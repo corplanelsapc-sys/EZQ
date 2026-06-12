@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Queue Clicker Dashboard</title>
+    <title>EZ Clicker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
@@ -33,6 +33,7 @@
             width:22%;
             min-width:120px;
             transition:0.2s;
+            cursor:pointer;
         }
 
         .label {
@@ -56,7 +57,7 @@
         }
 
         button {
-            font-size:30px;
+            font-size:25px;
             padding:15px;
             margin:10px;
             width:40%;
@@ -75,10 +76,22 @@
             color:white;
         }
 
+        .reset {
+            background:#222;
+            color:#999;
+            width:85%;
+            font-size:18px;
+        }
+
         .selected {
             margin-top:20px;
-            font-size:25px;
+            font-size:22px;
             color:#0f0;
+        }
+
+        .toggle {
+            margin-top:10px;
+            font-size:16px;
         }
     </style>
 </head>
@@ -89,6 +102,13 @@
 
 <div class="selected">
     Selected Window: <span id="selectedWin">w3</span>
+</div>
+
+<div class="toggle">
+    <label>
+        <input type="checkbox" id="voiceToggle">
+        Enable Voice Announcement
+    </label>
 </div>
 
 <div class="windows">
@@ -120,6 +140,8 @@
     <button class="next" onclick="change(1)">NEXT (+1)</button>
     <button class="back" onclick="change(-1)">BACK (-1)</button>
 
+    <button class="reset" onclick="resetAll()">RESET ALL TO ZERO</button>
+
 </div>
 
 <script type="module">
@@ -131,7 +153,8 @@ import {
     getDatabase,
     ref,
     runTransaction,
-    onValue
+    onValue,
+    set
 } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -148,10 +171,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// default selected window
 let selected = "w3";
+let lastSpoken = {};
 
-// show selected window
+// ===== UI SELECT =====
 function updateSelectedUI() {
 
     document.getElementById("selectedWin").innerText = selected;
@@ -165,7 +188,7 @@ function updateSelectedUI() {
 
 updateSelectedUI();
 
-// listen ALL windows at once
+// ===== LIVE LISTENER =====
 const queueRef = ref(db, "queues");
 
 onValue(queueRef, (snapshot) => {
@@ -173,14 +196,38 @@ onValue(queueRef, (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
 
-    document.getElementById("w3").innerText = data.w3 || 0;
-    document.getElementById("w4").innerText = data.w4 || 0;
-    document.getElementById("w5").innerText = data.w5 || 0;
-    document.getElementById("w6").innerText = data.w6 || 0;
+    updateBox("w3", data.w3);
+    updateBox("w4", data.w4);
+    updateBox("w5", data.w5);
+    updateBox("w6", data.w6);
 
 });
 
-// change value of selected window
+function updateBox(win, value) {
+
+    const val = value || 0;
+    document.getElementById(win).innerText = val;
+
+    // OPTIONAL VOICE
+    const voiceEnabled = document.getElementById("voiceToggle").checked;
+
+    if (voiceEnabled && lastSpoken[win] !== val) {
+
+        if (win === selected) {
+
+            const msg = new SpeechSynthesisUtterance(
+                "Window " + win.replace("w","") +
+                " now serving number " + val
+            );
+
+            speechSynthesis.speak(msg);
+        }
+
+        lastSpoken[win] = val;
+    }
+}
+
+// ===== CHANGE VALUE =====
 window.change = function(amount) {
 
     const dbRef = ref(db, "queues/" + selected);
@@ -191,7 +238,17 @@ window.change = function(amount) {
 
 };
 
-// click box to select window
+// ===== RESET ALL =====
+window.resetAll = function() {
+
+    if(!confirm("Reset all windows to zero?")) return;
+
+    ["w3","w4","w5","w6"].forEach(win => {
+        set(ref(db, "queues/" + win), 0);
+    });
+};
+
+// ===== CLICK TO SELECT WINDOW =====
 document.querySelectorAll(".box").forEach(box => {
 
     box.addEventListener("click", () => {
