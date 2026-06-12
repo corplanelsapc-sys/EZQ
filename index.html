@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Queue Display</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: black; color: white; font-family: Arial, sans-serif; }
+        body { display: flex; flex-direction: column; justify-content: space-around; align-items: center; }
+        h1 { margin: 0; font-size: 6vw; text-align: center; flex-shrink: 0; }
+        table { width: 95%; border-collapse: collapse; table-layout: fixed; }
+        .header-cell { font-size: 3vw; padding-bottom: 20px; border-bottom: 3px solid red; text-transform: uppercase; text-align: center; font-weight: bold; }
+        td { font-family: 'Oswald', 'Impact', sans-serif; font-size: 18vw; font-weight: normal; text-align: center; color: white; padding: 0; }
+        td span { display: inline-block; transform: scaleY(1.4); transform-origin: center; line-height: 1.2; }
+    </style>
+</head>
+<body>
+    <h1>NOW SERVING</h1>
+    <table>
+        <tbody>
+            <tr>
+                <td class="header-cell">Window 3</td><td class="header-cell">Window 4</td>
+                <td class="header-cell">Window 5</td><td class="header-cell">Window 6</td>
+            </tr>
+            <tr>
+                <td><span id="win3">0</span></td><td><span id="win4">0</span></td>
+                <td><span id="win5">0</span></td><td><span id="win6">0</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script type="module">
+        import { initializeApp } from "https://gstatic.com";
+        import { getDatabase, ref, onValue } from "https://gstatic.com";
+
+        // PASTE YOUR CONFIG HERE
+const firebaseConfig = {
+  apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+  authDomain: "panelco-i-queue-system.firebaseapp.com",
+  projectId: "panelco-i-queue-system",
+  storageBucket: "panelco-i-queue-system.firebasestorage.app",
+  messagingSenderId: "1075037996413",
+  appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814",
+  measurementId: "G-RR5ZWBX0QP"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Update display when data changes
+        const ids = { 'w3': 'win3', 'w4': 'win4', 'w5': 'win5', 'w6': 'win6' };
+        onValue(ref(db, 'queues'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                Object.keys(ids).forEach(key => {
+                    if (data[key] !== undefined) document.getElementById(ids[key]).innerText = data[key];
+                });
+            }
+        });
+    </script>
+</body>
+</html>

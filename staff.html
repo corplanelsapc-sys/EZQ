@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head><title>Staff Control</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="background:#222; color:white; font-family:sans-serif; text-align:center; padding:20px;">
+    <h2>WINDOW CONTROL</h2>
+    <select id="win" style="font-size:20px; padding:10px; width:80%;">
+        <option value="w3">Window 3</option>
+        <option value="w4">Window 4</option>
+        <option value="w5">Window 5</option>
+        <option value="w6">Window 6</option>
+    </select>
+    <br><br>
+    <button onclick="change(1)" style="font-size:40px; padding:20px; width:80%; background:red; color:white; border:none; border-radius:10px;">NEXT (+1)</button>
+    <br><br>
+    <button onclick="change(-1)" style="font-size:20px; padding:10px; width:40%; background:#555; color:white; border:none;">Back (-1)</button>
+
+    <script type="module">
+        import { initializeApp } from "https://gstatic.com";
+        import { getDatabase, ref, runTransaction } from "https://gstatic.com";
+
+        // PASTE THE SAME CONFIG HERE
+const firebaseConfig = {
+  apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+  authDomain: "panelco-i-queue-system.firebaseapp.com",
+  projectId: "panelco-i-queue-system",
+  storageBucket: "panelco-i-queue-system.firebasestorage.app",
+  messagingSenderId: "1075037996413",
+  appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814",
+  measurementId: "G-RR5ZWBX0QP"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.change = (amt) => {
+            const win = document.getElementById('win').value;
+            const dbRef = ref(db, 'queues/' + win);
+            runTransaction(dbRef, (curr) => (curr || 0) + amt);
+        };
+    </script>
+</body>
+</html>
