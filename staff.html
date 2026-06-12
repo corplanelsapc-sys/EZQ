@@ -27,15 +27,14 @@
     <button onclick="resetAll()" style="font-size:16px; padding:10px; width:80%; background:#333; color:gray; border:1px solid #444; margin-top:50px; cursor:pointer;">RESET ALL TO ZERO</button>
 
     <script type="module">
-        // Using the FULL correct paths to Firebase
-        import { initializeApp } from "https://gstatic.com";
-        import { getDatabase, ref, runTransaction } from "https://gstatic.com";
+        // These are the FULL paths. Do not change these.
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
             authDomain: "panelco-i-queue-system.firebaseapp.com",
-            // Added the databaseURL manually based on your project ID
-            databaseURL: "https://firebaseio.com",
+            databaseURL: "https://panelco-i-queue-system-default-rtdb.firebaseio.com",
             projectId: "panelco-i-queue-system",
             storageBucket: "panelco-i-queue-system.firebasestorage.app",
             messagingSenderId: "1075037996413",
@@ -47,7 +46,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Make functions public so buttons can see them
+        // This makes the buttons work by attaching the code to the "window"
         window.change = function(amt) {
             const win = document.getElementById('win').value;
             const dbRef = ref(db, 'queues/' + win);
@@ -55,7 +54,7 @@
             runTransaction(dbRef, (currentValue) => {
                 return (currentValue || 0) + amt;
             }).catch((err) => {
-                alert("Error: Make sure your Database Rules are set to 'Test Mode'");
+                alert("Error: Check console or Firebase Rules.");
                 console.error(err);
             });
         };
