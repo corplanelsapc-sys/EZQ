@@ -1,89 +1,74 @@
 <!DOCTYPE html>
 <html>
-<head><title>Staff Control</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<head>
+    <title>Staff Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
 <body style="background:#222; color:white; font-family:sans-serif; text-align:center; padding:20px;">
     <h2>WINDOW CONTROL</h2>
+    
     <select id="win" style="font-size:20px; padding:10px; width:80%;">
         <option value="w3">Window 3</option>
         <option value="w4">Window 4</option>
         <option value="w5">Window 5</option>
         <option value="w6">Window 6</option>
     </select>
+    
     <br><br>
-    <button onclick="change(1)" style="font-size:40px; padding:20px; width:80%; background:red; color:white; border:none; border-radius:10px;">NEXT (+1)</button>
+    
+    <button onclick="change(1)" style="font-size:40px; padding:20px; width:80%; background:red; color:white; border:none; border-radius:10px; cursor:pointer;">NEXT (+1)</button>
+    
     <br><br>
-    <button onclick="change(-1)" style="font-size:20px; padding:10px; width:40%; background:#555; color:white; border:none;">Back (-1)</button>
+    
+    <button onclick="change(-1)" style="font-size:20px; padding:10px; width:40%; background:#555; color:white; border:none; cursor:pointer;">Back (-1)</button>
+
+    <br><br>
+    
+    <button onclick="resetAll()" style="font-size:16px; padding:10px; width:80%; background:#333; color:gray; border:1px solid #444; margin-top:50px; cursor:pointer;">RESET ALL TO ZERO</button>
 
     <script type="module">
+        // Using the FULL correct paths to Firebase
         import { initializeApp } from "https://gstatic.com";
         import { getDatabase, ref, runTransaction } from "https://gstatic.com";
 
-        // PASTE THE SAME CONFIG HERE
-const firebaseConfig = {
-  apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
-  authDomain: "panelco-i-queue-system.firebaseapp.com",
-  projectId: "panelco-i-queue-system",
-  storageBucket: "panelco-i-queue-system.firebasestorage.app",
-  messagingSenderId: "1075037996413",
-  appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814",
-  measurementId: "G-RR5ZWBX0QP"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+            authDomain: "panelco-i-queue-system.firebaseapp.com",
+            // Added the databaseURL manually based on your project ID
+            databaseURL: "https://firebaseio.com",
+            projectId: "panelco-i-queue-system",
+            storageBucket: "panelco-i-queue-system.firebasestorage.app",
+            messagingSenderId: "1075037996413",
+            appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814",
+            measurementId: "G-RR5ZWBX0QP"
+        };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        window.change = (amt) => {
+        // Make functions public so buttons can see them
+        window.change = function(amt) {
             const win = document.getElementById('win').value;
             const dbRef = ref(db, 'queues/' + win);
-            runTransaction(dbRef, (curr) => (curr || 0) + amt);
+            
+            runTransaction(dbRef, (currentValue) => {
+                return (currentValue || 0) + amt;
+            }).catch((err) => {
+                alert("Error: Make sure your Database Rules are set to 'Test Mode'");
+                console.error(err);
+            });
+        };
+
+        window.resetAll = function() {
+            if(confirm("Are you sure you want to reset all windows to 0?")) {
+                const windows = ['w3', 'w4', 'w5', 'w6'];
+                windows.forEach(win => {
+                    const dbRef = ref(db, 'queues/' + win);
+                    runTransaction(dbRef, () => 0);
+                });
+            }
         };
     </script>
-    <script type="module">
-    import { initializeApp } from "https://gstatic.com";
-    import { getDatabase, ref, runTransaction } from "https://gstatic.com";
-
-    // PASTE YOUR FIREBASE CONFIG HERE
-    const firebaseConfig = {
-  apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
-  authDomain: "panelco-i-queue-system.firebaseapp.com",
-  projectId: "panelco-i-queue-system",
-  storageBucket: "panelco-i-queue-system.firebasestorage.app",
-  messagingSenderId: "1075037996413",
-  appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814",
-  measurementId: "G-RR5ZWBX0QP"
-};
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // This makes the function visible to the HTML buttons
-    window.change = function(amt) {
-        const win = document.getElementById('win').value;
-        const dbRef = ref(db, 'queues/' + win);
-        
-        runTransaction(dbRef, (currentValue) => {
-            return (currentValue || 0) + amt;
-        }).then(() => {
-            console.log("Updated " + win);
-        }).catch((err) => {
-            console.error("Error updating:", err);
-        });
-    };
-
-    // New Reset Function
-    window.resetAll = function() {
-        if(confirm("Are you sure you want to reset all windows to 0?")) {
-            const windows = ['w3', 'w4', 'w5', 'w6'];
-            windows.forEach(win => {
-                const dbRef = ref(db, 'queues/' + win);
-                runTransaction(dbRef, () => 0);
-            });
-        }
-    };
-</script>
-
-<!-- Add this button at the bottom of your staff.html body -->
-<br><br>
-<button onclick="resetAll()" style="font-size:16px; padding:10px; width:80%; background:#333; color:gray; border:1px solid #444; margin-top:50px;">RESET ALL TO ZERO</button>
-
 </body>
 </html>
