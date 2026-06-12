@@ -33,14 +33,13 @@
     </table>
 
     <script type="module">
-        // Using the FULL direct paths to Firebase
         import { initializeApp } from "https://gstatic.com";
         import { getDatabase, ref, onValue } from "https://gstatic.com";
 
         const firebaseConfig = {
           apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
           authDomain: "://firebaseapp.com",
-          databaseURL: "https://firebasedatabase.app", 
+          databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app/", 
           projectId: "panelco-i-queue-system",
           storageBucket: "panelco-i-queue-system.firebasestorage.app",
           messagingSenderId: "1075037996413",
@@ -51,13 +50,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // This maps the Firebase 'queues' to the HTML span IDs
         const ids = { 'w3': 'win3', 'w4': 'win4', 'w5': 'win5', 'w6': 'win6' };
 
-        // Listen for changes in the 'queues' folder
         onValue(ref(db, 'queues'), (snapshot) => {
             const data = snapshot.val();
-            console.log("New data received:", data); // This helps you see if it's working in F12
             if (data) {
                 Object.keys(ids).forEach(key => {
                     if (data[key] !== undefined) {
