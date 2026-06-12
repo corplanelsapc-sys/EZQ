@@ -38,5 +38,52 @@ const firebaseConfig = {
             runTransaction(dbRef, (curr) => (curr || 0) + amt);
         };
     </script>
+    <script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getDatabase, ref, runTransaction } from "https://gstatic.com";
+
+    // PASTE YOUR FIREBASE CONFIG HERE
+    const firebaseConfig = {
+  apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+  authDomain: "panelco-i-queue-system.firebaseapp.com",
+  projectId: "panelco-i-queue-system",
+  storageBucket: "panelco-i-queue-system.firebasestorage.app",
+  messagingSenderId: "1075037996413",
+  appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814",
+  measurementId: "G-RR5ZWBX0QP"
+};
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // This makes the function visible to the HTML buttons
+    window.change = function(amt) {
+        const win = document.getElementById('win').value;
+        const dbRef = ref(db, 'queues/' + win);
+        
+        runTransaction(dbRef, (currentValue) => {
+            return (currentValue || 0) + amt;
+        }).then(() => {
+            console.log("Updated " + win);
+        }).catch((err) => {
+            console.error("Error updating:", err);
+        });
+    };
+
+    // New Reset Function
+    window.resetAll = function() {
+        if(confirm("Are you sure you want to reset all windows to 0?")) {
+            const windows = ['w3', 'w4', 'w5', 'w6'];
+            windows.forEach(win => {
+                const dbRef = ref(db, 'queues/' + win);
+                runTransaction(dbRef, () => 0);
+            });
+        }
+    };
+</script>
+
+<!-- Add this button at the bottom of your staff.html body -->
+<br><br>
+<button onclick="resetAll()" style="font-size:16px; padding:10px; width:80%; background:#333; color:gray; border:1px solid #444; margin-top:50px;">RESET ALL TO ZERO</button>
+
 </body>
 </html>
