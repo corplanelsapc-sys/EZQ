@@ -68,14 +68,14 @@ table {
 <script type="module">
 
 import { initializeApp } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
 import {
     getDatabase,
     ref,
     onValue
 }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
@@ -110,15 +110,20 @@ function speak(text) {
 }
 
 // queue listener
-onValue(ref(db, "queues"), (snap) => {
+onValue(queueRef, (snap) => {
+
+    console.log("🔥 DATA RECEIVED:", snap.val());
 
     const d = snap.val();
     if (!d) return;
 
-    update("w3", d.w3);
-    update("w4", d.w4);
-    update("w5", d.w5);
-    update("w6", d.w6);
+    document.getElementById("win3").innerText = d.w3 ?? 0;
+    document.getElementById("win4").innerText = d.w4 ?? 0;
+    document.getElementById("win5").innerText = d.w5 ?? 0;
+    document.getElementById("win6").innerText = d.w6 ?? 0;
+
+}, (err) => {
+    console.error("❌ Firebase error:", err);
 });
 
 function update(win, val) {
