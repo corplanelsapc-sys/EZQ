@@ -30,25 +30,32 @@
 
     <script type="module">
         import { initializeApp } from "https://gstatic.com";
-        import { getDatabase, ref, onValue } from "https://gstatic.com";
+        import { getDatabase, ref, onValue, set, get } from "https://gstatic.com";
 
-        // PASTE YOUR CONFIG HERE
-const firebaseConfig = {
-  apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
-  authDomain: "panelco-i-queue-system.firebaseapp.com",
-  projectId: "panelco-i-queue-system",
-  storageBucket: "panelco-i-queue-system.firebasestorage.app",
-  messagingSenderId: "1075037996413",
-  appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814",
-  measurementId: "G-RR5ZWBX0QP"
-};
+        const firebaseConfig = {
+          apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+          authDomain: "://firebaseapp.com",
+          databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app/", 
+          projectId: "panelco-i-queue-system",
+          storageBucket: "panelco-i-queue-system.firebasestorage.app",
+          messagingSenderId: "1075037996413",
+          appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814",
+          measurementId: "G-RR5ZWBX0QP"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Update display when data changes
+        // This part checks if the 'queues' folder exists, and creates it if not
+        const queueRef = ref(db, 'queues');
+        get(queueRef).then((snapshot) => {
+            if (!snapshot.exists()) {
+                set(queueRef, { w3: 0, w4: 0, w5: 0, w6: 0 });
+            }
+        });
+
         const ids = { 'w3': 'win3', 'w4': 'win4', 'w5': 'win5', 'w6': 'win6' };
-        onValue(ref(db, 'queues'), (snapshot) => {
+        onValue(queueRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 Object.keys(ids).forEach(key => {
