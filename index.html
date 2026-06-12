@@ -89,7 +89,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
+const queueRef = ref(db, "queues");
 const voiceRef = ref(db, "settings/voiceEnabled");
 
 let voiceEnabled = false;
@@ -134,7 +134,7 @@ function update(win, val) {
 
     if (last[win] !== val) {
 
-        beep.play().catch(()=>{});
+        //beep.play().catch(()=>{});
 
         if (voiceEnabled) {
 
