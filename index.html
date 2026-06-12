@@ -117,33 +117,40 @@ onValue(queueRef, (snap) => {
     const d = snap.val();
     if (!d) return;
 
-    document.getElementById("win3").innerText = d.w3 ?? 0;
-    document.getElementById("win4").innerText = d.w4 ?? 0;
-    document.getElementById("win5").innerText = d.w5 ?? 0;
-    document.getElementById("win6").innerText = d.w6 ?? 0;
+    update("win3", d.w3);
+    update("win4", d.w4);
+    update("win5", d.w5);
+    update("win6", d.w6);
 
 }, (err) => {
     console.error("❌ Firebase error:", err);
 });
 
-function update(win, val) {
+function update(id, val) {
 
-    val = val || 0;
+    val = val ?? 0;
 
-    document.getElementById(win).innerText = val;
+    document.getElementById(id).innerText = val;
 
-    if (last[win] !== val) {
+    if (last[id] !== val) {
 
-        beep.play().catch(()=>{});
+        console.log("Changed:", id, val);
+
+        beep.play().catch(err => {
+            console.log("Audio blocked:", err);
+        });
 
         if (voiceEnabled) {
 
-            const num = win.replace("w","");
+            const windowNo = id.replace("win","");
 
-            speak("Window " + num + " now serving number " + val);
+            speak(
+                "Window " + windowNo +
+                " now serving number " + val
+            );
         }
 
-        last[win] = val;
+        last[id] = val;
     }
 }
 
