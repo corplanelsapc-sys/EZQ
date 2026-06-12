@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>EZ Clicker</title>
+    <title>Queue Clicker Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
@@ -18,6 +18,11 @@
             margin:10px 0;
         }
 
+        .toggle {
+            margin:10px;
+            font-size:16px;
+        }
+
         .windows {
             display:flex;
             justify-content:space-around;
@@ -32,13 +37,12 @@
             padding:20px;
             width:22%;
             min-width:120px;
-            transition:0.2s;
             cursor:pointer;
+            transition:0.2s;
         }
 
         .label {
             font-size:20px;
-            margin-bottom:10px;
             color:#aaa;
         }
 
@@ -49,11 +53,7 @@
 
         .active {
             border:4px solid yellow;
-            box-shadow:0 0 20px yellow;
-        }
-
-        .controls {
-            margin-top:30px;
+            box-shadow:0 0 15px yellow;
         }
 
         button {
@@ -66,49 +66,36 @@
             cursor:pointer;
         }
 
-        .next {
-            background:red;
-            color:white;
-        }
-
-        .back {
-            background:#555;
-            color:white;
-        }
-
+        .next { background:red; color:white; }
+        .back { background:#555; color:white; }
         .reset {
             background:#222;
-            color:#999;
+            color:#aaa;
             width:85%;
             font-size:18px;
         }
 
         .selected {
-            margin-top:20px;
-            font-size:22px;
-            color:#0f0;
-        }
-
-        .toggle {
             margin-top:10px;
-            font-size:16px;
+            font-size:20px;
+            color:#0f0;
         }
     </style>
 </head>
 
 <body>
 
-<h2>WINDOW DASHBOARD</h2>
-
-<div class="selected">
-    Selected Window: <span id="selectedWin">w3</span>
-</div>
+<h2>WINDOW CONTROL</h2>
 
 <div class="toggle">
     <label>
         <input type="checkbox" id="voiceToggle">
         Enable Voice Announcement
     </label>
+</div>
+
+<div class="selected">
+    Selected: <span id="selectedWin">w3</span>
 </div>
 
 <div class="windows">
@@ -135,12 +122,12 @@
 
 </div>
 
-<div class="controls">
+<div>
 
     <button class="next" onclick="change(1)">NEXT (+1)</button>
     <button class="back" onclick="change(-1)">BACK (-1)</button>
 
-    <button class="reset" onclick="resetAll()">RESET ALL TO ZERO</button>
+    <button class="reset" onclick="resetAll()">RESET ALL</button>
 
 </div>
 
@@ -155,13 +142,13 @@ import {
     runTransaction,
     onValue,
     set
-} 
+}
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
     authDomain: "panelco-i-queue-system.firebaseapp.com",
-    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "panelco-i-queue-system",
     storageBucket: "panelco-i-queue-system.firebasestorage.app",
     messagingSenderId: "1075037996413",
@@ -172,10 +159,18 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 let selected = "w3";
-let lastSpoken = {};
+
+// ===== SET VOICE DEFAULT =====
+const voiceToggle = document.getElementById("voiceToggle");
+set(ref(db, "settings/voiceEnabled"), voiceToggle.checked);
+
+// sync toggle to firebase
+voiceToggle.addEventListener("change", (e) => {
+    set(ref(db, "settings/voiceEnabled"), e.target.checked);
+});
 
 // ===== UI SELECT =====
-function updateSelectedUI() {
+function updateUI() {
 
     document.getElementById("selectedWin").innerText = selected;
 
@@ -186,78 +181,45 @@ function updateSelectedUI() {
     document.getElementById("box-" + selected).classList.add("active");
 }
 
-updateSelectedUI();
+updateUI();
 
-// ===== LIVE LISTENER =====
-const queueRef = ref(db, "queues");
+// ===== LIVE DATA =====
+onValue(ref(db, "queues"), (snap) => {
 
-onValue(queueRef, (snapshot) => {
-
-    const data = snapshot.val();
+    const data = snap.val();
     if (!data) return;
 
-    updateBox("w3", data.w3);
-    updateBox("w4", data.w4);
-    updateBox("w5", data.w5);
-    updateBox("w6", data.w6);
-
+    document.getElementById("w3").innerText = data.w3 || 0;
+    document.getElementById("w4").innerText = data.w4 || 0;
+    document.getElementById("w5").innerText = data.w5 || 0;
+    document.getElementById("w6").innerText = data.w6 || 0;
 });
-
-function updateBox(win, value) {
-
-    const val = value || 0;
-    document.getElementById(win).innerText = val;
-
-    // OPTIONAL VOICE
-    const voiceEnabled = document.getElementById("voiceToggle").checked;
-
-    if (voiceEnabled && lastSpoken[win] !== val) {
-
-        if (win === selected) {
-
-            const msg = new SpeechSynthesisUtterance(
-                "Window " + win.replace("w","") +
-                " now serving number " + val
-            );
-
-            speechSynthesis.speak(msg);
-        }
-
-        lastSpoken[win] = val;
-    }
-}
 
 // ===== CHANGE VALUE =====
 window.change = function(amount) {
 
-    const dbRef = ref(db, "queues/" + selected);
-
-    runTransaction(dbRef, (current) => {
-        return (current || 0) + amount;
+    runTransaction(ref(db, "queues/" + selected), (v) => {
+        return (v || 0) + amount;
     });
 
 };
 
-// ===== RESET ALL =====
+// ===== RESET =====
 window.resetAll = function() {
 
-    if(!confirm("Reset all windows to zero?")) return;
+    if(!confirm("Reset all queues?")) return;
 
-    ["w3","w4","w5","w6"].forEach(win => {
-        set(ref(db, "queues/" + win), 0);
+    ["w3","w4","w5","w6"].forEach(w => {
+        set(ref(db, "queues/" + w), 0);
     });
 };
 
-// ===== CLICK TO SELECT WINDOW =====
-document.querySelectorAll(".box").forEach(box => {
-
-    box.addEventListener("click", () => {
-
-        selected = box.id.replace("box-", "");
-        updateSelectedUI();
-
+// ===== SELECT WINDOW =====
+document.querySelectorAll(".box").forEach(b => {
+    b.addEventListener("click", () => {
+        selected = b.id.replace("box-","");
+        updateUI();
     });
-
 });
 
 </script>
