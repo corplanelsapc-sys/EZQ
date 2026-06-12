@@ -67,7 +67,7 @@ table {
 
 <script type="module">
 
-import { initializeApp } 
+import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
 import {
@@ -89,72 +89,198 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
 const queueRef = ref(db, "queues");
 const voiceRef = ref(db, "settings/voiceEnabled");
 
 let voiceEnabled = false;
+let audioUnlocked = false;
+let firstLoad = true;
 let last = {};
 
 const beep = new Audio("beep.mp3");
 
-// listen toggle from clicker
-onValue(voiceRef, (snap) => {
-    voiceEnabled = snap.val() === true;
+
+// ==========================
+// ENABLE AUDIO BUTTON
+// ==========================
+
+document.getElementById("enableAudioBtn")
+.addEventListener("click", async () => {
+
+    try {
+
+        await beep.play();
+
+        beep.pause();
+        beep.currentTime = 0;
+
+        speechSynthesis.speak(
+            new SpeechSynthesisUtterance("Audio enabled")
+        );
+
+        audioUnlocked = true;
+
+        document.getElementById("enableAudioBtn")
+        .style.display = "none";
+
+        console.log("Audio unlocked");
+
+    }
+    catch(err) {
+
+        console.error(err);
+
+        alert(
+            "Browser still blocked audio. Try clicking again."
+        );
+    }
+
 });
 
-// speak function
+
+// ==========================
+// VOICE TOGGLE
+// ==========================
+
+onValue(voiceRef, (snap) => {
+
+    voiceEnabled = snap.val() === true;
+
+    console.log(
+        "Voice Enabled:",
+        voiceEnabled
+    );
+
+});
+
+
+// ==========================
+// SPEAK FUNCTION
+// ==========================
+
 function speak(text) {
-    const msg = new SpeechSynthesisUtterance(text);
+
+    if(!audioUnlocked) return;
+
+    speechSynthesis.cancel();
+
+    const msg =
+        new SpeechSynthesisUtterance(text);
+
     msg.rate = 1;
+
     speechSynthesis.speak(msg);
+
 }
 
-// queue listener
+
+// ==========================
+// UPDATE DISPLAY
+// ==========================
+
+function update(id, val) {
+
+    val = val ?? 0;
+
+    document.getElementById(id)
+        .innerText = val;
+
+    if(firstLoad) {
+
+        last[id] = val;
+        return;
+    }
+
+    if(last[id] !== val) {
+
+        console.log(
+            "Changed:",
+            id,
+            val
+        );
+
+        if(audioUnlocked) {
+
+            beep.currentTime = 0;
+
+            beep.play()
+            .catch(err =>
+                console.log(err)
+            );
+
+        }
+
+        if(
+            audioUnlocked &&
+            voiceEnabled
+        ) {
+
+            const windowNo =
+                id.replace("win","");
+
+            speak(
+                "Window " +
+                windowNo +
+                " now serving number " +
+                val
+            );
+
+        }
+
+        last[id] = val;
+    }
+
+}
+
+
+// ==========================
+// FIREBASE LISTENER
+// ==========================
+
 onValue(queueRef, (snap) => {
 
-    console.log("🔥 DATA RECEIVED:", snap.val());
-
     const d = snap.val();
-    if (!d) return;
+
+    console.log(
+        "Firebase:",
+        d
+    );
+
+    if(!d) return;
 
     update("win3", d.w3);
     update("win4", d.w4);
     update("win5", d.w5);
     update("win6", d.w6);
 
-}, (err) => {
-    console.error("❌ Firebase error:", err);
+    firstLoad = false;
+
+},
+(err) => {
+
+    console.error(
+        "Firebase Error:",
+        err
+    );
+
 });
 
-function update(id, val) {
-
-    val = val ?? 0;
-
-    document.getElementById(id).innerText = val;
-
-    if (last[id] !== val) {
-
-        console.log("Changed:", id, val);
-
-        beep.play().catch(err => {
-            console.log("Audio blocked:", err);
-        });
-
-        if (voiceEnabled) {
-
-            const windowNo = id.replace("win","");
-
-            speak(
-                "Window " + windowNo +
-                " now serving number " + val
-            );
-        }
-
-        last[id] = val;
-    }
-}
-
 </script>
-
+<button id="enableAudioBtn"
+style="
+position:absolute;
+top:20px;
+right:20px;
+font-size:20px;
+padding:15px;
+background:green;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+z-index:9999;">
+ENABLE AUDIO
+</button>
 </body>
 </html>
