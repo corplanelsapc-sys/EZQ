@@ -103,58 +103,29 @@ onValue(voiceRef, (snap) => {
     voiceEnabled = snap.val() === true;
 });
 
-// // speak function
-// function speak(text) {
-//     const msg = new SpeechSynthesisUtterance(text);
-//     msg.rate = 1;
-//     speechSynthesis.speak(msg);
-// }
-// function speak(text) {
+// speak function
+function speak(text) {
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.rate = 1;
+    speechSynthesis.speak(msg);
+}
+function speak(text) {
 
-//     const msg = new SpeechSynthesisUtterance(text);
+    const msg = new SpeechSynthesisUtterance(text);
 
-//     msg.rate = 1;
-//     msg.pitch = 1.1;
+    msg.rate = 1;
+    msg.pitch = 1.1;
 
-//     const voices = speechSynthesis.getVoices();
-
-//     msg.voice =
-//         voices.find(v => v.name.includes("Jenny")) ||
-//         voices.find(v => v.name.includes("Aria")) ||
-//         voices.find(v => v.name.includes("Zira")) ||
-//         null;
-
-//     speechSynthesis.speak(msg);
-// }
-let availableVoices = [];
-
-speechSynthesis.onvoiceschanged = () => {
-    availableVoices = speechSynthesis.getVoices();
-};
-
-function pickVoice() {
     const voices = speechSynthesis.getVoices();
 
-    console.log("AVAILABLE VOICES:", voices.map(v => v.name));
-
-    return (
-        voices.find(v => v.name === "Microsoft Zira Desktop") ||
+    msg.voice =
+        voices.find(v => v.name.includes("Jenny")) ||
+        voices.find(v => v.name.includes("Aria")) ||
         voices.find(v => v.name.includes("Zira")) ||
-        voices.find(v => v.lang === "en-US") ||
-        voices[0] ||
-        null
-    );
+        null;
+
+    speechSynthesis.speak(msg);
 }
-
-let voices = [];
-
-function loadVoices() {
-    voices = speechSynthesis.getVoices();
-    console.log("VOICES LOADED:", voices.map(v => v.name));
-}
-
-speechSynthesis.onvoiceschanged = loadVoices;
-loadVoices();
 
 function speak(text) {
 
