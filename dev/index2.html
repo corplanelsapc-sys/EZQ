@@ -133,27 +133,48 @@ speechSynthesis.onvoiceschanged = () => {
 };
 
 function pickVoice() {
+    const voices = speechSynthesis.getVoices();
+
+    console.log("AVAILABLE VOICES:", voices.map(v => v.name));
+
     return (
-        availableVoices.find(v => v.name.includes("Google")) ||
-        availableVoices.find(v => v.name.includes("Microsoft")) ||
-        availableVoices.find(v => v.name.includes("Jenny")) ||
-        availableVoices.find(v => v.name.includes("Aria")) ||
-        availableVoices.find(v => v.name.includes("Zira")) ||
-        availableVoices[0] ||
+        voices.find(v => v.name === "Microsoft Zira Desktop") ||
+        voices.find(v => v.name.includes("Zira")) ||
+        voices.find(v => v.lang === "en-US") ||
+        voices[0] ||
         null
     );
 }
 
+let voices = [];
+
+function loadVoices() {
+    voices = speechSynthesis.getVoices();
+    console.log("VOICES LOADED:", voices.map(v => v.name));
+}
+
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
 function speak(text) {
+
     const msg = new SpeechSynthesisUtterance(text);
 
     msg.rate = 1;
     msg.pitch = 1.1;
+    msg.lang = "en-US";
 
-    msg.voice = pickVoice();
+    const voice = pickVoice();
 
-    speechSynthesis.cancel(); // prevents queue overlap
-    speechSynthesis.speak(msg);
+    console.log("SELECTED VOICE:", voice?.name);
+
+    if (voice) msg.voice = voice;
+
+    speechSynthesis.cancel();
+
+    setTimeout(() => {
+        speechSynthesis.speak(msg);
+    }, 100);
 }
 // queue listener
 onValue(queueRef, (snap) => {
