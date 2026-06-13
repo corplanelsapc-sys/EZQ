@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Queue Display</title>
-<!-- //display -->
+
 <style>
 html, body {
     height: 100%;
@@ -43,16 +43,6 @@ table {
     text-align:center;
     font-family:Impact;
 }
-
-.highlight {
-    animation: flash 0.6s ease;
-}
-
-@keyframes flash {
-    0%   { background: yellow; color: black; }
-    100% { background: transparent; color: white; }
-}
-
 </style>
 </head>
 
@@ -78,7 +68,7 @@ table {
 
 <script type="module">
 
-import { initializeApp } 
+import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
 import {
@@ -100,141 +90,198 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
 const queueRef = ref(db, "queues");
 const voiceRef = ref(db, "settings/voiceEnabled");
 
 let voiceEnabled = false;
+let audioUnlocked = false;
+let firstLoad = true;
 let last = {};
 
 const beep = new Audio("beep.mp3");
 
-// listen toggle from clicker
-onValue(voiceRef, (snap) => {
-    voiceEnabled = snap.val() === true;
+
+// ==========================
+// ENABLE AUDIO BUTTON
+// ==========================
+
+document.getElementById("enableAudioBtn")
+.addEventListener("click", async () => {
+
+    try {
+
+        await beep.play();
+
+        beep.pause();
+        beep.currentTime = 0;
+
+        speechSynthesis.speak(
+            new SpeechSynthesisUtterance("Audio enabled")
+        );
+
+        audioUnlocked = true;
+
+        document.getElementById("enableAudioBtn")
+        .style.display = "none";
+
+        console.log("Audio unlocked");
+
+    }
+    catch(err) {
+
+        console.error(err);
+
+        alert(
+            "Browser still blocked audio. Try clicking again."
+        );
+    }
+
 });
 
-// speak function
-function speak(text) {
-    const msg = new SpeechSynthesisUtterance(text);
-    msg.rate = 1;
-    speechSynthesis.speak(msg);
-}
-function speak(text) {
 
-    const msg = new SpeechSynthesisUtterance(text);
+// ==========================
+// VOICE TOGGLE
+// ==========================
 
-    msg.rate = 1;
-    msg.pitch = 1.1;
+onValue(voiceRef, (snap) => {
 
-    const voices = speechSynthesis.getVoices();
+    voiceEnabled = snap.val() === true;
 
-    msg.voice =
-        voices.find(v => v.name.includes("Jenny")) ||
-        voices.find(v => v.name.includes("Aria")) ||
-        voices.find(v => v.name.includes("Zira")) ||
-        null;
+    console.log(
+        "Voice Enabled:",
+        voiceEnabled
+    );
 
-    speechSynthesis.speak(msg);
-}
+});
+
+
+// ==========================
+// SPEAK FUNCTION
+// ==========================
 
 function speak(text) {
 
-    const msg = new SpeechSynthesisUtterance(text);
-
-    msg.rate = 1;
-    msg.pitch = 1.1;
-    msg.lang = "en-US";
-
-    const voice = pickVoice();
-
-    console.log("SELECTED VOICE:", voice?.name);
-
-    if (voice) msg.voice = voice;
+    if(!audioUnlocked) return;
 
     speechSynthesis.cancel();
 
-    setTimeout(() => {
-        speechSynthesis.speak(msg);
-    }, 100);
+    const msg =
+        new SpeechSynthesisUtterance(text);
+
+    msg.rate = 1;
+
+    speechSynthesis.speak(msg);
+
 }
-// queue listener
-onValue(queueRef, (snap) => {
 
-    console.log("🔥 DATA RECEIVED:", snap.val());
 
-    const d = snap.val();
-    if (!d) return;
+// ==========================
+// UPDATE DISPLAY
+// ==========================
 
-    document.getElementById("win3").innerText = d.w3 ?? 0;
-    document.getElementById("win4").innerText = d.w4 ?? 0;
-    document.getElementById("win5").innerText = d.w5 ?? 0;
-    document.getElementById("win6").innerText = d.w6 ?? 0;
+function update(id, val) {
 
-}, (err) => {
-    console.error("❌ Firebase error:", err);
-});
+    val = val ?? 0;
 
-// onValue(queueRef, (snap) => {
+    document.getElementById(id)
+        .innerText = val;
 
-//     const d = snap.val();
-//     if (!d) return;
+    if(firstLoad) {
 
-//     update("win3", d.w3 ?? 0);
-//     update("win4", d.w4 ?? 0);
-//     update("win5", d.w5 ?? 0);
-//     update("win6", d.w6 ?? 0);
+        last[id] = val;
+        return;
+    }
 
-// }, (err) => {
-//     console.error("❌ Firebase error:", err);
-// });
+    if(last[id] !== val) {
 
-// function update(win, val) {
+        console.log(
+            "Changed:",
+            id,
+            val
+        );
 
-//     val = val || 0;
+        if(audioUnlocked) {
 
-//     document.getElementById(win).innerText = val;
+            beep.currentTime = 0;
 
-//     if (last[win] !== val) {
+            beep.play()
+            .catch(err =>
+                console.log(err)
+            );
 
-//         beep.play().catch(()=>{});
-
-//         if (voiceEnabled) {
-
-//             const num = win.replace("w","");
-
-//             speak("Window " + num + " now serving number " + val);
-//         }
-
-//         last[win] = val;
-//     }
-// }
-
-function update(win, val) {
-
-    val = val || 0;
-
-    const el = document.getElementById(win);
-
-    if (last[win] !== val) {
-
-        el.innerText = val;
-
-        // highlight effect
-        el.classList.remove("highlight");
-        void el.offsetWidth; // restart animation
-        el.classList.add("highlight");
-
-        beep.play().catch(()=>{});
-
-        if (voiceEnabled) {
-            const num = win.replace("w", "");
-            speak("Window " + num + " now serving number " + val);
         }
 
-        last[win] = val;
-    }
-}
-</script>
+        if(
+            audioUnlocked &&
+            voiceEnabled
+        ) {
 
+            const windowNo =
+                id.replace("win","");
+
+            speak(
+                "Window " +
+                windowNo +
+                " now serving number " +
+                val
+            );
+
+        }
+
+        last[id] = val;
+    }
+
+}
+
+
+// ==========================
+// FIREBASE LISTENER
+// ==========================
+
+onValue(queueRef, (snap) => {
+
+    const d = snap.val();
+
+    console.log(
+        "Firebase:",
+        d
+    );
+
+    if(!d) return;
+
+    update("win3", d.w3);
+    update("win4", d.w4);
+    update("win5", d.w5);
+    update("win6", d.w6);
+
+    firstLoad = false;
+
+},
+(err) => {
+
+    console.error(
+        "Firebase Error:",
+        err
+    );
+
+});
+
+</script>
+<button id="enableAudioBtn"
+style="
+position:absolute;
+top:20px;
+right:20px;
+font-size:20px;
+padding:15px;
+background:green;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+z-index:9999;">
+ENABLE AUDIO
+</button>
 </body>
 </html>
