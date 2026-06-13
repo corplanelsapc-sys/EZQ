@@ -109,21 +109,50 @@ onValue(voiceRef, (snap) => {
 //     msg.rate = 1;
 //     speechSynthesis.speak(msg);
 // }
-function speak(text) {
+// function speak(text) {
 
+//     const msg = new SpeechSynthesisUtterance(text);
+
+//     msg.rate = 1;
+//     msg.pitch = 1.1;
+
+//     const voices = speechSynthesis.getVoices();
+
+//     msg.voice =
+//         voices.find(v => v.name.includes("Jenny")) ||
+//         voices.find(v => v.name.includes("Aria")) ||
+//         voices.find(v => v.name.includes("Zira")) ||
+//         null;
+
+//     speechSynthesis.speak(msg);
+// }
+let availableVoices = [];
+
+speechSynthesis.onvoiceschanged = () => {
+    availableVoices = speechSynthesis.getVoices();
+};
+
+function pickVoice() {
+    return (
+        availableVoices.find(v => v.name.includes("Google")) ||
+        availableVoices.find(v => v.name.includes("Microsoft")) ||
+        availableVoices.find(v => v.name.includes("Jenny")) ||
+        availableVoices.find(v => v.name.includes("Aria")) ||
+        availableVoices.find(v => v.name.includes("Zira")) ||
+        availableVoices[0] ||
+        null
+    );
+}
+
+function speak(text) {
     const msg = new SpeechSynthesisUtterance(text);
 
     msg.rate = 1;
     msg.pitch = 1.1;
 
-    const voices = speechSynthesis.getVoices();
+    msg.voice = pickVoice();
 
-    msg.voice =
-        voices.find(v => v.name.includes("Jenny")) ||
-        voices.find(v => v.name.includes("Aria")) ||
-        voices.find(v => v.name.includes("Zira")) ||
-        null;
-
+    speechSynthesis.cancel(); // prevents queue overlap
     speechSynthesis.speak(msg);
 }
 // queue listener
