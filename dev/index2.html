@@ -158,35 +158,35 @@ function speak(text) {
     }, 100);
 }
 // queue listener
-// onValue(queueRef, (snap) => {
-
-//     console.log("🔥 DATA RECEIVED:", snap.val());
-
-//     const d = snap.val();
-//     if (!d) return;
-
-//     document.getElementById("win3").innerText = d.w3 ?? 0;
-//     document.getElementById("win4").innerText = d.w4 ?? 0;
-//     document.getElementById("win5").innerText = d.w5 ?? 0;
-//     document.getElementById("win6").innerText = d.w6 ?? 0;
-
-// }, (err) => {
-//     console.error("❌ Firebase error:", err);
-// });
-
 onValue(queueRef, (snap) => {
+
+    console.log("🔥 DATA RECEIVED:", snap.val());
 
     const d = snap.val();
     if (!d) return;
 
-    update("win3", d.w3 ?? 0);
-    update("win4", d.w4 ?? 0);
-    update("win5", d.w5 ?? 0);
-    update("win6", d.w6 ?? 0);
+    document.getElementById("win3").innerText = d.w3 ?? 0;
+    document.getElementById("win4").innerText = d.w4 ?? 0;
+    document.getElementById("win5").innerText = d.w5 ?? 0;
+    document.getElementById("win6").innerText = d.w6 ?? 0;
 
 }, (err) => {
     console.error("❌ Firebase error:", err);
 });
+
+// onValue(queueRef, (snap) => {
+
+//     const d = snap.val();
+//     if (!d) return;
+
+//     update("win3", d.w3 ?? 0);
+//     update("win4", d.w4 ?? 0);
+//     update("win5", d.w5 ?? 0);
+//     update("win6", d.w6 ?? 0);
+
+// }, (err) => {
+//     console.error("❌ Firebase error:", err);
+// });
 
 // function update(win, val) {
 
@@ -234,7 +234,6 @@ function update(win, val) {
         last[win] = val;
     }
 }
-
 </script>
 
 </body>
