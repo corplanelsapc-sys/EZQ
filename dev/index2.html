@@ -43,6 +43,16 @@ table {
     text-align:center;
     font-family:Impact;
 }
+
+.highlight {
+    animation: flash 0.6s ease;
+}
+
+@keyframes flash {
+    0%   { background: yellow; color: black; }
+    100% { background: transparent; color: white; }
+}
+
 </style>
 </head>
 
@@ -148,36 +158,76 @@ function speak(text) {
     }, 100);
 }
 // queue listener
-onValue(queueRef, (snap) => {
+// onValue(queueRef, (snap) => {
 
-    console.log("🔥 DATA RECEIVED:", snap.val());
+//     console.log("🔥 DATA RECEIVED:", snap.val());
+
+//     const d = snap.val();
+//     if (!d) return;
+
+//     document.getElementById("win3").innerText = d.w3 ?? 0;
+//     document.getElementById("win4").innerText = d.w4 ?? 0;
+//     document.getElementById("win5").innerText = d.w5 ?? 0;
+//     document.getElementById("win6").innerText = d.w6 ?? 0;
+
+// }, (err) => {
+//     console.error("❌ Firebase error:", err);
+// });
+
+onValue(queueRef, (snap) => {
 
     const d = snap.val();
     if (!d) return;
 
-    document.getElementById("win3").innerText = d.w3 ?? 0;
-    document.getElementById("win4").innerText = d.w4 ?? 0;
-    document.getElementById("win5").innerText = d.w5 ?? 0;
-    document.getElementById("win6").innerText = d.w6 ?? 0;
+    update("win3", d.w3 ?? 0);
+    update("win4", d.w4 ?? 0);
+    update("win5", d.w5 ?? 0);
+    update("win6", d.w6 ?? 0);
 
 }, (err) => {
     console.error("❌ Firebase error:", err);
 });
 
+// function update(win, val) {
+
+//     val = val || 0;
+
+//     document.getElementById(win).innerText = val;
+
+//     if (last[win] !== val) {
+
+//         beep.play().catch(()=>{});
+
+//         if (voiceEnabled) {
+
+//             const num = win.replace("w","");
+
+//             speak("Window " + num + " now serving number " + val);
+//         }
+
+//         last[win] = val;
+//     }
+// }
+
 function update(win, val) {
 
     val = val || 0;
 
-    document.getElementById(win).innerText = val;
+    const el = document.getElementById(win);
 
     if (last[win] !== val) {
+
+        el.innerText = val;
+
+        // highlight effect
+        el.classList.remove("highlight");
+        void el.offsetWidth; // restart animation
+        el.classList.add("highlight");
 
         beep.play().catch(()=>{});
 
         if (voiceEnabled) {
-
-            const num = win.replace("w","");
-
+            const num = win.replace("w", "");
             speak("Window " + num + " now serving number " + val);
         }
 
