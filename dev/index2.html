@@ -1,1 +1,154 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Queue Display</title>
+//display
+<style>
+html, body {
+    height: 100%;
+    margin: 0;
+    background: black;
+    color: white;
+    font-family: Arial;
+    overflow: hidden;
+}
+
+body {
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+}
+
+h1 {
+    font-size:5vw;
+}
+
+table {
+    width:95%;
+    table-layout:fixed;
+}
+
+.header-cell {
+    font-size:2.5vw;
+    border-bottom:3px solid red;
+    text-align:center;
+}
+
+.queue-cell {
+    font-size:16vw;
+    text-align:center;
+    font-family:Impact;
+}
+</style>
+</head>
+
+<body>
+
+<h1>NOW SERVING</h1>
+
+<table>
+<tr>
+    <td class="header-cell">WINDOW 3</td>
+    <td class="header-cell">WINDOW 4</td>
+    <td class="header-cell">WINDOW 5</td>
+    <td class="header-cell">WINDOW 6</td>
+</tr>
+
+<tr>
+    <td class="queue-cell" id="win3">0</td>
+    <td class="queue-cell" id="win4">0</td>
+    <td class="queue-cell" id="win5">0</td>
+    <td class="queue-cell" id="win6">0</td>
+</tr>
+</table>
+
+<script type="module">
+
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+    getDatabase,
+    ref,
+    onValue
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+    authDomain: "panelco-i-queue-system.firebaseapp.com",
+    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "panelco-i-queue-system",
+    storageBucket: "panelco-i-queue-system.firebasestorage.app",
+    messagingSenderId: "1075037996413",
+    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const queueRef = ref(db, "queues");
+const voiceRef = ref(db, "settings/voiceEnabled");
+
+let voiceEnabled = false;
+let last = {};
+
+const beep = new Audio("beep.mp3");
+
+// listen toggle from clicker
+onValue(voiceRef, (snap) => {
+    voiceEnabled = snap.val() === true;
+});
+
+// speak function
+function speak(text) {
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.rate = 1;
+    speechSynthesis.speak(msg);
+}
+
+// queue listener
+onValue(queueRef, (snap) => {
+
+    console.log("🔥 DATA RECEIVED:", snap.val());
+
+    const d = snap.val();
+    if (!d) return;
+
+    document.getElementById("win3").innerText = d.w3 ?? 0;
+    document.getElementById("win4").innerText = d.w4 ?? 0;
+    document.getElementById("win5").innerText = d.w5 ?? 0;
+    document.getElementById("win6").innerText = d.w6 ?? 0;
+
+}, (err) => {
+    console.error("❌ Firebase error:", err);
+});
+
+function update(win, val) {
+
+    val = val || 0;
+
+    document.getElementById(win).innerText = val;
+
+    if (last[win] !== val) {
+
+        beep.play().catch(()=>{});
+
+        if (voiceEnabled) {
+
+            const num = win.replace("w","");
+
+            speak("Window " + num + " now serving number " + val);
+        }
+
+        last[win] = val;
+    }
+}
+
+</script>
+
+</body>
+</html>

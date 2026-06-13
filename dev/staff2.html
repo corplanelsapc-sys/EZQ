@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Queue Clicker Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+//staff
+    <style>
+        body {
+            background:#111;
+            color:white;
+            font-family:Arial, sans-serif;
+            text-align:center;
+            margin:0;
+            padding:20px;
+        }
+
+        h2 {
+            margin:10px 0;
+        }
+
+        .toggle {
+            margin:10px;
+            font-size:16px;
+        }
+
+        .windows {
+            display:flex;
+            justify-content:space-around;
+            margin-top:20px;
+            flex-wrap:wrap;
+        }
+
+        .box {
+            background:#222;
+            border:2px solid #333;
+            border-radius:10px;
+            padding:20px;
+            width:22%;
+            min-width:120px;
+            cursor:pointer;
+            transition:0.2s;
+        }
+
+        .label {
+            font-size:20px;
+            color:#aaa;
+        }
+
+        .value {
+            font-size:60px;
+            font-weight:bold;
+        }
+
+        .active {
+            border:4px solid yellow;
+            box-shadow:0 0 15px yellow;
+        }
+
+        button {
+            font-size:25px;
+            padding:15px;
+            margin:10px;
+            width:40%;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+        }
+
+        .next { background:red; color:white; }
+        .back { background:#555; color:white; }
+        .reset {
+            background:#222;
+            color:#aaa;
+            width:85%;
+            font-size:18px;
+        }
+
+        .selected {
+            margin-top:10px;
+            font-size:20px;
+            color:#0f0;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>PANELCO I QUEUE MANAGEMENT SYSTEM (QMS) :)</h2>
+
+<div class="toggle">
+    <label>
+        <input type="checkbox" id="voiceToggle">
+        Enable Voice Announcement
+    </label>
+</div>
+
+<div class="selected">
+    Selected: <span id="selectedWin">w3</span>
+</div>
+
+<div class="windows">
+
+    <div class="box" id="box-w3">
+        <div class="label">WINDOW 3</div>
+        <div class="value" id="w3">0</div>
+    </div>
+
+    <div class="box" id="box-w4">
+        <div class="label">WINDOW 4</div>
+        <div class="value" id="w4">0</div>
+    </div>
+
+    <div class="box" id="box-w5">
+        <div class="label">WINDOW 5</div>
+        <div class="value" id="w5">0</div>
+    </div>
+
+    <div class="box" id="box-w6">
+        <div class="label">WINDOW 6</div>
+        <div class="value" id="w6">0</div>
+    </div>
+
+</div>
+
+<div>
+
+    <button class="next" onclick="change(1)">NEXT (+1)</button>
+    <button class="back" onclick="change(-1)">BACK (-1)</button>
+
+    <button class="reset" onclick="resetAll()">RESET ALL</button>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+    getDatabase,
+    ref,
+    runTransaction,
+    onValue,
+    set
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+    authDomain: "panelco-i-queue-system.firebaseapp.com",
+    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "panelco-i-queue-system",
+    storageBucket: "panelco-i-queue-system.firebasestorage.app",
+    messagingSenderId: "1075037996413",
+    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let selected = "w3";
+
+// ===== SET VOICE DEFAULT =====
+const voiceToggle = document.getElementById("voiceToggle");
+set(ref(db, "settings/voiceEnabled"), voiceToggle.checked);
+
+// sync toggle to firebase
+voiceToggle.addEventListener("change", (e) => {
+    set(ref(db, "settings/voiceEnabled"), e.target.checked);
+});
+
+// ===== UI SELECT =====
+function updateUI() {
+
+    document.getElementById("selectedWin").innerText = selected;
+
+    ["w3","w4","w5","w6"].forEach(w => {
+        document.getElementById("box-" + w).classList.remove("active");
+    });
+
+    document.getElementById("box-" + selected).classList.add("active");
+}
+
+updateUI();
+
+// ===== LIVE DATA =====
+onValue(ref(db, "queues"), (snap) => {
+
+    const data = snap.val();
+    if (!data) return;
+
+    document.getElementById("w3").innerText = data.w3 || 0;
+    document.getElementById("w4").innerText = data.w4 || 0;
+    document.getElementById("w5").innerText = data.w5 || 0;
+    document.getElementById("w6").innerText = data.w6 || 0;
+});
+
+// ===== CHANGE VALUE =====
+window.change = function(amount) {
+
+    runTransaction(ref(db, "queues/" + selected), (v) => {
+        return (v || 0) + amount;
+    });
+
+};
+
+// ===== RESET =====
+window.resetAll = function() {
+
+    if(!confirm("Reset all queues?")) return;
+
+    ["w3","w4","w5","w6"].forEach(w => {
+        set(ref(db, "queues/" + w), 0);
+    });
+};
+
+// ===== SELECT WINDOW =====
+document.querySelectorAll(".box").forEach(b => {
+    b.addEventListener("click", () => {
+        selected = b.id.replace("box-","");
+        updateUI();
+    });
+});
+
+</script>
+
+</body>
+</html>
