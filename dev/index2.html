@@ -103,13 +103,29 @@ onValue(voiceRef, (snap) => {
     voiceEnabled = snap.val() === true;
 });
 
-// speak function
+// // speak function
+// function speak(text) {
+//     const msg = new SpeechSynthesisUtterance(text);
+//     msg.rate = 1;
+//     speechSynthesis.speak(msg);
+// }
 function speak(text) {
+
     const msg = new SpeechSynthesisUtterance(text);
+
     msg.rate = 1;
+    msg.pitch = 1.1;
+
+    const voices = speechSynthesis.getVoices();
+
+    msg.voice =
+        voices.find(v => v.name.includes("Jenny")) ||
+        voices.find(v => v.name.includes("Aria")) ||
+        voices.find(v => v.name.includes("Zira")) ||
+        null;
+
     speechSynthesis.speak(msg);
 }
-
 // queue listener
 onValue(queueRef, (snap) => {
 
