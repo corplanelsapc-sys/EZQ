@@ -1,1 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QMS Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <style>
+        body{
+            background:#111;
+            color:white;
+            font-family:Arial,sans-serif;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            margin:0;
+        }
+
+        .login-box{
+            background:#222;
+            padding:30px;
+            border-radius:10px;
+            width:320px;
+            text-align:center;
+        }
+
+        h2{
+            margin-top:0;
+        }
+
+        input{
+            width:100%;
+            padding:12px;
+            margin:10px 0;
+            box-sizing:border-box;
+            border:none;
+            border-radius:5px;
+            font-size:16px;
+        }
+
+        button{
+            width:100%;
+            padding:12px;
+            background:red;
+            color:white;
+            border:none;
+            border-radius:5px;
+            font-size:18px;
+            cursor:pointer;
+        }
+
+        #msg{
+            margin-top:15px;
+            color:#ff8080;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-box">
+
+    <h2>PANELCO I QMS</h2>
+
+    <input type="email"
+           id="email"
+           placeholder="Email">
+
+    <input type="password"
+           id="password"
+           placeholder="Password">
+
+    <button onclick="login()">LOGIN</button>
+
+    <div id="msg"></div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "panelco-i-queue-system.firebaseapp.com",
+    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "panelco-i-queue-system",
+    storageBucket: "panelco-i-queue-system.firebasestorage.app",
+    messagingSenderId: "1075037996413",
+    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// already logged in?
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        window.location.href = "staff.html";
+    }
+});
+
+window.login = function() {
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    signInWithEmailAndPassword(auth, email, password)
+    .then(() => {
+        window.location.href = "staff.html";
+    })
+    .catch((error) => {
+        document.getElementById("msg").innerText =
+            "Login failed: " + error.message;
+    });
+};
+
+</script>
+
+</body>
+</html>
