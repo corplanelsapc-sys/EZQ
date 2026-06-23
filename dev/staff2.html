@@ -1,92 +1,91 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Queue Clicker Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-<!--// staff -->    
-    <style>
-        body {
-            background:#111;
-            color:white;
-            font-family:Arial, sans-serif;
-            text-align:center;
-            margin:0;
-            padding:20px;
-        }
+<title>Queue Clicker Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-        h2 {
-            margin:10px 0;
-        }
+<style>
+body {
+    background:#111;
+    color:white;
+    font-family:Arial;
+    text-align:center;
+    margin:0;
+    padding:20px;
+}
 
-        .toggle {
-            margin:10px;
-            font-size:16px;
-        }
+h2 {
+    margin:10px 0;
+}
 
-        .windows {
-            display:flex;
-            justify-content:space-around;
-            margin-top:20px;
-            flex-wrap:wrap;
-        }
+.toggle {
+    margin:10px;
+    font-size:16px;
+}
 
-        .box {
-            background:#222;
-            border:2px solid #333;
-            border-radius:10px;
-            padding:20px;
-            width:22%;
-            min-width:120px;
-            cursor:pointer;
-            transition:0.2s;
-        }
+.windows {
+    display:flex;
+    justify-content:space-around;
+    margin-top:20px;
+    flex-wrap:wrap;
+}
 
-        .label {
-            font-size:20px;
-            color:#aaa;
-        }
+.box {
+    background:#222;
+    border:2px solid #333;
+    border-radius:10px;
+    padding:20px;
+    width:22%;
+    min-width:120px;
+    cursor:pointer;
+}
 
-        .value {
-            font-size:60px;
-            font-weight:bold;
-        }
+.label {
+    font-size:20px;
+    color:#aaa;
+}
 
-        .active {
-            border:4px solid yellow;
-            box-shadow:0 0 15px yellow;
-        }
+.value {
+    font-size:60px;
+    font-weight:bold;
+}
 
-        button {
-            font-size:25px;
-            padding:15px;
-            margin:10px;
-            width:40%;
-            border:none;
-            border-radius:10px;
-            cursor:pointer;
-        }
+.active {
+    border:4px solid yellow;
+    box-shadow:0 0 15px yellow;
+}
 
-        .next { background:red; color:white; }
-        .back { background:#555; color:white; }
-        .reset {
-            background:#222;
-            color:#aaa;
-            width:85%;
-            font-size:18px;
-        }
+button {
+    font-size:25px;
+    padding:15px;
+    margin:10px;
+    width:40%;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
 
-        .selected {
-            margin-top:10px;
-            font-size:20px;
-            color:#0f0;
-        }
-    </style>
+.next { background:red; color:white; }
+.back { background:#555; color:white; }
+
+.reset {
+    background:#222;
+    color:#aaa;
+    width:85%;
+    font-size:18px;
+}
+
+.selected {
+    margin-top:10px;
+    font-size:20px;
+    color:#0f0;
+}
+</style>
 </head>
 
 <body>
 
-<h2>PANELCO I QUEUE MANAGEMENT SYSTEM (QMS) :)</h2>
+<h2>PANELCO I QUEUE MANAGEMENT SYSTEM (QMS)</h2>
 
 <div class="toggle">
     <label>
@@ -96,6 +95,7 @@
 </div>
 
 <div class="selected">
+    Office: <span id="officeName">---</span><br>
     Selected: <span id="selectedWin">w3</span>
 </div>
 
@@ -124,18 +124,17 @@
 </div>
 
 <div>
-
     <button class="next" onclick="change(1)">NEXT (+1)</button>
     <button class="back" onclick="change(-1)">BACK (-1)</button>
 
     <button class="reset" onclick="resetAll()">RESET ALL</button>
-    <!-- <button onclick="window.location.href='https://corplanelsapc-sys.github.io/EZQ/dev/index2.html'">
-    GO TO DISPLAY
-    </button> -->
-<button onclick="window.open('https://corplanelsapc-sys.github.io/EZQ/dev/index2.html', '_blank')">
-    GO TO DISPLAY
-</button>
-    
+
+    <button onclick="window.open(
+        'index2.html?office=' + office,
+        '_blank'
+    )">
+        GO TO DISPLAY
+    </button>
 </div>
 
 <script type="module">
@@ -149,9 +148,18 @@ import {
     runTransaction,
     onValue,
     set
-}
+} 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+import {
+    getAuth,
+    onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// =========================
+// FIREBASE
+// =========================
 const firebaseConfig = {
     apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
     authDomain: "panelco-i-queue-system.firebaseapp.com",
@@ -164,14 +172,17 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
-import {
-    getAuth,
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
 const auth = getAuth(app);
 
+// =========================
+// OFFICE DETECTION
+// =========================
+let office = null;
+let selected = "w3";
+
+// =========================
+// AUTH CHECK
+// =========================
 onAuthStateChanged(auth, (user) => {
 
     if (!user) {
@@ -179,72 +190,90 @@ onAuthStateChanged(auth, (user) => {
         return;
     }
 
-    console.log("Authenticated:", user.email);
+    const email = user.email;
+
+    office = email.split("@")[0].toLowerCase();
+
+    const validOffices = [
+        "mainoffice",
+        "bani",
+        "bolinao",
+        "dasol",
+        "alaminos"
+    ];
+
+    if (!validOffices.includes(office)) {
+        alert("Invalid office assignment");
+        return;
+    }
+
+    document.getElementById("officeName").innerText = office.toUpperCase();
+
+    startApp();
 });
-    
-let selected = "w3";
 
-// ===== SET VOICE DEFAULT =====
-const voiceToggle = document.getElementById("voiceToggle");
-set(ref(db, "settings/voiceEnabled"), voiceToggle.checked);
+// =========================
+// START APP AFTER LOGIN
+// =========================
+function startApp() {
 
-// sync toggle to firebase
-voiceToggle.addEventListener("change", (e) => {
-    set(ref(db, "settings/voiceEnabled"), e.target.checked);
-});
+    const queueRef = ref(db, `offices/${office}/queues`);
+    const voiceRef = ref(db, "settings/voiceEnabled");
 
-// ===== UI SELECT =====
-function updateUI() {
+    // VOICE TOGGLE
+    const voiceToggle = document.getElementById("voiceToggle");
 
-    document.getElementById("selectedWin").innerText = selected;
+    set(ref(db, "settings/voiceEnabled"), voiceToggle.checked);
 
-    ["w3","w4","w5","w6"].forEach(w => {
-        document.getElementById("box-" + w).classList.remove("active");
+    voiceToggle.addEventListener("change", (e) => {
+        set(ref(db, "settings/voiceEnabled"), e.target.checked);
     });
 
-    document.getElementById("box-" + selected).classList.add("active");
+    // LIVE DATA
+    onValue(queueRef, (snap) => {
+
+        const data = snap.val();
+        if (!data) return;
+
+        ["w3","w4","w5","w6"].forEach(w => {
+            document.getElementById(w).innerText = data[w] || 0;
+        });
+
+    });
+
+    // CHANGE VALUE
+    window.change = function(amount) {
+
+        runTransaction(
+            ref(db, `offices/${office}/queues/${selected}`),
+            (v) => (v || 0) + amount
+        );
+    };
+
+    // RESET ALL
+    window.resetAll = function() {
+
+        if (!confirm("Reset all queues?")) return;
+
+        ["w3","w4","w5","w6"].forEach(w => {
+            set(ref(db, `offices/${office}/queues/${w}`), 0);
+        });
+    };
+
+    // SELECT WINDOW
+    document.querySelectorAll(".box").forEach(b => {
+        b.addEventListener("click", () => {
+
+            selected = b.id.replace("box-","");
+            document.getElementById("selectedWin").innerText = selected;
+
+            document.querySelectorAll(".box")
+            .forEach(x => x.classList.remove("active"));
+
+            b.classList.add("active");
+        });
+    });
 }
-
-updateUI();
-
-// ===== LIVE DATA =====
-onValue(ref(db, "queues"), (snap) => {
-
-    const data = snap.val();
-    if (!data) return;
-
-    document.getElementById("w3").innerText = data.w3 || 0;
-    document.getElementById("w4").innerText = data.w4 || 0;
-    document.getElementById("w5").innerText = data.w5 || 0;
-    document.getElementById("w6").innerText = data.w6 || 0;
-});
-
-// ===== CHANGE VALUE =====
-window.change = function(amount) {
-
-    runTransaction(ref(db, "queues/" + selected), (v) => {
-        return (v || 0) + amount;
-    });
-
-};
-
-// ===== RESET =====
-window.resetAll = function() {
-
-    if(!confirm("Reset all queues?")) return;
-
-    ["w3","w4","w5","w6"].forEach(w => {
-        set(ref(db, "queues/" + w), 0);
-    });
-};
-
-// ===== SELECT WINDOW =====
-document.querySelectorAll(".box").forEach(b => {
-    b.addEventListener("click", () => {
-        selected = b.id.replace("box-","");
-        updateUI();
-    });
-});
 
 </script>
 
