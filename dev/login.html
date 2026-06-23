@@ -8,7 +8,7 @@
         body{
             background:#111;
             color:white;
-            font-family:Arial,sans-serif;
+            font-family:Arial;
             display:flex;
             justify-content:center;
             align-items:center;
@@ -24,15 +24,10 @@
             text-align:center;
         }
 
-        h2{
-            margin-top:0;
-        }
-
         input{
             width:100%;
             padding:12px;
             margin:10px 0;
-            box-sizing:border-box;
             border:none;
             border-radius:5px;
             font-size:16px;
@@ -62,13 +57,8 @@
 
     <h2>PANELCO I QMS</h2>
 
-    <input type="email"
-           id="email"
-           placeholder="Email">
-
-    <input type="password"
-           id="password"
-           placeholder="Password">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
 
     <button onclick="login()">LOGIN</button>
 
@@ -78,44 +68,76 @@
 
 <script type="module">
 
-import { initializeApp }
+import { initializeApp } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
 import {
     getAuth,
     signInWithEmailAndPassword,
     onAuthStateChanged
-}
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
-  authDomain: "panelco-i-queue-system.firebaseapp.com",
-  databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "panelco-i-queue-system",
-  storageBucket: "panelco-i-queue-system.firebasestorage.app",
-  messagingSenderId: "1075037996413",
-  appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814",
-  measurementId: "G-RR5ZWBX0QP"
+    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+    authDomain: "panelco-i-queue-system.firebaseapp.com",
+    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "panelco-i-queue-system",
+    storageBucket: "panelco-i-queue-system.firebasestorage.app",
+    messagingSenderId: "1075037996413",
+    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// already logged in?
+// =========================
+// AUTO REDIRECT IF LOGGED IN
+// =========================
 onAuthStateChanged(auth, (user) => {
     if (user) {
+
+        const office = user.email.split("@")[0].toLowerCase();
+        localStorage.setItem("office", office);
+
         window.location.href = "staff2.html";
     }
 });
 
+// =========================
+// LOGIN FUNCTION
+// =========================
 window.login = function() {
 
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
     signInWithEmailAndPassword(auth, email, password)
-    .then(() => {
+    .then((userCredential) => {
+
+        const user = userCredential.user;
+
+        // extract office from email
+        const office = user.email.split("@")[0].toLowerCase();
+
+        // VALID OFFICES
+        const validOffices = [
+            "mainoffice",
+            "bani",
+            "bolinao",
+            "dasol",
+            "alaminos"
+        ];
+
+        if (!validOffices.includes(office)) {
+            document.getElementById("msg").innerText =
+                "Invalid office account.";
+            return;
+        }
+
+        // store office
+        localStorage.setItem("office", office);
+
+        // redirect
         window.location.href = "staff2.html";
     })
     .catch((error) => {
