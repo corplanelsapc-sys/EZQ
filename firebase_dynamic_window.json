@@ -1,0 +1,97 @@
+{
+  "settings": {
+    "voiceEnabled": true
+  },
+
+  "offices": {
+    "alaminos": {
+      "windows": {
+        "w1": {
+          "label": "Cashier",
+          "queue": 0,
+          "order": 1
+        },
+        "w2": {
+          "label": "Billing",
+          "queue": 0,
+          "order": 2
+        },
+        "w3": {
+          "label": "Member Services",
+          "queue": 0,
+          "order": 3
+        },
+        "w4": {
+          "label": "Engineering",
+          "queue": 0,
+          "order": 4
+        }
+      }
+    },
+
+    "bani": {
+      "windows": {
+        "w1": {
+          "label": "Cashier",
+          "queue": 0,
+          "order": 1
+        },
+        "w2": {
+          "label": "Consumer Services",
+          "queue": 0,
+          "order": 2
+        }
+      }
+    },
+
+    "bolinao": {
+      "windows": {
+        "w1": {
+          "label": "Cashier",
+          "queue": 0,
+          "order": 1
+        },
+        "w2": {
+          "label": "Billing",
+          "queue": 0,
+          "order": 2
+        }
+      }
+    },
+
+    "dasol": {
+      "windows": {
+        "w1": {
+          "label": "Cashier",
+          "queue": 0,
+          "order": 1
+        }
+      }
+    },
+
+    "mainoffice": {
+      "windows": {
+        "w1": {
+          "label": "Cashier 1",
+          "queue": 0,
+          "order": 1
+        },
+        "w2": {
+          "label": "Cashier 2",
+          "queue": 0,
+          "order": 2
+        },
+        "w3": {
+          "label": "Member Services",
+          "queue": 0,
+          "order": 3
+        },
+        "w4": {
+          "label": "Engineering",
+          "queue": 0,
+          "order": 4
+        }
+      }
+    }
+  }
+}

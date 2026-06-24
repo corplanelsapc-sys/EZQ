@@ -14,9 +14,7 @@ body {
     padding:20px;
 }
 
-h2 {
-    margin:10px 0;
-}
+h2 { margin:10px 0; }
 
 .toggle {
     margin:10px;
@@ -26,8 +24,9 @@ h2 {
 .windows {
     display:flex;
     justify-content:space-around;
-    margin-top:20px;
     flex-wrap:wrap;
+    margin-top:20px;
+    gap:10px;
 }
 
 .box {
@@ -96,67 +95,35 @@ button {
 
 <div class="selected">
     Office: <span id="officeName">---</span><br>
-    Selected: <span id="selectedWin">w3</span>
+    Selected: <span id="selectedWin">---</span>
 </div>
 
-<div class="windows">
-
-    <div class="box" id="box-w3">
-        <div class="label">WINDOW 3</div>
-        <div class="value" id="w3">0</div>
-    </div>
-
-    <div class="box" id="box-w4">
-        <div class="label">WINDOW 4</div>
-        <div class="value" id="w4">0</div>
-    </div>
-
-    <div class="box" id="box-w5">
-        <div class="label">WINDOW 5</div>
-        <div class="value" id="w5">0</div>
-    </div>
-
-    <div class="box" id="box-w6">
-        <div class="label">WINDOW 6</div>
-        <div class="value" id="w6">0</div>
-    </div>
-
-</div>
+<div class="windows" id="windows"></div>
 
 <div>
     <button class="next" onclick="change(1)">NEXT (+1)</button>
     <button class="back" onclick="change(-1)">BACK (-1)</button>
-
     <button class="reset" onclick="resetAll()">RESET ALL</button>
-
-<button onclick="goToDisplay()">
-    GO TO DISPLAY
-</button>
+    <button onclick="goToDisplay()">GO TO DISPLAY</button>
+    <button onclick="logout()">SWITCH ACCOUNT</button>
 </div>
 
 <script type="module">
 
-import { initializeApp } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-
-import {
-    getDatabase,
-    ref,
-    runTransaction,
-    onValue,
-    set
-} 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-import {
-    getAuth,
-    onAuthStateChanged
-}
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, runTransaction, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { signOut }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// =========================
-// FIREBASE
-// =========================
+window.logout = function () {
+
+    signOut(auth).then(() => {
+        window.location.href = "login.html";
+    });
+
+};
+
 const firebaseConfig = {
     apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
     authDomain: "panelco-i-queue-system.firebaseapp.com",
@@ -171,15 +138,10 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// =========================
-// OFFICE DETECTION
-// =========================
 let office = null;
-let selected = "w3";
+let selected = null;
+let windowData = {};
 
-// =========================
-// AUTH CHECK
-// =========================
 onAuthStateChanged(auth, (user) => {
 
     if (!user) {
@@ -187,9 +149,7 @@ onAuthStateChanged(auth, (user) => {
         return;
     }
 
-    const email = user.email;
-
-    office = email.split("@")[0].toLowerCase();
+    office = user.email.split("@")[0].toLowerCase();
 
     const validOffices = [
         "mainoffice",
@@ -209,15 +169,10 @@ onAuthStateChanged(auth, (user) => {
     startApp();
 });
 
-// =========================
-// START APP AFTER LOGIN
-// =========================
 function startApp() {
 
-    const queueRef = ref(db, `offices/${office}/queues`);
-    const voiceRef = ref(db, "settings/voiceEnabled");
+    const windowsRef = ref(db, `offices/${office}/windows`);
 
-    // VOICE TOGGLE
     const voiceToggle = document.getElementById("voiceToggle");
 
     set(ref(db, "settings/voiceEnabled"), voiceToggle.checked);
@@ -226,59 +181,76 @@ function startApp() {
         set(ref(db, "settings/voiceEnabled"), e.target.checked);
     });
 
-    // LIVE DATA
-    onValue(queueRef, (snap) => {
-
-        const data = snap.val();
-        if (!data) return;
-
-        ["w3","w4","w5","w6"].forEach(w => {
-            document.getElementById(w).innerText = data[w] || 0;
-        });
-
+    onValue(ref(db, "settings/voiceEnabled"), (snap) => {
+        voiceToggle.checked = snap.val() || false;
     });
 
-    // CHANGE VALUE
+    onValue(windowsRef, (snap) => {
+
+        windowData = snap.val() || {};
+
+        const container = document.getElementById("windows");
+        container.innerHTML = "";
+
+        const windows = Object.entries(windowData)
+            .sort((a,b) => (a[1].order || 0) - (b[1].order || 0));
+
+        windows.forEach(([id, win], index) => {
+
+            const box = document.createElement("div");
+            box.className = "box";
+            box.id = "box-" + id;
+
+            box.innerHTML = `
+                <div class="label">${win.label}</div>
+                <div class="value">${win.queue || 0}</div>
+            `;
+
+            box.onclick = () => {
+
+                selected = id;
+
+                document.getElementById("selectedWin").innerText = win.label;
+
+                document.querySelectorAll(".box")
+                    .forEach(x => x.classList.remove("active"));
+
+                box.classList.add("active");
+            };
+
+            container.appendChild(box);
+
+            if (index === 0 && !selected) {
+                selected = id;
+                document.getElementById("selectedWin").innerText = win.label;
+                box.classList.add("active");
+            }
+        });
+    });
+
     window.change = function(amount) {
 
+        if (!selected) return;
+
         runTransaction(
-            ref(db, `offices/${office}/queues/${selected}`),
-            (v) => (v || 0) + amount
+            ref(db, `offices/${office}/windows/${selected}/queue`),
+            (v) => Math.max(0, (v || 0) + amount)
         );
     };
 
-    // RESET ALL
     window.resetAll = function() {
 
         if (!confirm("Reset all queues?")) return;
 
-        ["w3","w4","w5","w6"].forEach(w => {
-            set(ref(db, `offices/${office}/queues/${w}`), 0);
+        Object.keys(windowData).forEach(id => {
+            set(ref(db, `offices/${office}/windows/${id}/queue`), 0);
         });
     };
-
-    // SELECT WINDOW
-    document.querySelectorAll(".box").forEach(b => {
-        b.addEventListener("click", () => {
-
-            selected = b.id.replace("box-","");
-            document.getElementById("selectedWin").innerText = selected;
-
-            document.querySelectorAll(".box")
-            .forEach(x => x.classList.remove("active"));
-
-            b.classList.add("active");
-        });
-    });
 }
 
-window.goToDisplay = () => {
-    window.open(
-        "index2.html?office=" + office,
-        "_blank"
-    );
+window.goToDisplay = function() {
+    window.open("index2.html?office=" + office, "_blank");
 };
-
 </script>
 
 </body>
