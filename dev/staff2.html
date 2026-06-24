@@ -129,12 +129,9 @@ button {
 
     <button class="reset" onclick="resetAll()">RESET ALL</button>
 
-    <button onclick="window.open(
-        'index2.html?office=' + office,
-        '_blank'
-    )">
-        GO TO DISPLAY
-    </button>
+<button onclick="goToDisplay()">
+    GO TO DISPLAY
+</button>
 </div>
 
 <script type="module">
@@ -274,6 +271,13 @@ function startApp() {
         });
     });
 }
+
+window.goToDisplay = () => {
+    window.open(
+        "index2.html?office=" + office,
+        "_blank"
+    );
+};
 
 </script>
 
