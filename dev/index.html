@@ -48,6 +48,7 @@
             margin-top:15px;
             color:#ff8080;
         }
+        
     </style>
 </head>
 
@@ -56,6 +57,7 @@
 <div class="login-box">
 
     <h2>PANELCO I QMS</h2>
+        <td>(QUEUE MANAGEMENT SYSTEM)</td>
 
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Password">
@@ -94,13 +96,24 @@ const auth = getAuth(app);
 // AUTO REDIRECT IF LOGGED IN
 // =========================
 onAuthStateChanged(auth, (user) => {
-    if (user) {
 
-        const office = user.email.split("@")[0].toLowerCase();
+    if (!user) return;
+
+    const email = user.email.toLowerCase();
+
+    if (email === "admin@panelcoi.com") {
+
+        window.location.href = "window.html";
+
+    } else {
+
+        const office = email.split("@")[0];
+        
         localStorage.setItem("office", office);
 
         window.location.href = "staff2.html";
     }
+
 });
 
 // =========================
@@ -128,6 +141,17 @@ window.login = function() {
             "alaminos"
         ];
 
+        const isAdmin =
+            user.email.toLowerCase() === "admin@panelcoi.com";
+
+        if (!validOffices.includes(office) && !isAdmin) {
+
+            document.getElementById("msg").innerText =
+                "Invalid office account.";
+
+            return;
+        }
+
         if (!validOffices.includes(office)) {
             document.getElementById("msg").innerText =
                 "Invalid office account.";
@@ -138,7 +162,15 @@ window.login = function() {
         localStorage.setItem("office", office);
 
         // redirect
+        if (user.email.toLowerCase() === "admin@panelcoi.com") {
+
+         window.location.href = "window.html";
+
+        } else {
+
         window.location.href = "staff2.html";
+
+    }
     })
     .catch((error) => {
         document.getElementById("msg").innerText =

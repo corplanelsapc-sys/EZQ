@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>QMS Window Administration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+body{
+    background:#111;
+    color:white;
+    font-family:Arial;
+    margin:0;
+    padding:20px;
+}
+
+h2{
+    text-align:center;
+}
+
+.controls{
+    margin-bottom:20px;
+}
+
+select,
+input{
+    padding:8px;
+    font-size:16px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    border:1px solid #444;
+    padding:10px;
+    text-align:left;
+}
+
+th{
+    background:#222;
+}
+
+tr:nth-child(even){
+    background:#1a1a1a;
+}
+
+button{
+    padding:10px 15px;
+    margin:5px;
+    cursor:pointer;
+    border:none;
+    border-radius:5px;
+}
+
+.saveBtn{
+    background:green;
+    color:white;
+}
+
+.addBtn{
+    background:#0066cc;
+    color:white;
+}
+
+.deleteBtn{
+    background:red;
+    color:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>QMS WINDOW ADMINISTRATION</h2>
+
+<div class="controls">
+
+    Office:
+
+    <select id="officeSelect">
+        <option value="mainoffice">Main Office</option>
+        <option value="alaminos">Alaminos</option>
+        <option value="bani">Bani</option>
+        <option value="bolinao">Bolinao</option>
+        <option value="dasol">Dasol</option>
+    </select>
+
+    <button class="addBtn" onclick="addWindow()">
+        ADD WINDOW
+    </button>
+
+</div>
+
+<table>
+
+<thead>
+<tr>
+    <th>Window ID</th>
+    <th>Label</th>
+    <th>Order</th>
+    <th>Delete</th>
+</tr>
+</thead>
+
+<tbody id="windowTable">
+</tbody>
+
+</table>
+
+<br>
+
+<button class="saveBtn" onclick="saveAll()">
+    SAVE CHANGES
+</button>
+<button onclick="logout()">SWITCH ACCOUNT</button>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+// authentication 
+import {
+    getAuth,
+    onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
+    getDatabase,
+    ref,
+    onValue,
+    update,
+    remove
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+window.logout = function () {
+
+    signOut(auth).then(() => {
+        window.location.href = "index.html";
+    });
+
+};
+
+// const admins = [
+//     "admin@panelcoi.com"
+// ];
+
+// if (!admins.includes(user.email)) {
+//     alert("Unauthorized");
+//     location.href = "staff2.html";
+// }
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+    authDomain: "panelco-i-queue-system.firebaseapp.com",
+    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "panelco-i-queue-system",
+    storageBucket: "panelco-i-queue-system.firebasestorage.app",
+    messagingSenderId: "1075037996413",
+    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, (user) => {
+
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    const admins = [
+        "admin@panelcoi.com"
+    ];
+
+    if (!admins.includes(user.email.toLowerCase())) {
+
+        alert("Unauthorized");
+
+        window.location.href = "staff2.html";
+
+        return;
+    }
+
+    // If User is admin
+    loadWindows();
+
+});
+
+let currentOffice = "mainoffice";
+let currentData = {};
+
+const officeSelect =
+    document.getElementById("officeSelect");
+
+officeSelect.addEventListener("change", () => {
+
+    currentOffice = officeSelect.value;
+    loadWindows();
+
+});
+
+// loadWindows();
+
+function loadWindows(){
+
+    const windowsRef =
+        ref(db, `offices/${currentOffice}/windows`);
+
+    onValue(windowsRef, (snap)=>{
+
+        currentData = snap.val() || {};
+
+        renderTable();
+
+    });
+
+}
+
+function renderTable(){
+
+    const tbody =
+        document.getElementById("windowTable");
+
+    tbody.innerHTML = "";
+
+    const windows =
+        Object.entries(currentData)
+        .sort((a,b)=>
+            (a[1].order||0) -
+            (b[1].order||0)
+        );
+
+    windows.forEach(([id,win])=>{
+
+        const row =
+            document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${id}</td>
+
+            <td>
+                <input
+                    type="text"
+                    value="${win.label||''}"
+                    data-id="${id}"
+                    class="labelInput"
+                >
+            </td>
+
+            <td>
+                <input
+                    type="number"
+                    value="${win.order||0}"
+                    data-id="${id}"
+                    class="orderInput"
+                    style="width:80px"
+                >
+            </td>
+
+            <td>
+                <button
+                    class="deleteBtn"
+                    onclick="deleteWindow('${id}')">
+                    DELETE
+                </button>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+
+    });
+
+}
+
+window.saveAll = async function(){
+
+    const updates = {};
+
+    document
+    .querySelectorAll(".labelInput")
+    .forEach(input=>{
+
+        const id = input.dataset.id;
+
+        updates[
+            `${id}/label`
+        ] = input.value;
+
+    });
+
+    document
+    .querySelectorAll(".orderInput")
+    .forEach(input=>{
+
+        const id = input.dataset.id;
+
+        updates[
+            `${id}/order`
+        ] = Number(input.value);
+
+    });
+
+    await update(
+        ref(db,
+        `offices/${currentOffice}/windows`
+        ),
+        updates
+    );
+
+    alert("Saved");
+
+};
+
+window.addWindow = function(){
+
+    const nextNo =
+        Object.keys(currentData).length + 1;
+
+    const id = "w" + nextNo;
+
+    currentData[id] = {
+
+        label: "New Window",
+        queue: 0,
+        order: nextNo
+
+    };
+
+    renderTable();
+
+};
+
+window.deleteWindow = async function(id){
+
+    if(!confirm(
+        "Delete " + id + " ?"
+    )) return;
+
+    await remove(
+        ref(
+            db,
+            `offices/${currentOffice}/windows/${id}`
+        )
+    );
+
+};
+
+</script>
+
+</body>
+</html>
