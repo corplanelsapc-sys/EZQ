@@ -321,22 +321,23 @@ window.saveAll = async function(){
 
 };
 
-window.addWindow = function(){
+window.addWindow = async function(){
 
     const nextNo =
         Object.keys(currentData).length + 1;
 
     const id = "w" + nextNo;
 
-    currentData[id] = {
-
-        label: "New Window",
-        queue: 0,
-        order: nextNo
-
-    };
-
-    renderTable();
+    await update(
+        ref(db, `offices/${currentOffice}/windows`),
+        {
+            [id]: {
+                label: "New Window",
+                queue: 0,
+                order: nextNo
+            }
+        }
+    );
 
 };
 
