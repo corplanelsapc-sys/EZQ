@@ -8,20 +8,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 <style>
-html, body {
-    height: 100%;
-    margin: 0;
-    background: black;
-    color: white;
-    font-family: Arial;
-    overflow: hidden;
+html, body{
+    margin:0;
+    height:100vh;
+    background:black;
+    color:white;
+    overflow:hidden;
 }
 
-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+.page{
+    height:100%;
+    display:flex;
+    flex-direction:column;
 }
 
 h1 {
@@ -38,11 +36,11 @@ h1 {
 }
 
 table {
-    width: 95%;
+    width: 98%;
     table-layout: fixed;
     margin-top: 10px;
     border-collapse: collapse;
-    height: 60%;
+    height: 80%;
 }
 
 .header-cell {
@@ -77,20 +75,93 @@ table {
     cursor: pointer;
     z-index: 9999;
 }
+.header{
+    flex:0 0 auto;
+    text-align:center;
+    padding-top:20px;
+}
+
+.content{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.footer{
+    height:55px;
+    display:flex;
+    align-items:center;
+    background:#222;
+    border-top:2px solid #444;
+    overflow:hidden;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+.footer-left{
+    width:320px;
+    text-align:center;
+    font-size:18px;
+    font-style:italic;
+    flex-shrink:0;
+}
+
+.ticker{
+    flex:1;
+    overflow:hidden;
+    position:relative;
+}
+
+#tickerText{
+    position:absolute;
+    white-space:nowrap;
+    font-size:28px;
+    line-height:55px;
+    animation:ticker 25s linear infinite;
+}
+
+@keyframes ticker{
+    from{
+        transform:translateX(100%);
+    }
+    to{
+        transform:translateX(-100%);
+    }
+}
 </style>
 </head>
 
 <body>
 
-<h1 id="officeTitle">NOW SERVING</h1>
+<div class="page">
 
-<table>
-    <tr id="headerRow"></tr>
-    <tr id="dataRow"></tr>
-</table>
+    <div class="header">
+        <h1 id="officeTitle">NOW SERVING</h1>
+    </div>
 
-<div class="subtext">
-    PANELCO I : Making Lives Better
+    <div class="content">
+        <table>
+            <tr id="headerRow"></tr>
+            <tr id="dataRow"></tr>
+        </table>
+    </div>
+
+    <div class="footer">
+
+        <div class="footer-left">
+            PANELCO I : Making Lives Better
+        </div>
+
+        <div class="ticker">
+            <div id="tickerText">
+                Welcome to PANELCO I • Please prepare your payment before approaching the cashier • Thank you for choosing PANELCO I
+            </div>
+        </div>
+
+    </div>
+
 </div>
 
 <button id="enableAudioBtn">ENABLE AUDIO</button>

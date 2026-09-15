@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Queue Display</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg:        #0B0F13;
+    --bg-lift:   #131A21;
+    --surface:   #161E26;
+    --line:      #26323C;
+    --text:      #EAF0F4;
+    --muted:     #7D8C99;
+    --go:        #35D57F;
+    --go-deep:   #0E3D28;
+    --gap: clamp(8px, 1.1vw, 20px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Barlow", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle vignette so the screen doesn't read as a flat black rectangle */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(120% 90% at 50% 0%, #1A242E 0%, var(--bg) 62%);
+    z-index: -1;
+}
+
+.screen {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(12px, 1.6vw, 28px);
+    gap: var(--gap);
+}
+
+/* ---------- top bar ---------- */
+
+.bar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex: 0 0 auto;
+}
+
+.bar__office {
+    font-size: clamp(16px, 2.1vw, 40px);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin: 0;
+}
+
+.bar__office span {
+    color: var(--muted);
+    font-weight: 400;
+}
+
+.bar__right {
+    display: flex;
+    align-items: baseline;
+    gap: clamp(10px, 1.2vw, 22px);
+}
+
+.clock {
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(20px, 2.6vw, 48px);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.date {
+    font-size: clamp(11px, 1vw, 18px);
+    color: var(--muted);
+}
+
+.link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: clamp(11px, 1vw, 18px);
+    color: var(--muted);
+}
+
+.link::before {
+    content: "";
+    width: 0.62em;
+    height: 0.62em;
+    border-radius: 50%;
+    background: var(--muted);
+}
+
+.link.is-live::before { background: var(--go); }
+.link.is-down::before { background: #E0533D; }
+
+/* ---------- counters ---------- */
+
+.board {
+    flex: 1 1 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    justify-content: center;
+    gap: var(--gap);
+    min-height: 0;
+    --cols: 1;
+    --rows: 1;
+}
+
+.counter {
+    position: relative;
+    flex: 0 1 auto;
+    width: calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));
+    height: calc((100% - (var(--rows) - 1) * var(--gap)) / var(--rows));
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    overflow: hidden;
+    transition: border-color .25s ease, background-color .25s ease, box-shadow .25s ease;
+}
+
+.counter__label {
+    flex: 0 0 auto;
+    padding: 0.45em 0.7em;
+    background: var(--bg-lift);
+    border-bottom: 2px solid var(--line);
+    color: var(--muted);
+    font-size: clamp(12px, 1.35vw, 26px);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color .25s ease, background-color .25s ease, border-color .25s ease;
+}
+
+.counter__num {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 0.1em 0.15em;
+}
+
+.counter__num span {
+    font-family: "Bebas Neue", Impact, sans-serif;
+    line-height: 0.82;
+    letter-spacing: 0.01em;
+    display: block;
+    white-space: nowrap;
+    transition: transform .3s cubic-bezier(.2, .9, .3, 1.3), color .25s ease;
+}
+
+.counter__num.is-empty span { color: var(--muted); opacity: .45; }
+
+/* the one moment of drama: a window just called a new number */
+.counter.is-called {
+    border-color: var(--go);
+    background: linear-gradient(180deg, var(--go-deep) 0%, var(--surface) 70%);
+    box-shadow: 0 0 0 1px var(--go), 0 0 44px -6px rgba(53, 213, 127, .55);
+}
+
+.counter.is-called .counter__label {
+    background: var(--go);
+    border-bottom-color: var(--go);
+    color: #06170E;
+}
+
+.counter.is-called .counter__num span {
+    color: var(--go);
+    transform: scale(1.06);
+}
+
+.board__empty {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    border: 2px dashed var(--line);
+    border-radius: 14px;
+    color: var(--muted);
+    text-align: center;
+    padding: 2em;
+}
+
+.board__empty strong {
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-weight: 400;
+    font-size: clamp(24px, 4vw, 72px);
+    color: var(--text);
+    letter-spacing: 0.02em;
+}
+
+.board__empty span { font-size: clamp(12px, 1.2vw, 22px); }
+
+/* ---------- footer ---------- */
+
+.foot {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--muted);
+    font-size: clamp(11px, 1.05vw, 20px);
+}
+
+.foot__brand strong { color: var(--text); font-weight: 600; }
+
+.controls { display: flex; gap: 8px; }
+
+.btn {
+    font: inherit;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg-lift);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.45em 1.1em;
+    cursor: pointer;
+}
+
+.btn:hover { border-color: var(--muted); }
+
+.btn:focus-visible {
+    outline: 2px solid var(--go);
+    outline-offset: 2px;
+}
+
+.btn--go {
+    background: var(--go);
+    border-color: var(--go);
+    color: #06170E;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="screen">
+
+    <header class="bar">
+        <h1 class="bar__office" id="officeTitle">Now serving</h1>
+        <div class="bar__right">
+            <span class="link" id="conn">Connecting</span>
+            <span class="date" id="date"></span>
+            <span class="clock" id="clock">--:--</span>
+        </div>
+    </header>
+
+    <main class="board" id="board">
+        <div class="board__empty">
+            <strong>Getting today&rsquo;s numbers</strong>
+            <span>This screen updates on its own.</span>
+        </div>
+    </main>
+
+    <footer class="foot">
+        <div class="foot__brand"><strong>PANELCO I</strong> &nbsp;&middot;&nbsp; Making Lives Better</div>
+        <div class="controls">
+            <button class="btn btn--go" id="enableAudioBtn" type="button">Turn on sound</button>
+            <button class="btn" id="fullscreenBtn" type="button">Full screen</button>
+        </div>
+    </footer>
+
+</div>
+
+<script type="module">
+
+// ==========================
+// GET OFFICE
+// ==========================
+const urlParams = new URLSearchParams(window.location.search);
+const office = urlParams.get("office") || "mainoffice";
+
+document.title = "Queue Display - " + office;
+
+// "mainoffice" -> "Main Office", "binmaley-sub" -> "Binmaley Sub"
+function prettyOffice(slug) {
+    return slug
+        .replace(/[-_]+/g, " ")
+        .replace(/office/gi, " Office")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+document.getElementById("officeTitle").innerHTML =
+    prettyOffice(office) + ' <span>&mdash; now serving</span>';
+
+// ==========================
+// CLOCK
+// ==========================
+const clockEl = document.getElementById("clock");
+const dateEl = document.getElementById("date");
+
+function tick() {
+    const now = new Date();
+    clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    dateEl.textContent = now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+}
+tick();
+setInterval(tick, 10000);
+
+// ==========================
+// FIREBASE
+// ==========================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+    authDomain: "panelco-i-queue-system.firebaseapp.com",
+    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "panelco-i-queue-system",
+    storageBucket: "panelco-i-queue-system.firebasestorage.app",
+    messagingSenderId: "1075037996413",
+    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ==========================
+// REFERENCES
+// ==========================
+const windowsRef = ref(db, `offices/${office}/windows`);
+const voiceRef = ref(db, "settings/voiceEnabled");
+const connRef = ref(db, ".info/connected");
+
+// ==========================
+// CONNECTION INDICATOR
+// ==========================
+const connEl = document.getElementById("conn");
+
+onValue(connRef, (snap) => {
+    const up = snap.val() === true;
+    connEl.classList.toggle("is-live", up);
+    connEl.classList.toggle("is-down", !up);
+    connEl.textContent = up ? "Live" : "Reconnecting";
+});
+
+// ==========================
+// AUDIO
+// ==========================
+let voiceEnabled = false;
+let audioUnlocked = false;
+let firstLoad = true;
+let last = {};
+
+const beep = new Audio("beep.mp3");
+const audioBtn = document.getElementById("enableAudioBtn");
+
+audioBtn.addEventListener("click", async () => {
+    try {
+        await beep.play();
+        beep.pause();
+        beep.currentTime = 0;
+
+        speechSynthesis.speak(new SpeechSynthesisUtterance("Audio enabled"));
+
+        audioUnlocked = true;
+        audioBtn.remove();
+
+    } catch (err) {
+        audioBtn.textContent = "Sound blocked — tap again";
+    }
+});
+
+// ==========================
+// FULL SCREEN
+// ==========================
+const fsBtn = document.getElementById("fullscreenBtn");
+
+fsBtn.addEventListener("click", () => {
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
+    } else {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+});
+
+document.addEventListener("fullscreenchange", () => {
+    fsBtn.textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
+});
+
+// ==========================
+// VOICE SETTING
+// ==========================
+onValue(voiceRef, (snap) => {
+    voiceEnabled = snap.val() === true;
+});
+
+// ==========================
+// SPEAK
+// ==========================
+function speak(text) {
+    if (!audioUnlocked) return;
+
+    speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.rate = 1;
+    speechSynthesis.speak(msg);
+}
+
+// ==========================
+// FIT THE NUMBER TO ITS CARD
+// Any office, any window count, any digit count.
+// ==========================
+function fitNumber(cell) {
+    const span = cell.firstElementChild;
+    const maxW = cell.clientWidth - 8;
+    const maxH = cell.clientHeight - 4;
+    if (maxW <= 0 || maxH <= 0) return;
+
+    let lo = 12, hi = 900, best = 12;
+
+    while (hi - lo > 2) {
+        const mid = (lo + hi) / 2;
+        span.style.fontSize = mid + "px";
+        if (span.scrollWidth <= maxW && span.scrollHeight <= maxH) {
+            best = mid;
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    span.style.fontSize = best + "px";
+}
+
+function fitAll() {
+    const cells = [...document.querySelectorAll(".counter__num")];
+    if (!cells.length) return;
+
+    cells.forEach(fitNumber);
+
+    // One size for the whole board — a longer number shouldn't look louder.
+    const smallest = Math.min(...cells.map(c => parseFloat(c.firstElementChild.style.fontSize)));
+    cells.forEach(c => { c.firstElementChild.style.fontSize = smallest + "px"; });
+}
+
+window.addEventListener("resize", fitAll);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+
+// ==========================
+// LAYOUT: pick a grid that keeps cards as square as possible
+// ==========================
+function layout(board, n) {
+    let best = { cols: n, score: Infinity };
+
+    for (let cols = 1; cols <= n; cols++) {
+        const rows = Math.ceil(n / cols);
+        // prefer cells close to a 4:3 landscape shape
+        const cell = (board.clientWidth / cols) / (board.clientHeight / rows);
+        const score = Math.abs(Math.log(cell / 1.35));
+        if (score < best.score) best = { cols, score };
+    }
+
+    board.style.setProperty("--cols", best.cols);
+    board.style.setProperty("--rows", Math.ceil(n / best.cols));
+}
+
+// ==========================
+// BUILD THE BOARD
+// ==========================
+const board = document.getElementById("board");
+const calledTimers = {};
+const calledUntil = {};
+const HIGHLIGHT_MS = 15000;
+
+onValue(windowsRef, (snap) => {
+
+    const data = snap.val();
+    if (!data) return;
+
+    const windows = Object.entries(data)
+        .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+
+    board.innerHTML = "";
+
+    windows.forEach(([id, win]) => {
+
+        const val = win.queue || 0;
+
+        const card = document.createElement("article");
+        card.className = "counter";
+        card.id = id;
+
+        const label = document.createElement("div");
+        label.className = "counter__label";
+        label.textContent = win.label;
+
+        const numWrap = document.createElement("div");
+        numWrap.className = "counter__num" + (val ? "" : " is-empty");
+
+        const num = document.createElement("span");
+        num.textContent = val ? val : "—";
+
+        numWrap.appendChild(num);
+        card.appendChild(label);
+        card.appendChild(numWrap);
+        board.appendChild(card);
+
+        // AUDIO + CALLED STATE
+        if (!firstLoad && last[id] !== val) {
+
+            card.classList.add("is-called");
+            calledUntil[id] = Date.now() + HIGHLIGHT_MS;
+            clearTimeout(calledTimers[id]);
+            calledTimers[id] = setTimeout(() => {
+                delete calledUntil[id];
+                document.getElementById(id)?.classList.remove("is-called");
+            }, HIGHLIGHT_MS);
+
+            if (audioUnlocked) {
+                beep.currentTime = 0;
+                beep.play().catch(() => {});
+            }
+
+            if (audioUnlocked && voiceEnabled) {
+                speak(win.label + " now serving number " + val);
+            }
+
+        } else if (calledUntil[id] > Date.now()) {
+            // a re-render while this window is still highlighted
+            card.classList.add("is-called");
+        }
+
+        last[id] = val;
+    });
+
+    layout(board, windows.length);
+    requestAnimationFrame(fitAll);
+
+    firstLoad = false;
+});
+
+</script>
+
+</body>
+</html>
