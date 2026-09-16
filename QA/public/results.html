@@ -3,80 +3,324 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Results Dashboard</title>
+    <title>QA Results</title>
+
     <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
-        h2 { text-align: center; }
-        ul { list-style-type: none; padding: 0; }
-        li { background: #f4f4f4; padding: 10px; margin: 10px 0; border-left: 5px solid #28a745; display: flex; justify-content: space-between; border-radius: 3px; }
-        .time { color: #888; font-size: 0.8em; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        #question {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #f0f0f0;
+        }
+
+        .correct {
+            font-weight: bold;
+        }
+
+        .wrong {
+            font-weight: normal;
+        }
     </style>
 </head>
+
 <body>
-    <h2>🏆 Verified Users Dashboard v2</h2>
-    <ul id="resultsList">Listening for live updates...</ul>
+
+    <h1>QA Results</h1>
+
+    <div id="question">
+        Waiting for question...
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Answer</th>
+                <th>Result</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+
+        <tbody id="resultsBody">
+        </tbody>
+    </table>
+
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+        import { initializeApp }
+            from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
         import {
             getFirestore,
             collection,
             query,
-            where,
             orderBy,
-            onSnapshot
+            onSnapshot,
+            doc,
+            getDoc
         } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-        // WE WILL PASTE CONFIG HERE IN THE NEXT STEP
+
+        // --------------------------------------------------
+        // FIREBASE CONFIG
+        // --------------------------------------------------
+
         const firebaseConfig = {
-        apiKey: "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
-        authDomain: "panelcoiqa.firebaseapp.com",
-        projectId: "panelcoiqa",
-        storageBucket: "panelcoiqa.firebasestorage.app",
-        messagingSenderId: "562964190698",
-        appId: "1:562964190698:web:bac52f098b5b3a5ada8e93"
+            apiKey: "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
+            authDomain: "panelcoiqa.firebaseapp.com",
+            projectId: "panelcoiqa",
+            storageBucket: "panelcoiqa.firebasestorage.app",
+            messagingSenderId: "562964190698",
+            appId: "1:562964190698:web:bac52f098b5b3a5ada8e93"
         };
+
+
+        // --------------------------------------------------
+        // INITIALIZE FIREBASE
+        // --------------------------------------------------
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const q = query(
-            collection(db, "submissions"), 
-            where("status", "==", "verified"),
-            orderBy("timestamp", "desc")
-        );
 
-        const listElement = document.getElementById('resultsList');
+        // --------------------------------------------------
+        // HTML ELEMENTS
+        // --------------------------------------------------
 
-        onSnapshot(q, (snapshot) => {
-            listElement.innerHTML = "";
+        const questionElement =
+            document.getElementById("question");
 
-            if (snapshot.empty) {
-                listElement.innerHTML = "<li>No verified submissions yet.</li>";
+        const resultsBody =
+            document.getElementById("resultsBody");
+
+
+        // --------------------------------------------------
+        // CURRENT QUESTION
+        // --------------------------------------------------
+
+        const gameRef =
+            doc(db, "game", "current");
+
+
+        onSnapshot(gameRef, async (gameSnapshot) => {
+
+            if (!gameSnapshot.exists()) {
+
+                questionElement.textContent =
+                    "Waiting for question...";
+
                 return;
             }
 
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const li = document.createElement("li");
 
-                li.innerHTML = `
-                    <span><strong>${data.username}</strong> answered correctly!</span>
-                    <span class="time">${
-                        data.timestamp
-                            ? new Date(data.timestamp.toDate()).toLocaleTimeString()
-                            : "Just now"
-                    }</span>
-                `;
+            const gameData =
+                gameSnapshot.data();
 
-                listElement.appendChild(li);
+            const questionId =
+                gameData.questionId;
+
+
+            if (!questionId) {
+
+                questionElement.textContent =
+                    "No question selected.";
+
+                return;
+            }
+
+
+            // --------------------------------------------------
+            // LOAD QUESTION
+            // --------------------------------------------------
+
+            const questionRef =
+                doc(db, "questions", questionId);
+
+            const questionSnapshot =
+                await getDoc(questionRef);
+
+
+            if (questionSnapshot.exists()) {
+
+                const questionData =
+                    questionSnapshot.data();
+
+                questionElement.textContent =
+                    questionData.question;
+
+            } else {
+
+                questionElement.textContent =
+                    "Question not found.";
+            }
+
+
+            // --------------------------------------------------
+            // LOAD SUBMISSIONS
+            // --------------------------------------------------
+
+            loadResults(questionId);
+
+        });
+
+
+        // --------------------------------------------------
+        // LOAD RESULTS
+        // --------------------------------------------------
+
+        function loadResults(questionId) {
+
+            const submissionsRef =
+                collection(db, "submissions");
+
+
+            const q =
+                query(
+                    submissionsRef,
+                    orderBy("timestamp", "asc")
+                );
+
+
+            onSnapshot(q, (snapshot) => {
+
+                resultsBody.innerHTML = "";
+
+                let count = 0;
+
+
+                snapshot.forEach((submissionSnapshot) => {
+
+                    const data =
+                        submissionSnapshot.data();
+
+
+                    // Only show the current question
+
+                    if (data.questionId !== questionId) {
+                        return;
+                    }
+
+
+                    count++;
+
+
+                    const row =
+                        document.createElement("tr");
+
+
+                    // Number
+
+                    const numberCell =
+                        document.createElement("td");
+
+                    numberCell.textContent =
+                        count;
+
+
+                    // Name
+
+                    const nameCell =
+                        document.createElement("td");
+
+                    nameCell.textContent =
+                        data.username || "";
+
+
+                    // Answer
+
+                    const answerCell =
+                        document.createElement("td");
+
+                    answerCell.textContent =
+                        data.answer || "";
+
+
+                    // Result
+
+                    const resultCell =
+                        document.createElement("td");
+
+
+                    if (data.correct === true) {
+
+                        resultCell.textContent =
+                            "CORRECT";
+
+                        resultCell.className =
+                            "correct";
+
+                    } else {
+
+                        resultCell.textContent =
+                            "WRONG";
+
+                        resultCell.className =
+                            "wrong";
+                    }
+
+
+                    // Time
+
+                    const timeCell =
+                        document.createElement("td");
+
+
+                    if (data.timestamp) {
+
+                        const date =
+                            data.timestamp.toDate();
+
+                        timeCell.textContent =
+                            date.toLocaleTimeString();
+
+                    } else {
+
+                        timeCell.textContent =
+                            "...";
+                    }
+
+
+                    row.appendChild(numberCell);
+                    row.appendChild(nameCell);
+                    row.appendChild(answerCell);
+                    row.appendChild(resultCell);
+                    row.appendChild(timeCell);
+
+
+                    resultsBody.appendChild(row);
+
+                });
+
             });
 
-        }, (error) => {
-            console.error("Firestore listener error:", error);
-            listElement.innerHTML =
-                "<li style='color:red;'>Error loading results. Check the browser console.</li>";
-        });
+        }
+
     </script>
+
 </body>
 </html>

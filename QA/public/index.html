@@ -1,405 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Q&A Challenge</title>
-
-    <style>
-
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-            text-align: center;
-        }
-
-        input,
-        button {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            box-sizing: border-box;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        button:disabled {
-            background-color: #999;
-            cursor: not-allowed;
-        }
-
-        #questionText {
-            font-size: 1.3em;
-            font-weight: bold;
-            margin: 25px 0;
-        }
-
-        #status {
-            font-weight: bold;
-            margin: 15px 0;
-        }
-
-        #message {
-            font-weight: bold;
-            margin-top: 15px;
-        }
-
-    </style>
-
+    <title>QA</title>
 </head>
-
 
 <body>
 
-    <h2>Q&A Challenge</h2>
+    <h1>Question & Answer</h1>
 
-    <div id="questionText">
-        Loading question...
+    <div id="status">Waiting...</div>
+
+    <h2 id="question">Waiting for question...</h2>
+
+    <div>
+        <label for="username">Name:</label>
+        <input type="text" id="username" autocomplete="off">
     </div>
 
-    <div id="status">
-        Loading...
+    <br>
+
+    <div>
+        <label for="answer">Answer:</label>
+        <input type="text" id="answer" autocomplete="off">
+        <button id="submitBtn" disabled>Submit Answer</button>
     </div>
-
-    <input
-        type="text"
-        id="username"
-        placeholder="Your Name"
-    >
-
-    <input
-        type="text"
-        id="answer"
-        placeholder="Your Answer"
-        disabled
-    >
-
-    <button
-        id="submitBtn"
-        disabled
-    >
-        Submit Answer
-    </button>
-
-    <div id="message"></div>
-
 
     <script type="module">
 
-        import { initializeApp }
-        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { initializeApp } 
+            from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
         import {
             getFirestore,
             doc,
             getDoc,
-            collection,
+            onSnapshot,
             addDoc,
-            serverTimestamp,
-            onSnapshot
-        }
-        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+            collection,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 
-        // Firebase configuration
+        // --------------------------------------------------
+        // FIREBASE CONFIG
+        // --------------------------------------------------
 
         const firebaseConfig = {
-
             apiKey: "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
-
             authDomain: "panelcoiqa.firebaseapp.com",
-
             projectId: "panelcoiqa",
-
             storageBucket: "panelcoiqa.firebasestorage.app",
-
             messagingSenderId: "562964190698",
-
             appId: "1:562964190698:web:bac52f098b5b3a5ada8e93"
         };
 
 
-        const app = initializeApp(firebaseConfig);
+        // --------------------------------------------------
+        // INITIALIZE FIREBASE
+        // --------------------------------------------------
 
+        const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
 
-        // Page elements
+        // --------------------------------------------------
+        // VARIABLES
+        // --------------------------------------------------
 
-        const questionText =
-            document.getElementById("questionText");
-
-        const statusText =
-            document.getElementById("status");
-
-        const usernameInput =
-            document.getElementById("username");
-
-        const answerInput =
-            document.getElementById("answer");
-
-        const submitBtn =
-            document.getElementById("submitBtn");
-
-        const messageDiv =
-            document.getElementById("message");
-
-
-        // Current question
-
-        let currentQuestionId = null;
-
+        let currentQuestionID = null;
         let currentCorrectAnswer = null;
+        let questionIsOpen = false;
 
 
-        // Listen for changes to game/current
+        // --------------------------------------------------
+        // HTML ELEMENTS
+        // --------------------------------------------------
+
+        const statusElement = document.getElementById("status");
+        const questionElement = document.getElementById("question");
+        const usernameElement = document.getElementById("username");
+        const answerElement = document.getElementById("answer");
+        const submitButton = document.getElementById("submitBtn");
+
+
+        // --------------------------------------------------
+        // WATCH CURRENT GAME
+        // --------------------------------------------------
 
         const gameRef = doc(db, "game", "current");
 
+        onSnapshot(gameRef, async (gameSnapshot) => {
 
-        onSnapshot(gameRef, async (gameSnap) => {
+            if (!gameSnapshot.exists()) {
 
-            try {
+                currentQuestionID = null;
+                currentCorrectAnswer = null;
+                questionIsOpen = false;
 
-                if (!gameSnap.exists()) {
+                statusElement.textContent = "No active game.";
+                questionElement.textContent = "Waiting for question...";
 
-                    questionText.textContent =
-                        "Game is not configured.";
+                submitButton.disabled = true;
 
-                    return;
-                }
-
-
-                const gameData = gameSnap.data();
-
-
-                currentQuestionId =
-                    gameData.questionID;
+                return;
+            }
 
 
-                const status =
-                    gameData.status;
+            const gameData = gameSnapshot.data();
+
+            currentQuestionID = gameData.questionId;
+            questionIsOpen = gameData.status === "open";
 
 
-                console.log(
-                    "Current question:",
-                    currentQuestionId
-                );
+            // --------------------------------------------------
+            // LOAD CURRENT QUESTION
+            // --------------------------------------------------
 
-                console.log(
-                    "Game status:",
-                    status
-                );
+            if (!currentQuestionID) {
 
+                currentCorrectAnswer = null;
 
-                // Load question
+                statusElement.textContent = "No question selected.";
+                questionElement.textContent = "Waiting for question...";
 
-                const questionRef = doc(
-                    db,
-                    "questions",
-                    currentQuestionId
-                );
+                submitButton.disabled = true;
+
+                return;
+            }
 
 
-                const questionSnap =
-                    await getDoc(questionRef);
+            const questionRef = doc(
+                db,
+                "questions",
+                currentQuestionID
+            );
+
+            const questionSnapshot = await getDoc(questionRef);
 
 
-                if (!questionSnap.exists()) {
+            if (!questionSnapshot.exists()) {
 
-                    questionText.textContent =
-                        "Question not found.";
+                currentCorrectAnswer = null;
 
-                    return;
-                }
+                statusElement.textContent = "Question not found.";
+                questionElement.textContent = "";
 
+                submitButton.disabled = true;
 
-                const questionData =
-                    questionSnap.data();
-
-
-                questionText.textContent =
-                    questionData.question;
+                return;
+            }
 
 
-                // Keep correct answer in memory
-                // only for checking the submission
-
-                currentCorrectAnswer =
-                    questionData.answer
-                    .trim()
-                    .toLowerCase();
+            const questionData = questionSnapshot.data();
 
 
-                // Update interface
+            // --------------------------------------------------
+            // DISPLAY QUESTION
+            // --------------------------------------------------
 
-                if (status === "open") {
+            questionElement.textContent = questionData.question;
 
-                    statusText.textContent =
-                        "QUESTION OPEN";
-
-                    statusText.style.color =
-                        "green";
-
-                    answerInput.disabled = false;
-
-                    submitBtn.disabled = false;
-
-                } else {
-
-                    statusText.textContent =
-                        "WAITING FOR NEXT QUESTION";
-
-                    statusText.style.color =
-                        "red";
-
-                    answerInput.disabled = true;
-
-                    submitBtn.disabled = true;
-                }
+            currentCorrectAnswer =
+                String(questionData.answer || "").trim();
 
 
-                // Clear old answer/message
+            // --------------------------------------------------
+            // OPEN / CLOSED STATUS
+            // --------------------------------------------------
 
-                answerInput.value = "";
+            if (questionIsOpen) {
 
-                messageDiv.textContent = "";
+                statusElement.textContent = "QUESTION OPEN";
 
+                submitButton.disabled = false;
+                answerElement.disabled = false;
+                usernameElement.disabled = false;
 
-            } catch (error) {
+            } else {
 
-                console.error(
-                    "Question loading error:",
-                    error
-                );
+                statusElement.textContent = "WAITING";
 
-                messageDiv.textContent =
-                    "Error loading question: " +
-                    error.message;
+                submitButton.disabled = true;
+                answerElement.disabled = true;
+                usernameElement.disabled = true;
             }
 
         });
 
 
-        // Submit answer
+        // --------------------------------------------------
+        // SUBMIT ANSWER
+        // --------------------------------------------------
 
-        submitBtn.addEventListener(
-            "click",
-            async () => {
-
-                const name =
-                    usernameInput.value.trim();
-
-                const userAnswer =
-                    answerInput.value
-                    .trim()
-                    .toLowerCase();
+        submitButton.addEventListener("click", submitAnswer);
 
 
-                if (!name || !userAnswer) {
+        async function submitAnswer() {
 
-                    messageDiv.textContent =
-                        "Please enter your name and answer.";
+            const username =
+                usernameElement.value.trim();
 
-                    messageDiv.style.color =
-                        "red";
-
-                    return;
-                }
+            const answer =
+                answerElement.value.trim();
 
 
-                if (!currentQuestionId) {
+            // --------------------------------------------------
+            // VALIDATION
+            // --------------------------------------------------
 
-                    messageDiv.textContent =
-                        "No active question.";
+            if (!username) {
 
-                    return;
-                }
+                alert("Please enter your name.");
 
+                usernameElement.focus();
 
-                try {
-
-                    submitBtn.disabled = true;
-
-
-                    const isCorrect =
-                        userAnswer ===
-                        currentCorrectAnswer;
-
-
-                    await addDoc(
-                        collection(db, "submissions"),
-                        {
-
-                            questionID:
-                                currentQuestionId,
-
-                            username:
-                                name,
-
-                            answer:
-                                userAnswer,
-
-                            correct:
-                                isCorrect,
-
-                            timestamp:
-                                serverTimestamp()
-                        }
-                    );
-
-
-                    if (isCorrect) {
-
-                        messageDiv.textContent =
-                            "Correct! Your answer has been recorded.";
-
-                        messageDiv.style.color =
-                            "green";
-
-                    } else {
-
-                        messageDiv.textContent =
-                            "Answer recorded.";
-
-                        messageDiv.style.color =
-                            "red";
-                    }
-
-
-                    answerInput.value = "";
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Submission error:",
-                        error
-                    );
-
-                    messageDiv.textContent =
-                        "Error submitting answer.";
-
-                    messageDiv.style.color =
-                        "red";
-
-                    submitBtn.disabled = false;
-                }
-
+                return;
             }
-        );
+
+
+            if (!answer) {
+
+                alert("Please enter your answer.");
+
+                answerElement.focus();
+
+                return;
+            }
+
+
+            if (!currentQuestionID || !questionIsOpen) {
+
+                alert("There is no open question.");
+
+                return;
+            }
+
+
+            // --------------------------------------------------
+            // CHECK ANSWER
+            // --------------------------------------------------
+
+            const isCorrect =
+                answer.toLowerCase() ===
+                currentCorrectAnswer.toLowerCase();
+
+
+            // --------------------------------------------------
+            // SAVE EVERY ANSWER
+            // --------------------------------------------------
+
+            try {
+
+                await addDoc(
+                    collection(db, "submissions"),
+                    {
+                        questionID: currentQuestionID,
+                        username: username,
+                        answer: answer,
+                        correct: isCorrect,
+                        timestamp: serverTimestamp()
+                    }
+                );
+
+
+                // --------------------------------------------------
+                // SUCCESS
+                // --------------------------------------------------
+
+                if (isCorrect) {
+
+                    alert("Correct answer submitted!");
+
+                } else {
+
+                    alert("Answer submitted.");
+
+                }
+
+
+                // Clear answer box
+
+                answerElement.value = "";
+
+                answerElement.focus();
+
+
+            } catch (error) {
+
+                console.error(
+                    "Submission error:",
+                    error
+                );
+
+                alert(
+                    "Unable to submit answer. Check the console for details."
+                );
+            }
+
+        }
 
     </script>
 
 </body>
-
 </html>
