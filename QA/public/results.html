@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Results Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
+        h2 { text-align: center; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #f4f4f4; padding: 10px; margin: 10px 0; border-left: 5px solid #28a745; display: flex; justify-content: space-between; border-radius: 3px; }
+        .time { color: #888; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+    <h2>🏆 Verified Users Dashboard v2</h2>
+    <ul id="resultsList">Listening for live updates...</ul>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            query,
+            where,
+            orderBy,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+        // WE WILL PASTE CONFIG HERE IN THE NEXT STEP
+        const firebaseConfig = {
+        apiKey: "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
+        authDomain: "panelcoiqa.firebaseapp.com",
+        projectId: "panelcoiqa",
+        storageBucket: "panelcoiqa.firebasestorage.app",
+        messagingSenderId: "562964190698",
+        appId: "1:562964190698:web:bac52f098b5b3a5ada8e93"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const q = query(
+            collection(db, "submissions"), 
+            where("status", "==", "verified"),
+            orderBy("timestamp", "desc")
+        );
+
+        const listElement = document.getElementById('resultsList');
+
+        onSnapshot(q, (snapshot) => {
+            listElement.innerHTML = "";
+
+            if (snapshot.empty) {
+                listElement.innerHTML = "<li>No verified submissions yet.</li>";
+                return;
+            }
+
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const li = document.createElement("li");
+
+                li.innerHTML = `
+                    <span><strong>${data.username}</strong> answered correctly!</span>
+                    <span class="time">${
+                        data.timestamp
+                            ? new Date(data.timestamp.toDate()).toLocaleTimeString()
+                            : "Just now"
+                    }</span>
+                `;
+
+                listElement.appendChild(li);
+            });
+
+        }, (error) => {
+            console.error("Firestore listener error:", error);
+            listElement.innerHTML =
+                "<li style='color:red;'>Error loading results. Check the browser console.</li>";
+        });
+    </script>
+</body>
+</html>

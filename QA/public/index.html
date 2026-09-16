@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Q&A Challenge</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        input,
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background-color: #999;
+            cursor: not-allowed;
+        }
+
+        #questionText {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 25px 0;
+        }
+
+        #status {
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        #message {
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <h2>Q&A Challenge</h2>
+
+    <div id="questionText">
+        Loading question...
+    </div>
+
+    <div id="status">
+        Loading...
+    </div>
+
+    <input
+        type="text"
+        id="username"
+        placeholder="Your Name"
+    >
+
+    <input
+        type="text"
+        id="answer"
+        placeholder="Your Answer"
+        disabled
+    >
+
+    <button
+        id="submitBtn"
+        disabled
+    >
+        Submit Answer
+    </button>
+
+    <div id="message"></div>
+
+
+    <script type="module">
+
+        import { initializeApp }
+        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            collection,
+            addDoc,
+            serverTimestamp,
+            onSnapshot
+        }
+        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+
+        // Firebase configuration
+
+        const firebaseConfig = {
+
+            apiKey: "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
+
+            authDomain: "panelcoiqa.firebaseapp.com",
+
+            projectId: "panelcoiqa",
+
+            storageBucket: "panelcoiqa.firebasestorage.app",
+
+            messagingSenderId: "562964190698",
+
+            appId: "1:562964190698:web:bac52f098b5b3a5ada8e93"
+        };
+
+
+        const app = initializeApp(firebaseConfig);
+
+        const db = getFirestore(app);
+
+
+        // Page elements
+
+        const questionText =
+            document.getElementById("questionText");
+
+        const statusText =
+            document.getElementById("status");
+
+        const usernameInput =
+            document.getElementById("username");
+
+        const answerInput =
+            document.getElementById("answer");
+
+        const submitBtn =
+            document.getElementById("submitBtn");
+
+        const messageDiv =
+            document.getElementById("message");
+
+
+        // Current question
+
+        let currentQuestionId = null;
+
+        let currentCorrectAnswer = null;
+
+
+        // Listen for changes to game/current
+
+        const gameRef = doc(db, "game", "current");
+
+
+        onSnapshot(gameRef, async (gameSnap) => {
+
+            try {
+
+                if (!gameSnap.exists()) {
+
+                    questionText.textContent =
+                        "Game is not configured.";
+
+                    return;
+                }
+
+
+                const gameData = gameSnap.data();
+
+
+                currentQuestionId =
+                    gameData.questionID;
+
+
+                const status =
+                    gameData.status;
+
+
+                console.log(
+                    "Current question:",
+                    currentQuestionId
+                );
+
+                console.log(
+                    "Game status:",
+                    status
+                );
+
+
+                // Load question
+
+                const questionRef = doc(
+                    db,
+                    "questions",
+                    currentQuestionId
+                );
+
+
+                const questionSnap =
+                    await getDoc(questionRef);
+
+
+                if (!questionSnap.exists()) {
+
+                    questionText.textContent =
+                        "Question not found.";
+
+                    return;
+                }
+
+
+                const questionData =
+                    questionSnap.data();
+
+
+                questionText.textContent =
+                    questionData.question;
+
+
+                // Keep correct answer in memory
+                // only for checking the submission
+
+                currentCorrectAnswer =
+                    questionData.answer
+                    .trim()
+                    .toLowerCase();
+
+
+                // Update interface
+
+                if (status === "open") {
+
+                    statusText.textContent =
+                        "QUESTION OPEN";
+
+                    statusText.style.color =
+                        "green";
+
+                    answerInput.disabled = false;
+
+                    submitBtn.disabled = false;
+
+                } else {
+
+                    statusText.textContent =
+                        "WAITING FOR NEXT QUESTION";
+
+                    statusText.style.color =
+                        "red";
+
+                    answerInput.disabled = true;
+
+                    submitBtn.disabled = true;
+                }
+
+
+                // Clear old answer/message
+
+                answerInput.value = "";
+
+                messageDiv.textContent = "";
+
+
+            } catch (error) {
+
+                console.error(
+                    "Question loading error:",
+                    error
+                );
+
+                messageDiv.textContent =
+                    "Error loading question: " +
+                    error.message;
+            }
+
+        });
+
+
+        // Submit answer
+
+        submitBtn.addEventListener(
+            "click",
+            async () => {
+
+                const name =
+                    usernameInput.value.trim();
+
+                const userAnswer =
+                    answerInput.value
+                    .trim()
+                    .toLowerCase();
+
+
+                if (!name || !userAnswer) {
+
+                    messageDiv.textContent =
+                        "Please enter your name and answer.";
+
+                    messageDiv.style.color =
+                        "red";
+
+                    return;
+                }
+
+
+                if (!currentQuestionId) {
+
+                    messageDiv.textContent =
+                        "No active question.";
+
+                    return;
+                }
+
+
+                try {
+
+                    submitBtn.disabled = true;
+
+
+                    const isCorrect =
+                        userAnswer ===
+                        currentCorrectAnswer;
+
+
+                    await addDoc(
+                        collection(db, "submissions"),
+                        {
+
+                            questionID:
+                                currentQuestionId,
+
+                            username:
+                                name,
+
+                            answer:
+                                userAnswer,
+
+                            correct:
+                                isCorrect,
+
+                            timestamp:
+                                serverTimestamp()
+                        }
+                    );
+
+
+                    if (isCorrect) {
+
+                        messageDiv.textContent =
+                            "Correct! Your answer has been recorded.";
+
+                        messageDiv.style.color =
+                            "green";
+
+                    } else {
+
+                        messageDiv.textContent =
+                            "Answer recorded.";
+
+                        messageDiv.style.color =
+                            "red";
+                    }
+
+
+                    answerInput.value = "";
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Submission error:",
+                        error
+                    );
+
+                    messageDiv.textContent =
+                        "Error submitting answer.";
+
+                    messageDiv.style.color =
+                        "red";
+
+                    submitBtn.disabled = false;
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
