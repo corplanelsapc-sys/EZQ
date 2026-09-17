@@ -457,6 +457,109 @@
                 font-size: 21px;
             }
         }
+                .report-controls {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .report-controls select {
+            min-width: 0;
+        }
+
+        .report-container {
+            border: 1px solid #d9dee5;
+            background: #fff;
+            overflow-x: auto;
+        }
+
+        .report-empty {
+            padding: 30px;
+            text-align: center;
+            color: #737b86;
+        }
+
+        .report-title {
+            padding: 18px 20px;
+            border-bottom: 1px solid #d9dee5;
+            font-size: 18px;
+            font-weight: 700;
+            color: #172033;
+        }
+
+        .report-question {
+            margin-top: 20px;
+            border: 1px solid #d9dee5;
+        }
+
+        .report-question:first-child {
+            margin-top: 0;
+        }
+
+        .report-question-header {
+            padding: 12px 16px;
+            background: #f3f6f9;
+            border-bottom: 1px solid #d9dee5;
+            font-weight: 700;
+            color: #172033;
+        }
+
+        .report-question-text {
+            padding: 8px 16px 12px;
+            color: #596270;
+            white-space: pre-line;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+        }
+
+        .report-table th {
+            background: #f8f9fb;
+            color: #596270;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid #d9dee5;
+        }
+
+        .report-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e8ec;
+            color: #252b33;
+            vertical-align: top;
+        }
+
+        .report-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .report-correct {
+            color: #18794e;
+            font-weight: 700;
+        }
+
+        .report-wrong {
+            color: #b42318;
+            font-weight: 700;
+        }
+
+        .report-no-winner {
+            padding: 14px 16px;
+            color: #737b86;
+            font-style: italic;
+        }
+
+        @media (max-width: 700px) {
+            .report-controls {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -585,6 +688,33 @@
 
     </section>
 
+    <section class="section">
+        <div class="section-title">REPORTS</div>
+
+        <div class="report-controls">
+            <select id="reportSelect">
+                <option value="">SELECT REPORT</option>
+                <option value="winners">1. WINNERS — ALL QUESTIONS</option>
+                <option value="submissions">2. SUBMITTED ANSWERS — ALL QUESTIONS</option>
+            </select>
+
+            <button id="loadReportBtn" class="primary">
+                VIEW REPORT
+            </button>
+
+            <button id="printReportBtn">
+                PRINT REPORT
+            </button>
+        </div>
+
+        <div id="reportStatus" class="message"></div>
+
+        <div id="reportContainer" class="report-container">
+            <div class="report-empty">
+                Select a report above.
+            </div>
+        </div>
+    </section>
 
     <!-- ADD QUESTION -->
 
@@ -658,6 +788,482 @@
 
 
 <script type="module">
+
+    // ============================================================
+// REPORTS
+// ============================================================
+
+document.getElementById("loadReportBtn")
+    .addEventListener("click", loadSelectedReport);
+
+document.getElementById("printReportBtn")
+    .addEventListener("click", () => {
+        const report = document.getElementById("reportContainer");
+
+        if (!report || report.innerText.trim() === "Select a report above.") {
+            alert("Please select and view a report first.");
+            return;
+        }
+
+        window.print();
+    });
+
+
+async function loadSelectedReport() {
+
+    const reportType =
+        document.getElementById("reportSelect").value;
+
+    const container =
+        document.getElementById("reportContainer");
+
+    const status =
+        document.getElementById("reportStatus");
+
+    if (!reportType) {
+        status.textContent = "Please select a report.";
+        return;
+    }
+
+    status.textContent = "Loading report...";
+    container.innerHTML = "";
+
+    try {
+
+        // ----------------------------------------------------
+        // LOAD QUESTIONS
+        // ----------------------------------------------------
+
+        const questionsSnapshot =
+            await getDocs(collection(db, "questions"));
+
+        const questions = {};
+
+        questionsSnapshot.forEach((docSnapshot) => {
+
+            const data = docSnapshot.data();
+
+            questions[docSnapshot.id] = {
+                id: docSnapshot.id,
+                question: data.question || "",
+                answer: data.answer || ""
+            };
+        });
+
+
+        // ----------------------------------------------------
+        // LOAD ALL SUBMISSIONS
+        // ----------------------------------------------------
+
+        const submissionsSnapshot =
+            await getDocs(collection(db, "submissions"));
+
+        const submissions = [];
+
+        submissionsSnapshot.forEach((docSnapshot) => {
+
+            const data = docSnapshot.data();
+
+            const questionId =
+                data.questionId || data.questionID || "";
+
+            submissions.push({
+                id: docSnapshot.id,
+                questionId: questionId,
+                username: data.username || "",
+                answer: data.answer || "",
+                correct: data.correct === true,
+                timestamp: data.timestamp || null
+            });
+        });
+
+
+        // Sort by question number first, then timestamp
+        submissions.sort((a, b) => {
+
+            const qCompare =
+                compareQuestionIds(a.questionId, b.questionId);
+
+            if (qCompare !== 0) {
+                return qCompare;
+            }
+
+            return getTimestampMillis(a.timestamp) -
+                   getTimestampMillis(b.timestamp);
+        });
+
+
+        if (reportType === "winners") {
+
+            renderWinnersReport(
+                questions,
+                submissions,
+                container
+            );
+
+            status.textContent =
+                "Winners report loaded.";
+
+        }
+        else if (reportType === "submissions") {
+
+            renderSubmissionsReport(
+                questions,
+                submissions,
+                container
+            );
+
+            status.textContent =
+                "Submitted answers report loaded.";
+        }
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Unable to load report.";
+
+        container.innerHTML = `
+            <div class="report-empty">
+                Unable to load report. Check the browser console.
+            </div>
+        `;
+    }
+}
+
+
+// ============================================================
+// QUESTION NUMBER SORTING
+// ============================================================
+
+function compareQuestionIds(a, b) {
+
+    const numA =
+        parseInt(String(a).replace(/\D/g, ""), 10) || 0;
+
+    const numB =
+        parseInt(String(b).replace(/\D/g, ""), 10) || 0;
+
+    return numA - numB;
+}
+
+
+// ============================================================
+// TIMESTAMP
+// ============================================================
+
+function getTimestampMillis(timestamp) {
+
+    if (!timestamp) {
+        return Number.MAX_SAFE_INTEGER;
+    }
+
+    if (typeof timestamp.toMillis === "function") {
+        return timestamp.toMillis();
+    }
+
+    if (timestamp.seconds !== undefined) {
+        return timestamp.seconds * 1000;
+    }
+
+    return Number.MAX_SAFE_INTEGER;
+}
+
+
+function formatTimestamp(timestamp) {
+
+    if (!timestamp) {
+        return "TIME PENDING";
+    }
+
+    let date;
+
+    if (typeof timestamp.toDate === "function") {
+        date = timestamp.toDate();
+    }
+    else if (timestamp.seconds !== undefined) {
+        date = new Date(timestamp.seconds * 1000);
+    }
+    else {
+        return "TIME PENDING";
+    }
+
+    return date.toLocaleString();
+}
+
+
+// ============================================================
+// REPORT 1 — WINNERS
+// ============================================================
+
+function renderWinnersReport(
+    questions,
+    submissions,
+    container
+) {
+
+    let html = `
+        <div class="report-title">
+            WINNERS — ALL QUESTIONS
+        </div>
+    `;
+
+    const questionIds =
+        Object.keys(questions)
+            .sort(compareQuestionIds);
+
+
+    if (questionIds.length === 0) {
+
+        container.innerHTML =
+            html +
+            `<div class="report-empty">
+                No questions found.
+            </div>`;
+
+        return;
+    }
+
+
+    html += `
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Participant</th>
+                    <th>Submitted Answer</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+
+    questionIds.forEach((questionId) => {
+
+        const winner =
+            submissions.find(item =>
+                item.questionId === questionId &&
+                item.correct === true
+            );
+
+
+        if (winner) {
+
+            html += `
+                <tr>
+                    <td><strong>${escapeHtml(questionId)}</strong></td>
+
+                    <td>
+                        ${escapeHtml(winner.username)}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(winner.answer)}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            formatTimestamp(winner.timestamp)
+                        )}
+                    </td>
+                </tr>
+            `;
+
+        }
+        else {
+
+            html += `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(questionId)}</strong>
+                    </td>
+
+                    <td colspan="3"
+                        class="report-no-winner">
+                        NO CORRECT ANSWER
+                    </td>
+                </tr>
+            `;
+        }
+
+    });
+
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    container.innerHTML = html;
+}
+
+
+// ============================================================
+// REPORT 2 — ALL SUBMITTED ANSWERS
+// ============================================================
+
+function renderSubmissionsReport(
+    questions,
+    submissions,
+    container
+) {
+
+    let html = `
+        <div class="report-title">
+            SUBMITTED ANSWERS — ALL QUESTIONS
+        </div>
+    `;
+
+
+    const questionIds =
+        Object.keys(questions)
+            .sort(compareQuestionIds);
+
+
+    questionIds.forEach((questionId) => {
+
+        const question =
+            questions[questionId];
+
+
+        const questionSubmissions =
+            submissions
+                .filter(item =>
+                    item.questionId === questionId
+                )
+                .sort((a, b) =>
+                    getTimestampMillis(a.timestamp) -
+                    getTimestampMillis(b.timestamp)
+                );
+
+
+        html += `
+            <div class="report-question">
+
+                <div class="report-question-header">
+                    ${escapeHtml(questionId)}
+                </div>
+
+                <div class="report-question-text">
+                    ${escapeHtml(question.question)}
+                </div>
+        `;
+
+
+        if (questionSubmissions.length === 0) {
+
+            html += `
+                <div class="report-no-winner">
+                    NO SUBMITTED ANSWERS
+                </div>
+            `;
+
+        }
+        else {
+
+            html += `
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Participant</th>
+                            <th>Submitted Answer</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+
+            questionSubmissions.forEach((submission) => {
+
+                const resultClass =
+                    submission.correct
+                        ? "report-correct"
+                        : "report-wrong";
+
+                const resultText =
+                    submission.correct
+                        ? "CORRECT"
+                        : "WRONG";
+
+
+                html += `
+                    <tr>
+
+                        <td>
+                            ${escapeHtml(
+                                formatTimestamp(
+                                    submission.timestamp
+                                )
+                            )}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(
+                                submission.username
+                            )}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(
+                                submission.answer
+                            )}
+                        </td>
+
+                        <td class="${resultClass}">
+                            ${resultText}
+                        </td>
+
+                    </tr>
+                `;
+
+            });
+
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+        }
+
+
+        html += `
+            </div>
+        `;
+    });
+
+
+    if (questionIds.length === 0) {
+
+        html += `
+            <div class="report-empty">
+                No questions found.
+            </div>
+        `;
+    }
+
+
+    container.innerHTML = html;
+}
+
+
+// ============================================================
+// HTML SAFETY
+// ============================================================
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
     import {
         initializeApp
