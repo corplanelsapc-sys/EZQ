@@ -2,460 +2,903 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Q&A Results</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f5f7;
+            color: #202a35;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        .page {
+            width: min(1100px, 94vw);
+            margin: 0 auto;
+            padding: 32px 0 48px;
+        }
+
+        /* ----------------------------------------
+           HEADER
+        ---------------------------------------- */
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #d7dde3;
+        }
+
+        .brand {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #1d2d3d;
+        }
+
+        .header-label {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            color: #687582;
+        }
+
+        /* ----------------------------------------
+           STATUS
+        ---------------------------------------- */
+
+        .status {
+            margin-top: 30px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: #1769aa;
+        }
+
+        /* ----------------------------------------
+           QUESTION
+        ---------------------------------------- */
+
+        .question-area {
+            margin-top: 12px;
+            padding: 24px 28px;
+            background: #ffffff;
+            border: 1px solid #dce2e7;
+            border-left: 5px solid #1769aa;
+            border-radius: 7px;
+            box-shadow: 0 2px 8px rgba(20, 35, 50, 0.05);
+        }
+
+        #question {
+            margin: 0;
+            font-size: clamp(28px, 4vw, 48px);
+            line-height: 1.2;
+            font-weight: 650;
+            color: #172331;
+        }
+
+        /* ----------------------------------------
+           TIMER
+        ---------------------------------------- */
+
+        .timer-area {
+            margin-top: 22px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #timer {
+            min-width: 230px;
+            padding: 14px 24px;
+            text-align: center;
+            background: #172331;
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: clamp(25px, 4vw, 38px);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        /* ----------------------------------------
+           CONTROLS / COUNT
+        ---------------------------------------- */
+
+        .control-bar {
+            margin-top: 26px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #d7dde3;
+        }
+
+        #answerCount {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            color: #687582;
+        }
+
+        #revealButton {
+            padding: 11px 20px;
+            border: 1px solid #1769aa;
+            border-radius: 6px;
+            background: #1769aa;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            cursor: pointer;
+        }
+
+        #revealButton:hover {
+            background: #12588f;
+        }
+
+        #revealButton:active {
+            transform: translateY(1px);
+        }
+
+        /* ----------------------------------------
+           RESULTS
+        ---------------------------------------- */
+
+        #results {
+            margin-top: 26px;
+        }
+
+        .waiting {
+            padding: 32px 20px;
+            text-align: center;
+            color: #7a8792;
+            font-size: 17px;
+        }
+
+        .winner {
+            margin-bottom: 30px;
+            padding: 24px;
+            background: #ffffff;
+            border: 1px solid #d7dde3;
+            border-left: 5px solid #1769aa;
+            border-radius: 7px;
+            box-shadow: 0 3px 12px rgba(20, 35, 50, 0.07);
+        }
+
+        .winner-label {
+            margin-bottom: 7px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            color: #1769aa;
+        }
+
+        .winner-name {
+            margin: 0;
+            font-size: clamp(28px, 4vw, 44px);
+            line-height: 1.15;
+            font-weight: 700;
+            color: #172331;
+        }
+
+        .no-winner {
+            margin-bottom: 30px;
+            padding: 24px;
+            background: #ffffff;
+            border: 1px solid #d7dde3;
+            border-radius: 7px;
+            text-align: center;
+            font-size: 25px;
+            font-weight: 700;
+            color: #596773;
+        }
+
+        .answers-heading {
+            margin: 0 0 12px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: #687582;
+        }
+
+        .result-row {
+            display: grid;
+            grid-template-columns: 48px 1fr auto;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            margin-bottom: 6px;
+            background: #ffffff;
+            border: 1px solid #e0e5e9;
+            border-radius: 5px;
+        }
+
+        .result-number {
+            font-size: 15px;
+            font-weight: 700;
+            color: #7b8791;
+        }
+
+        .result-main {
+            min-width: 0;
+        }
+
+        .result-name {
+            font-weight: 700;
+            color: #243240;
+        }
+
+        .result-answer {
+            margin-top: 3px;
+            color: #566572;
+            overflow-wrap: anywhere;
+        }
+
+        .result-status {
+            text-align: right;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+            color: #7a8792;
+        }
+
+        .result-status.correct {
+            color: #18794e;
+        }
+
+        .result-status.winner {
+            color: #1769aa;
+        }
+
+        .result-time {
+            margin-top: 3px;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0;
+            color: #8a959e;
+        }
+
+        /* ----------------------------------------
+           MOBILE
+        ---------------------------------------- */
+
+        @media (max-width: 650px) {
+
+            .page {
+                width: 94vw;
+                padding-top: 20px;
+            }
+
+            .header-label {
+                display: none;
+            }
+
+            .question-area {
+                padding: 20px;
+            }
+
+            .control-bar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            #revealButton {
+                width: 100%;
+            }
+
+            .result-row {
+                grid-template-columns: 36px 1fr;
+                gap: 10px;
+            }
+
+            .result-status {
+                grid-column: 2;
+                text-align: left;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-    <h1>Q&A RESULTS</h1>
+<div class="page">
 
-    <div id="status">WAITING FOR QUESTION</div>
+    <header class="header">
+        <div class="brand">PANELCO I</div>
+        <div class="header-label">Q&amp;A RESULTS</div>
+    </header>
 
-    <h2 id="question"></h2>
-
-    <div id="timer">TIME: --</div>
-
-    <hr>
-
-    <div id="answerCount">
-        ANSWERS RECEIVED: 0
+    <div id="status" class="status">
+        WAITING FOR QUESTION
     </div>
 
-    <br>
+    <section class="question-area">
+        <h2 id="question" style="white-space: pre-line;"></h2>
+    </section>
 
-    <button id="revealButton" style="display:none;">
-        REVEAL ANSWERS
-    </button>
+    <div class="timer-area">
+        <div id="timer">TIME: --</div>
+    </div>
+
+    <div class="control-bar">
+
+        <div id="answerCount">
+            ANSWERS RECEIVED: 0
+        </div>
+
+        <button id="revealButton" style="display:none;">
+            REVEAL ANSWERS
+        </button>
+
+    </div>
 
     <div id="results"></div>
 
-    <script type="module">
-
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-        import {
-            getFirestore,
-            doc,
-            getDoc,
-            onSnapshot,
-            collection,
-            query,
-            orderBy
-        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+</div>
 
 
-        // --------------------------------------------------
-        // FIREBASE
-        // --------------------------------------------------
+<script type="module">
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
-            authDomain: "panelcoiqa.firebaseapp.com",
-            projectId: "panelcoiqa",
-            storageBucket: "panelcoiqa.firebasestorage.app",
-            messagingSenderId: "562964190698",
-            appId: "1:562964190698:web:bac52f098b5b3a5ada8e93"
-        };
+    import { initializeApp }
+        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-
-        // --------------------------------------------------
-        // ELEMENTS
-        // --------------------------------------------------
-
-        const statusElement = document.getElementById("status");
-        const questionElement = document.getElementById("question");
-        const timerElement = document.getElementById("timer");
-        const answerCountElement = document.getElementById("answerCount");
-        const resultsElement = document.getElementById("results");
-        const revealButton = document.getElementById("revealButton");
+    import {
+        getFirestore,
+        doc,
+        getDoc,
+        onSnapshot,
+        collection,
+        query,
+        orderBy
+    }
+        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 
-        // --------------------------------------------------
-        // VARIABLES
-        // --------------------------------------------------
+    // --------------------------------------------------
+    // FIREBASE
+    // --------------------------------------------------
 
-        let currentQuestionID = null;
-        let currentStatus = "closed";
+    const firebaseConfig = {
+        apiKey: "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
+        authDomain: "panelcoiqa.firebaseapp.com",
+        projectId: "panelcoiqa",
+        storageBucket: "panelcoiqa.firebasestorage.app",
+        messagingSenderId: "562964190698",
+        appId: "1:562964190698:web:bac52f098b5b3a5ada8e93"
+    };
 
-        let submissions = [];
-
-        let revealed = false;
-
-        let timerInterval = null;
-
-        let clockOffsetMillis = 0;
-
-        let questionOpenedAt = null;
-
-        let answerSeconds = 0;
-
-        let currentWinner = null;
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
 
-        // --------------------------------------------------
-        // TIMER
-        // --------------------------------------------------
+    // --------------------------------------------------
+    // ELEMENTS
+    // --------------------------------------------------
 
-        function stopTimer() {
+    const statusElement =
+        document.getElementById("status");
 
-            if (timerInterval !== null) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
+    const questionElement =
+        document.getElementById("question");
 
+    const timerElement =
+        document.getElementById("timer");
+
+    const answerCountElement =
+        document.getElementById("answerCount");
+
+    const resultsElement =
+        document.getElementById("results");
+
+    const revealButton =
+        document.getElementById("revealButton");
+
+
+    // --------------------------------------------------
+    // VARIABLES
+    // --------------------------------------------------
+
+    let currentQuestionID = null;
+    let currentStatus = "closed";
+
+    let submissions = [];
+
+    let revealed = false;
+
+    let timerInterval = null;
+
+    let clockOffsetMillis = 0;
+
+    let answerSeconds = 0;
+
+    let currentWinner = null;
+
+
+    // --------------------------------------------------
+    // TIMER
+    // --------------------------------------------------
+
+    function stopTimer() {
+
+        if (timerInterval !== null) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+    }
+
+
+    function getCorrectedNow() {
+
+        return Date.now() + clockOffsetMillis;
+
+    }
+
+
+    function startTimer(openedAt, seconds) {
+
+        stopTimer();
+
+        if (!openedAt || !seconds || seconds <= 0) {
+
+            timerElement.textContent = "TIME: --";
+
+            return;
         }
 
 
-        function getCorrectedNow() {
+        const openedMillis =
+            openedAt.toMillis();
 
-            return Date.now() + clockOffsetMillis;
+        // Use Firestore's server timestamp as our
+        // reference instead of relying on the
+        // projector computer's clock.
 
-        }
+        clockOffsetMillis =
+            openedMillis - Date.now();
 
-
-        function startTimer(openedAt, seconds) {
-
-            stopTimer();
-
-            if (!openedAt || !seconds || seconds <= 0) {
-                timerElement.textContent = "TIME: --";
-                return;
-            }
+        const deadline =
+            openedMillis + (seconds * 1000);
 
 
-            const openedMillis = openedAt.toMillis();
+        function updateTimer() {
 
-            /*
-                Use Firestore's server timestamp as our
-                reference instead of relying on the
-                projector computer's clock.
-            */
+            const remainingMillis =
+                deadline - getCorrectedNow();
 
-            clockOffsetMillis = openedMillis - Date.now();
+            const remainingSeconds =
+                Math.max(
+                    0,
+                    Math.ceil(remainingMillis / 1000)
+                );
 
-            const deadline = openedMillis + (seconds * 1000);
+
+            timerElement.textContent =
+                "TIME: " + remainingSeconds;
 
 
-            function updateTimer() {
+            if (remainingMillis <= 0) {
 
-                const remainingMillis =
-                    deadline - getCorrectedNow();
-
-                const remainingSeconds =
-                    Math.max(0, Math.ceil(remainingMillis / 1000));
-
+                stopTimer();
 
                 timerElement.textContent =
-                    "TIME: " + remainingSeconds;
+                    "TIME: 0 — TIME EXPIRED";
 
+                // Automatically reveal the results
+                // when the countdown reaches zero.
 
-                if (remainingMillis <= 0) {
-
-                    stopTimer();
-
-                    timerElement.textContent =
-                        "TIME: 0 — TIME EXPIRED";
-
-                    /*
-                        Automatically reveal the results
-                        when the countdown reaches zero.
-                    */
-
-                    revealAnswers();
-                }
-
+                revealAnswers();
             }
-
-
-            updateTimer();
-
-            timerInterval = setInterval(updateTimer, 200);
 
         }
 
 
-        // --------------------------------------------------
-        // HIDE RESULTS
-        // --------------------------------------------------
+        updateTimer();
 
-        function hideResults() {
+        timerInterval =
+            setInterval(updateTimer, 200);
 
-            revealed = false;
-
-            currentWinner = null;
-
-            resultsElement.innerHTML = "";
-
-            answerCountElement.textContent =
-                "ANSWERS RECEIVED: 0";
-
-            revealButton.style.display = "none";
-
-        }
+    }
 
 
-        // --------------------------------------------------
-        // DISPLAY RESULTS
-        // --------------------------------------------------
+    // --------------------------------------------------
+    // HIDE RESULTS
+    // --------------------------------------------------
 
-        function displayResults() {
+    function hideResults() {
 
-            answerCountElement.textContent =
-                "ANSWERS RECEIVED: " + submissions.length;
+        revealed = false;
+
+        currentWinner = null;
+
+        resultsElement.innerHTML = "";
+
+        answerCountElement.textContent =
+            "ANSWERS RECEIVED: 0";
+
+        revealButton.style.display =
+            "none";
+
+    }
 
 
-            if (!revealed) {
+    // --------------------------------------------------
+    // DISPLAY RESULTS
+    // --------------------------------------------------
 
-                resultsElement.innerHTML = "";
+    function displayResults() {
 
-                if (submissions.length > 0) {
+        answerCountElement.textContent =
+            "ANSWERS RECEIVED: " +
+            submissions.length;
 
-                    resultsElement.innerHTML =
-                        "<p>Answers are coming in...</p>" +
-                        "<p>🏆 WINNER HIDDEN</p>";
 
-                }
-
-                return;
-            }
-
+        if (!revealed) {
 
             resultsElement.innerHTML = "";
 
-
-            if (submissions.length === 0) {
+            if (submissions.length > 0) {
 
                 resultsElement.innerHTML =
-                    "<p>NO ANSWERS RECEIVED</p>";
-
-                return;
-            }
-
-
-            // ----------------------------------------------
-            // FIND FIRST CORRECT ANSWER
-            // ----------------------------------------------
-
-            currentWinner = null;
-
-            for (const submission of submissions) {
-
-                if (submission.correct === true) {
-
-                    currentWinner = submission;
-                    break;
-
-                }
+                    '<div class="waiting">' +
+                    '<div>Answers are coming in...</div>' +
+                    '<div style="margin-top:8px;">🏆 WINNER HIDDEN</div>' +
+                    '</div>';
 
             }
 
+            return;
+        }
 
-            // ----------------------------------------------
-            // WINNER
-            // ----------------------------------------------
 
-            if (currentWinner) {
+        resultsElement.innerHTML = "";
 
-                const winnerName =
-                    currentWinner.username || "Unknown";
 
-                const winnerElement =
-                    document.createElement("h2");
+        if (submissions.length === 0) {
 
-                winnerElement.textContent =
-                    "🏆 WINNER: " + winnerName;
+            resultsElement.innerHTML =
+                '<div class="no-winner">' +
+                'NO ANSWERS RECEIVED' +
+                '</div>';
 
-                resultsElement.appendChild(winnerElement);
+            return;
+        }
 
+
+        // ----------------------------------------------
+        // FIND FIRST CORRECT ANSWER
+        // ----------------------------------------------
+
+        currentWinner = null;
+
+        for (const submission of submissions) {
+
+            if (submission.correct === true) {
+
+                currentWinner = submission;
+
+                break;
             }
-            else {
 
-                const noWinnerElement =
-                    document.createElement("h2");
-
-                noWinnerElement.textContent =
-                    "NO CORRECT ANSWER";
-
-                resultsElement.appendChild(noWinnerElement);
-
-            }
+        }
 
 
-            // ----------------------------------------------
-            // SUBMISSIONS
-            // ----------------------------------------------
+        // ----------------------------------------------
+        // WINNER
+        // ----------------------------------------------
 
-            const heading =
-                document.createElement("h3");
+        if (currentWinner) {
 
-            heading.textContent =
-                "ANSWERS";
+            const winnerName =
+                currentWinner.username || "Unknown";
 
-            resultsElement.appendChild(heading);
-
-
-            submissions.forEach((submission, index) => {
-
-            const row =
+            const winnerElement =
                 document.createElement("div");
 
-            const name =
-                submission.username || "Unknown";
+            winnerElement.className =
+                "winner";
 
-            const answer =
-                submission.answer || "";
+            winnerElement.innerHTML =
+                '<div class="winner-label">' +
+                '🏆 FIRST CORRECT ANSWER' +
+                '</div>' +
+                '<h2 class="winner-name"></h2>';
 
-            const result =
-                submission.correct
-                    ? "CORRECT"
-                    : "WRONG";
+            winnerElement
+                .querySelector(".winner-name")
+                .textContent =
+                winnerName;
 
+            resultsElement.appendChild(
+                winnerElement
+            );
 
-            let timeText = "";
+        }
+        else {
 
-            if (submission.timestamp) {
+            const noWinnerElement =
+                document.createElement("div");
 
-                const date =
-                    submission.timestamp.toDate();
+            noWinnerElement.className =
+                "no-winner";
 
-                timeText =
-                    date.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                        hour12: false
-                    });
+            noWinnerElement.textContent =
+                "NO CORRECT ANSWER";
 
-            }
-            else {
-
-                timeText = "TIME PENDING";
-
-            }
-
-
-            if (
-                currentWinner &&
-                submission === currentWinner
-            ) {
-
-                row.textContent =
-                    (index + 1) +
-                    ". " +
-                    name +
-                    " — " +
-                    answer +
-                    " — 🏆 FIRST CORRECT" +
-                    " — " +
-                    timeText;
-
-            }
-            else {
-
-                row.textContent =
-                    (index + 1) +
-                    ". " +
-                    name +
-                    " — " +
-                    answer +
-                    " — " +
-                    result +
-                    " — " +
-                    timeText;
-
-            }
-
-
-            resultsElement.appendChild(row);
-
-        });
+            resultsElement.appendChild(
+                noWinnerElement
+            );
 
         }
 
 
-        // --------------------------------------------------
-        // REVEAL
-        // --------------------------------------------------
+        // ----------------------------------------------
+        // SUBMISSIONS
+        // ----------------------------------------------
 
-        function revealAnswers() {
+        const heading =
+            document.createElement("div");
 
-            revealed = true;
+        heading.className =
+            "answers-heading";
 
-            revealButton.style.display = "none";
+        heading.textContent =
+            "ANSWERS";
 
-            displayResults();
-
-        }
-
-
-        revealButton.addEventListener(
-            "click",
-            revealAnswers
+        resultsElement.appendChild(
+            heading
         );
 
 
-        // --------------------------------------------------
-        // LOAD SETTINGS
-        // --------------------------------------------------
+        submissions.forEach(
+            (submission, index) => {
 
-        async function loadSettings() {
+                const row =
+                    document.createElement("div");
 
-            const settingsRef =
-                doc(db, "game", "settings");
-
-            const settingsSnap =
-                await getDoc(settingsRef);
+                row.className =
+                    "result-row";
 
 
-            if (settingsSnap.exists()) {
+                const number =
+                    document.createElement("div");
 
-                const settings =
-                    settingsSnap.data();
+                number.className =
+                    "result-number";
 
-                answerSeconds =
-                    Number(settings.answerSeconds || 0);
+                number.textContent =
+                    index + 1;
+
+
+                const main =
+                    document.createElement("div");
+
+                main.className =
+                    "result-main";
+
+
+                const name =
+                    submission.username ||
+                    "Unknown";
+
+                const answer =
+                    submission.answer ||
+                    "";
+
+
+                const nameElement =
+                    document.createElement("div");
+
+                nameElement.className =
+                    "result-name";
+
+                nameElement.textContent =
+                    name;
+
+
+                const answerElement =
+                    document.createElement("div");
+
+                answerElement.className =
+                    "result-answer";
+
+                answerElement.textContent =
+                    answer;
+
+
+                main.appendChild(
+                    nameElement
+                );
+
+                main.appendChild(
+                    answerElement
+                );
+
+
+                // --------------------------------------
+                // STATUS / TIME
+                // --------------------------------------
+
+                const status =
+                    document.createElement("div");
+
+                status.className =
+                    "result-status";
+
+
+                let timeText = "";
+
+                if (submission.timestamp) {
+
+                    const date =
+                        submission.timestamp.toDate();
+
+                    timeText =
+                        date.toLocaleTimeString(
+                            [],
+                            {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                                hour12: false
+                            }
+                        );
+
+                }
+                else {
+
+                    timeText =
+                        "TIME PENDING";
+
+                }
+
+
+                if (
+                    currentWinner &&
+                    submission === currentWinner
+                ) {
+
+                    status.classList.add(
+                        "winner"
+                    );
+
+                    status.innerHTML =
+                        "🏆 FIRST CORRECT" +
+                        '<div class="result-time">' +
+                        timeText +
+                        '</div>';
+
+                }
+                else if (
+                    submission.correct
+                ) {
+
+                    status.classList.add(
+                        "correct"
+                    );
+
+                    status.innerHTML =
+                        "CORRECT" +
+                        '<div class="result-time">' +
+                        timeText +
+                        '</div>';
+
+                }
+                else {
+
+                    status.innerHTML =
+                        "WRONG" +
+                        '<div class="result-time">' +
+                        timeText +
+                        '</div>';
+
+                }
+
+
+                row.appendChild(number);
+
+                row.appendChild(main);
+
+                row.appendChild(status);
+
+                resultsElement.appendChild(row);
 
             }
-            else {
+        );
 
-                answerSeconds = 0;
+    }
 
-            }
+
+    // --------------------------------------------------
+    // REVEAL
+    // --------------------------------------------------
+
+    function revealAnswers() {
+
+        revealed = true;
+
+        revealButton.style.display =
+            "none";
+
+        displayResults();
+
+    }
+
+
+    revealButton.addEventListener(
+        "click",
+        revealAnswers
+    );
+
+
+    // --------------------------------------------------
+    // LOAD SETTINGS
+    // --------------------------------------------------
+
+    async function loadSettings() {
+
+        const settingsRef =
+            doc(db, "game", "settings");
+
+        const settingsSnap =
+            await getDoc(settingsRef);
+
+
+        if (settingsSnap.exists()) {
+
+            const settings =
+                settingsSnap.data();
+
+            answerSeconds =
+                Number(
+                    settings.answerSeconds || 0
+                );
+
+        }
+        else {
+
+            answerSeconds = 0;
 
         }
 
-
-        // --------------------------------------------------
-        // WATCH SUBMISSIONS
-        // --------------------------------------------------
-
-        const submissionsQuery =
-            query(
-                collection(db, "submissions"),
-                orderBy("timestamp", "asc")
-            );
+    }
 
 
-        onSnapshot(
-            submissionsQuery,
-            (snapshot) => {
+    // --------------------------------------------------
+    // WATCH SUBMISSIONS
+    // --------------------------------------------------
 
-                submissions = [];
+    const submissionsQuery =
+        query(
+            collection(db, "submissions"),
+            orderBy("timestamp", "asc")
+        );
 
-                snapshot.forEach((docSnap) => {
+
+    onSnapshot(
+        submissionsQuery,
+        (snapshot) => {
+
+            submissions = [];
+
+
+            snapshot.forEach(
+                (docSnap) => {
 
                     const data =
                         docSnap.data();
 
-
-                    /*
-                        Support both the current
-                        questionId and the older
-                        questionID field.
-                    */
+                    // Support both the current
+                    // questionId and the older
+                    // questionID field.
 
                     const submissionQuestionId =
                         data.questionId ||
@@ -464,196 +907,196 @@
 
                     if (
                         currentQuestionID &&
-                        submissionQuestionId === currentQuestionID
+                        submissionQuestionId ===
+                            currentQuestionID
                     ) {
 
                         submissions.push(data);
 
                     }
 
-                });
-
-
-                displayResults();
-
-            }
-        );
-
-
-        // --------------------------------------------------
-        // WATCH CURRENT GAME
-        // --------------------------------------------------
-
-        const gameRef =
-            doc(db, "game", "current");
-
-
-        onSnapshot(
-            gameRef,
-            async (gameSnap) => {
-
-                stopTimer();
-
-
-                if (!gameSnap.exists()) {
-
-                    currentQuestionID = null;
-
-                    currentStatus = "closed";
-
-                    questionElement.textContent = "";
-
-                    statusElement.textContent =
-                        "WAITING FOR QUESTION";
-
-                    timerElement.textContent =
-                        "TIME: --";
-
-                    hideResults();
-
-                    return;
-
                 }
+            );
 
 
-                const gameData =
-                    gameSnap.data();
+            displayResults();
+
+        }
+    );
 
 
-                const newQuestionID =
-                    gameData.questionId || null;
+    // --------------------------------------------------
+    // WATCH CURRENT GAME
+    // --------------------------------------------------
 
-                const newStatus =
-                    gameData.status || "closed";
-
-
-                /*
-                    If the question changed,
-                    completely reset the results.
-                */
-
-                if (
-                    newQuestionID !== currentQuestionID
-                ) {
-
-                    submissions = [];
-
-                    hideResults();
-
-                }
+    const gameRef =
+        doc(db, "game", "current");
 
 
-                currentQuestionID =
-                    newQuestionID;
+    onSnapshot(
+        gameRef,
+        async (gameSnap) => {
 
-                currentStatus =
-                    newStatus;
-
-
-                // --------------------------------------------------
-                // QUESTION CLOSED
-                // --------------------------------------------------
-
-                if (
-                    !currentQuestionID ||
-                    currentStatus !== "open"
-                ) {
-
-                    statusElement.textContent =
-                        "WAITING FOR QUESTION";
-
-                    questionElement.textContent = "";
-
-                    timerElement.textContent =
-                        "TIME: --";
-
-                    hideResults();
-
-                    return;
-
-                }
+            stopTimer();
 
 
-                // --------------------------------------------------
-                // QUESTION OPEN
-                // --------------------------------------------------
+            if (!gameSnap.exists()) {
+
+                currentQuestionID = null;
+
+                currentStatus = "closed";
+
+                questionElement.textContent =
+                    "";
 
                 statusElement.textContent =
-                    "QUESTION OPEN";
+                    "WAITING FOR QUESTION";
+
+                timerElement.textContent =
+                    "TIME: --";
+
+                hideResults();
+
+                return;
+            }
 
 
-                const questionRef =
-                    doc(
-                        db,
-                        "questions",
-                        currentQuestionID
-                    );
+            const gameData =
+                gameSnap.data();
 
 
-                const questionSnap =
-                    await getDoc(questionRef);
+            const newQuestionID =
+                gameData.questionId || null;
+
+            const newStatus =
+                gameData.status || "closed";
 
 
-                if (questionSnap.exists()) {
+            // If the question changed,
+            // completely reset the results.
 
-                    const questionData =
-                        questionSnap.data();
+            if (
+                newQuestionID !==
+                currentQuestionID
+            ) {
 
-                    questionElement.textContent =
-                        questionData.question || "";
+                submissions = [];
 
-                }
-                else {
-
-                    questionElement.textContent =
-                        "Question not found.";
-
-                }
-
-
-                // --------------------------------------------------
-                // TIMER SETTINGS
-                // --------------------------------------------------
-
-                await loadSettings();
-
-
-                if (
-                    gameData.openedAt &&
-                    answerSeconds > 0
-                ) {
-
-                    startTimer(
-                        gameData.openedAt,
-                        answerSeconds
-                    );
-
-                    /*
-                        Allow manual reveal while timer
-                        is still running.
-                    */
-
-                    revealButton.style.display =
-                        "inline-block";
-
-                }
-                else {
-
-                    timerElement.textContent =
-                        "NO TIMER";
-
-                    revealButton.style.display =
-                        "inline-block";
-
-                }
-
-
-                displayResults();
+                hideResults();
 
             }
-        );
 
-    </script>
+
+            currentQuestionID =
+                newQuestionID;
+
+            currentStatus =
+                newStatus;
+
+
+            // --------------------------------------------------
+            // QUESTION CLOSED
+            // --------------------------------------------------
+
+            if (
+                !currentQuestionID ||
+                currentStatus !== "open"
+            ) {
+
+                statusElement.textContent =
+                    "WAITING FOR QUESTION";
+
+                questionElement.textContent =
+                    "";
+
+                timerElement.textContent =
+                    "TIME: --";
+
+                hideResults();
+
+                return;
+
+            }
+
+
+            // --------------------------------------------------
+            // QUESTION OPEN
+            // --------------------------------------------------
+
+            statusElement.textContent =
+                "QUESTION OPEN";
+
+
+            const questionRef =
+                doc(
+                    db,
+                    "questions",
+                    currentQuestionID
+                );
+
+
+            const questionSnap =
+                await getDoc(questionRef);
+
+
+            if (questionSnap.exists()) {
+
+                const questionData =
+                    questionSnap.data();
+
+                questionElement.textContent =
+                    questionData.question || "";
+
+            }
+            else {
+
+                questionElement.textContent =
+                    "Question not found.";
+
+            }
+
+
+            // --------------------------------------------------
+            // TIMER SETTINGS
+            // --------------------------------------------------
+
+            await loadSettings();
+
+
+            if (
+                gameData.openedAt &&
+                answerSeconds > 0
+            ) {
+
+                startTimer(
+                    gameData.openedAt,
+                    answerSeconds
+                );
+
+                // Allow manual reveal while timer
+                // is still running.
+
+                revealButton.style.display =
+                    "inline-block";
+
+            }
+            else {
+
+                timerElement.textContent =
+                    "NO TIMER";
+
+                revealButton.style.display =
+                    "inline-block";
+
+            }
+
+
+            displayResults();
+
+        }
+    );
+
+</script>
 
 </body>
 </html>
