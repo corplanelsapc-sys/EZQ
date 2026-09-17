@@ -1,36 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>QA</title>
+
 </head>
+
 
 <body>
 
     <h1>Question & Answer</h1>
 
-    <div id="status">Waiting...</div>
 
-    <h2 id="question">Waiting for question...</h2>
+    <div id="status">
+        Waiting...
+    </div>
+
+
+    <div id="timer">
+        TIME: --
+    </div>
+
+
+    <h2 id="question">
+        Waiting for question...
+    </h2>
+
 
     <div>
-        <label for="username">Name:</label>
-        <input type="text" id="username" autocomplete="off">
+
+        <label for="username">
+            Name:
+        </label>
+
+        <input
+            type="text"
+            id="username"
+            autocomplete="off"
+        >
+
     </div>
+
 
     <br>
 
+
     <div>
-        <label for="answer">Answer:</label>
-        <input type="text" id="answer" autocomplete="off">
-        <button id="submitBtn" disabled>Submit Answer</button>
+
+        <label for="answer">
+            Answer:
+        </label>
+
+        <input
+            type="text"
+            id="answer"
+            autocomplete="off"
+        >
+
+        <button
+            id="submitBtn"
+            disabled
+        >
+            Submit Answer
+        </button>
+
     </div>
+
 
     <script type="module">
 
-        import { initializeApp } 
-            from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+        // ==================================================
+        // FIREBASE IMPORTS
+        // ==================================================
+
+        import {
+            initializeApp
+        }
+        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
 
         import {
             getFirestore,
@@ -40,161 +96,556 @@
             addDoc,
             collection,
             serverTimestamp
-        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+        }
+        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 
-        // --------------------------------------------------
+        // ==================================================
         // FIREBASE CONFIG
-        // --------------------------------------------------
+        // ==================================================
 
         const firebaseConfig = {
-            apiKey: "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
-            authDomain: "panelcoiqa.firebaseapp.com",
-            projectId: "panelcoiqa",
-            storageBucket: "panelcoiqa.firebasestorage.app",
-            messagingSenderId: "562964190698",
-            appId: "1:562964190698:web:bac52f098b5b3a5ada8e93"
+
+            apiKey:
+                "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
+
+            authDomain:
+                "panelcoiqa.firebaseapp.com",
+
+            projectId:
+                "panelcoiqa",
+
+            storageBucket:
+                "panelcoiqa.firebasestorage.app",
+
+            messagingSenderId:
+                "562964190698",
+
+            appId:
+                "1:562964190698:web:bac52f098b5b3a5ada8e93"
+
         };
 
 
-        // --------------------------------------------------
+        // ==================================================
         // INITIALIZE FIREBASE
-        // --------------------------------------------------
+        // ==================================================
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const app =
+            initializeApp(firebaseConfig);
 
 
-        // --------------------------------------------------
+        const db =
+            getFirestore(app);
+
+
+        // ==================================================
         // VARIABLES
-        // --------------------------------------------------
+        // ==================================================
 
         let currentQuestionID = null;
+
         let currentCorrectAnswer = null;
+
         let questionIsOpen = false;
 
+        let timerInterval = null;
 
-        // --------------------------------------------------
+        // Difference between Firestore server time
+        // and this computer's local clock.
+        let clockOffsetMillis = 0;
+
+
+        // ==================================================
         // HTML ELEMENTS
-        // --------------------------------------------------
+        // ==================================================
 
-        const statusElement = document.getElementById("status");
-        const questionElement = document.getElementById("question");
-        const usernameElement = document.getElementById("username");
-        const answerElement = document.getElementById("answer");
-        const submitButton = document.getElementById("submitBtn");
+        const statusElement =
+            document.getElementById("status");
 
 
-        // --------------------------------------------------
-        // WATCH CURRENT GAME
-        // --------------------------------------------------
-
-        const gameRef = doc(db, "game", "current");
-
-        onSnapshot(gameRef, async (gameSnapshot) => {
-
-            if (!gameSnapshot.exists()) {
-
-                currentQuestionID = null;
-                currentCorrectAnswer = null;
-                questionIsOpen = false;
-
-                statusElement.textContent = "No active game.";
-                questionElement.textContent = "Waiting for question...";
-
-                submitButton.disabled = true;
-
-                return;
-            }
+        const timerElement =
+            document.getElementById("timer");
 
 
-            const gameData = gameSnapshot.data();
-
-            currentQuestionID = gameData.questionId;
-            questionIsOpen = gameData.status === "open";
+        const questionElement =
+            document.getElementById("question");
 
 
-            // --------------------------------------------------
-            // LOAD CURRENT QUESTION
-            // --------------------------------------------------
-
-            if (!currentQuestionID) {
-
-                currentCorrectAnswer = null;
-
-                statusElement.textContent = "No question selected.";
-                questionElement.textContent = "Waiting for question...";
-
-                submitButton.disabled = true;
-
-                return;
-            }
+        const usernameElement =
+            document.getElementById("username");
 
 
-            const questionRef = doc(
+        const answerElement =
+            document.getElementById("answer");
+
+
+        const submitButton =
+            document.getElementById("submitBtn");
+
+
+        // ==================================================
+        // FIRESTORE REFERENCES
+        // ==================================================
+
+        const gameRef =
+            doc(
                 db,
-                "questions",
-                currentQuestionID
+                "game",
+                "current"
             );
 
-            const questionSnapshot = await getDoc(questionRef);
+
+        const settingsRef =
+            doc(
+                db,
+                "game",
+                "settings"
+            );
 
 
-            if (!questionSnapshot.exists()) {
+        // ==================================================
+        // GET SERVER-CORRECTED CURRENT TIME
+        // ==================================================
 
-                currentCorrectAnswer = null;
+        function getCorrectedNow() {
 
-                statusElement.textContent = "Question not found.";
-                questionElement.textContent = "";
+            return Date.now() +
+                   clockOffsetMillis;
 
-                submitButton.disabled = true;
+        }
+
+
+        // ==================================================
+        // STOP TIMER
+        // ==================================================
+
+        function stopTimer() {
+
+            if (timerInterval !== null) {
+
+                clearInterval(timerInterval);
+
+                timerInterval = null;
+
+            }
+
+        }
+
+
+        // ==================================================
+        // DISABLE ANSWERING
+        // ==================================================
+
+        function disableAnswering() {
+
+            submitButton.disabled = true;
+
+            answerElement.disabled = true;
+
+            usernameElement.disabled = true;
+
+        }
+
+
+        // ==================================================
+        // START TIMER
+        // ==================================================
+
+        function startTimer(
+            openedAt,
+            answerSeconds
+        ) {
+
+            stopTimer();
+
+
+            if (
+                !openedAt ||
+                !answerSeconds
+            ) {
+
+                timerElement.textContent =
+                    "TIME: --";
 
                 return;
+
             }
 
 
-            const questionData = questionSnapshot.data();
+            // Firestore Timestamp is server time
+
+            const openedMillis =
+                openedAt.toMillis();
 
 
-            // --------------------------------------------------
-            // DISPLAY QUESTION
-            // --------------------------------------------------
+            // Calculate the difference between
+            // Firestore time and this PC's clock.
 
-            questionElement.textContent = questionData.question;
-
-            currentCorrectAnswer =
-                String(questionData.answer || "").trim();
+            clockOffsetMillis =
+                openedMillis -
+                Date.now();
 
 
-            // --------------------------------------------------
-            // OPEN / CLOSED STATUS
-            // --------------------------------------------------
+            console.log(
+                "Firestore time:",
+                new Date(openedMillis)
+            );
 
-            if (questionIsOpen) {
 
-                statusElement.textContent = "QUESTION OPEN";
+            console.log(
+                "PC time:",
+                new Date(Date.now())
+            );
+
+
+            console.log(
+                "Clock offset:",
+                clockOffsetMillis / 1000,
+                "seconds"
+            );
+
+
+            const durationMillis =
+                Number(answerSeconds) * 1000;
+
+
+            // The deadline is based entirely on
+            // the Firestore server timestamp.
+
+            const deadline =
+                openedMillis +
+                durationMillis;
+
+
+            function updateTimer() {
+
+                // Correct the local PC time using
+                // the Firestore clock offset.
+
+                const correctedNow =
+                    getCorrectedNow();
+
+
+                const remainingMillis =
+                    deadline -
+                    correctedNow;
+
+
+                const remainingSeconds =
+                    Math.max(
+                        0,
+                        Math.ceil(
+                            remainingMillis / 1000
+                        )
+                    );
+
+
+                timerElement.textContent =
+                    "TIME: " +
+                    remainingSeconds;
+
+
+                if (
+                    remainingSeconds <= 0
+                ) {
+
+                    stopTimer();
+
+
+                    timerElement.textContent =
+                        "TIME: 0 — TIME EXPIRED";
+
+
+                    disableAnswering();
+
+                }
+
+            }
+
+
+            updateTimer();
+
+
+            timerInterval =
+                setInterval(
+                    updateTimer,
+                    200
+                );
+
+        }
+
+
+        // ==================================================
+        // WATCH CURRENT GAME
+        // ==================================================
+
+        onSnapshot(
+            gameRef,
+            async (gameSnapshot) => {
+
+                stopTimer();
+
+
+                // ==================================================
+                // NO GAME DOCUMENT
+                // ==================================================
+
+                if (
+                    !gameSnapshot.exists()
+                ) {
+
+                    currentQuestionID = null;
+
+                    currentCorrectAnswer = null;
+
+                    questionIsOpen = false;
+
+
+                    statusElement.textContent =
+                        "No active game.";
+
+
+                    questionElement.textContent =
+                        "Waiting for question...";
+
+
+                    timerElement.textContent =
+                        "TIME: --";
+
+
+                    disableAnswering();
+
+
+                    return;
+
+                }
+
+
+                // ==================================================
+                // READ GAME DATA
+                // ==================================================
+
+                const gameData =
+                    gameSnapshot.data();
+
+
+                currentQuestionID =
+                    gameData.questionId || null;
+
+
+                questionIsOpen =
+                    gameData.status === "open";
+
+
+                // ==================================================
+                // NO QUESTION SELECTED
+                // ==================================================
+
+                if (!currentQuestionID) {
+
+                    currentCorrectAnswer = null;
+
+                    questionIsOpen = false;
+
+
+                    statusElement.textContent =
+                        "WAITING";
+
+
+                    questionElement.textContent =
+                        "Waiting for question...";
+
+
+                    timerElement.textContent =
+                        "TIME: --";
+
+
+                    disableAnswering();
+
+
+                    return;
+
+                }
+
+
+                // ==================================================
+                // QUESTION SELECTED BUT CLOSED
+                // ==================================================
+
+                if (!questionIsOpen) {
+
+                    currentCorrectAnswer = null;
+
+
+                    statusElement.textContent =
+                        "WAITING";
+
+
+                    questionElement.textContent =
+                        "Waiting for question...";
+
+
+                    timerElement.textContent =
+                        "TIME: --";
+
+
+                    disableAnswering();
+
+
+                    return;
+
+                }
+
+
+                // ==================================================
+                // QUESTION IS OPEN
+                // ==================================================
+
+                const questionRef =
+                    doc(
+                        db,
+                        "questions",
+                        currentQuestionID
+                    );
+
+
+                const questionSnapshot =
+                    await getDoc(
+                        questionRef
+                    );
+
+
+                if (
+                    !questionSnapshot.exists()
+                ) {
+
+                    currentCorrectAnswer = null;
+
+
+                    statusElement.textContent =
+                        "Question not found.";
+
+
+                    questionElement.textContent =
+                        "";
+
+
+                    timerElement.textContent =
+                        "TIME: --";
+
+
+                    disableAnswering();
+
+
+                    return;
+
+                }
+
+
+                // ==================================================
+                // LOAD QUESTION
+                // ==================================================
+
+                const questionData =
+                    questionSnapshot.data();
+
+
+                questionElement.textContent =
+                    questionData.question || "";
+
+
+                currentCorrectAnswer =
+                    String(
+                        questionData.answer || ""
+                    ).trim();
+
+
+                statusElement.textContent =
+                    "QUESTION OPEN";
+
+
+                // ==================================================
+                // LOAD GLOBAL TIMER SETTINGS
+                // ==================================================
+
+                const settingsSnapshot =
+                    await getDoc(
+                        settingsRef
+                    );
+
+
+                let timerEnabled = false;
+
+                let answerSeconds = 0;
+
+
+                if (
+                    settingsSnapshot.exists()
+                ) {
+
+                    const settings =
+                        settingsSnapshot.data();
+
+
+                    timerEnabled =
+                        settings.timerEnabled === true;
+
+
+                    answerSeconds =
+                        Number(
+                            settings.answerSeconds || 0
+                        );
+
+                }
+
+
+                // ==================================================
+                // ENABLE ANSWERING
+                // ==================================================
 
                 submitButton.disabled = false;
+
                 answerElement.disabled = false;
+
                 usernameElement.disabled = false;
 
-            } else {
 
-                statusElement.textContent = "WAITING";
+                // ==================================================
+                // START TIMER
+                // ==================================================
 
-                submitButton.disabled = true;
-                answerElement.disabled = true;
-                usernameElement.disabled = true;
+                if (
+                    timerEnabled &&
+                    answerSeconds > 0 &&
+                    gameData.openedAt
+                ) {
+
+                    startTimer(
+                        gameData.openedAt,
+                        answerSeconds
+                    );
+
+                }
+                else {
+
+                    timerElement.textContent =
+                        "TIME: --";
+
+                }
+
             }
+        );
 
-        });
 
-
-        // --------------------------------------------------
+        // ==================================================
         // SUBMIT ANSWER
-        // --------------------------------------------------
+        // ==================================================
 
-        submitButton.addEventListener("click", submitAnswer);
+        submitButton.addEventListener(
+            "click",
+            submitAnswer
+        );
 
 
         async function submitAnswer() {
@@ -202,106 +653,142 @@
             const username =
                 usernameElement.value.trim();
 
+
             const answer =
                 answerElement.value.trim();
 
 
-            // --------------------------------------------------
+            // ==================================================
             // VALIDATION
-            // --------------------------------------------------
+            // ==================================================
 
             if (!username) {
 
-                alert("Please enter your name.");
+                alert(
+                    "Please enter your name."
+                );
 
                 usernameElement.focus();
 
                 return;
+
             }
 
 
             if (!answer) {
 
-                alert("Please enter your answer.");
+                alert(
+                    "Please enter your answer."
+                );
 
                 answerElement.focus();
 
                 return;
+
             }
 
 
-            if (!currentQuestionID || !questionIsOpen) {
+            if (
+                !currentQuestionID ||
+                !questionIsOpen
+            ) {
 
-                alert("There is no open question.");
+                alert(
+                    "There is no open question."
+                );
 
                 return;
+
             }
 
 
-            // --------------------------------------------------
+            // ==================================================
             // CHECK ANSWER
-            // --------------------------------------------------
+            // ==================================================
 
             const isCorrect =
                 answer.toLowerCase() ===
                 currentCorrectAnswer.toLowerCase();
 
 
-            // --------------------------------------------------
+            // ==================================================
             // SAVE EVERY ANSWER
-            // --------------------------------------------------
+            // ==================================================
 
             try {
 
                 await addDoc(
-                    collection(db, "submissions"),
+                    collection(
+                        db,
+                        "submissions"
+                    ),
                     {
-                        questionID: currentQuestionID,
-                        username: username,
-                        answer: answer,
-                        correct: isCorrect,
-                        timestamp: serverTimestamp()
+
+                        questionId:
+                            currentQuestionID,
+
+                        username:
+                            username,
+
+                        answer:
+                            answer,
+
+                        correct:
+                            isCorrect,
+
+                        timestamp:
+                            serverTimestamp()
+
                     }
                 );
 
 
-                // --------------------------------------------------
+                // ==================================================
                 // SUCCESS
-                // --------------------------------------------------
+                // ==================================================
 
                 if (isCorrect) {
 
-                    alert("Correct answer submitted!");
+                    alert(
+                        "Correct answer submitted!"
+                    );
 
-                } else {
+                }
+                else {
 
-                    alert("Answer submitted.");
+                    alert(
+                        "Answer submitted."
+                    );
 
                 }
 
 
-                // Clear answer box
+                // Clear only the answer
 
                 answerElement.value = "";
 
                 answerElement.focus();
 
-
-            } catch (error) {
+            }
+            catch (error) {
 
                 console.error(
                     "Submission error:",
                     error
                 );
 
+
                 alert(
                     "Unable to submit answer. Check the console for details."
                 );
+
             }
 
         }
 
+
     </script>
 
 </body>
+
 </html>

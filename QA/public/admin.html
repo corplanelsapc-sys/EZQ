@@ -1,200 +1,1705 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q&A Admin</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>QA Admin</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        h1 {
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            margin-top: 35px;
+        }
+
+        #questionId {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        #question {
+            font-size: 26px;
+            margin-bottom: 20px;
+        }
+
+        #status {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 18px;
+            margin-right: 8px;
+            margin-bottom: 10px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            max-width: 700px;
+            padding: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .form-row {
+            margin-bottom: 15px;
+        }
+
+        #message {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .timer-settings {
+            margin-bottom: 20px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            max-width: 700px;
+        }
+
+        .timer-settings label {
+            margin-right: 15px;
+        }
+
+        #answerSeconds {
+            width: 70px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 9px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f0f0f0;
+        }
+
+        .current {
+            background: #e8f0ff;
+            font-weight: bold;
+        }
+
+        .played {
+            font-weight: bold;
+        }
+
+        .unplayed {
+            font-weight: bold;
+        }
+
+    </style>
+
 </head>
+
 
 <body>
 
-    <h2>Q&A Admin</h2>
+    <h1>QA Admin</h1>
 
-    <div>
-        <strong>Current Question:</strong>
-        <div id="questionText">Loading...</div>
+
+    <!-- ==================================================
+         CURRENT QUESTION
+         ================================================== -->
+
+    <h2>Current Question</h2>
+
+
+    <div class="timer-settings">
+
+        <label>
+            <input
+                type="checkbox"
+                id="timerEnabled"
+            >
+            Enable Answer Timer
+        </label>
+
+        <label>
+            Seconds:
+            <input
+                type="number"
+                id="answerSeconds"
+                value="15"
+                min="1"
+                max="300"
+            >
+        </label>
+
     </div>
 
-    <br>
 
-    <div>
-        <strong>Status:</strong>
-        <span id="status">Loading...</span>
+    <div id="questionId">
+        Question: -
     </div>
 
-    <br>
 
-    <button id="openBtn">OPEN QUESTION</button>
-    <button id="closeBtn">CLOSE QUESTION</button>
+    <div id="question">
+        Loading...
+    </div>
 
-    <hr>
+
+    <div id="status">
+        Status: -
+    </div>
+
+
+    <!-- ==================================================
+         NAVIGATION
+         ================================================== -->
+
+    <div>
+
+        <button id="previousBtn">
+            PREVIOUS
+        </button>
+
+        <button id="nextBtn">
+            NEXT
+        </button>
+
+        <button id="selectBtn">
+            SELECT QUESTION
+        </button>
+
+    </div>
+
+
+    <!-- ==================================================
+         GAME CONTROL
+         ================================================== -->
+
+    <div>
+
+        <button id="openBtn">
+            OPEN QUESTION
+        </button>
+
+        <button id="closeBtn">
+            CLOSE QUESTION
+        </button>
+
+        <button id="playedBtn">
+            MARK PLAYED
+        </button>
+
+    </div>
+
 
     <div id="message"></div>
 
+
+    <!-- ==================================================
+         ADD QUESTION
+         ================================================== -->
+
+    <h2>Add Question</h2>
+
+
+    <div class="form-row">
+
+        <label for="newQuestion">
+            Question:
+        </label>
+
+        <br>
+
+        <textarea
+            id="newQuestion"
+            placeholder="Enter question..."
+        ></textarea>
+
+    </div>
+
+
+    <div class="form-row">
+
+        <label for="newAnswer">
+            Answer:
+        </label>
+
+        <br>
+
+        <input
+            type="text"
+            id="newAnswer"
+            placeholder="Enter correct answer..."
+            autocomplete="off"
+        >
+
+    </div>
+
+
+    <button id="addQuestionBtn">
+        ADD QUESTION
+    </button>
+
+
+    <!-- ==================================================
+         QUESTION BANK
+         ================================================== -->
+
+    <h2>Question Bank</h2>
+
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>ID</th>
+                <th>Question</th>
+                <th>Answer</th>
+                <th>Status</th>
+                <th>Action</th>
+
+            </tr>
+
+        </thead>
+
+
+        <tbody id="questionBankBody"></tbody>
+
+    </table>
+
+
     <script type="module">
 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+        // ==================================================
+        // FIREBASE
+        // ==================================================
+
+        import {
+            initializeApp
+        }
+        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
 
         import {
             getFirestore,
             doc,
             getDoc,
-            updateDoc
-        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+            updateDoc,
+            setDoc,
+            deleteDoc,
+            collection,
+            getDocs,
+            serverTimestamp
+        }
+        from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-
-        // Firebase configuration
 
         const firebaseConfig = {
-            apiKey: "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
-            authDomain: "panelcoiqa.firebaseapp.com",
-            projectId: "panelcoiqa",
-            storageBucket: "panelcoiqa.firebasestorage.app",
-            messagingSenderId: "562964190698",
-            appId: "1:562964190698:web:bac52f098b5b3a5ada8e93"
+
+            apiKey:
+                "AIzaSyAJ7zwv7xadG72VEW1JI_dJFuZfKjM9ESc",
+
+            authDomain:
+                "panelcoiqa.firebaseapp.com",
+
+            projectId:
+                "panelcoiqa",
+
+            storageBucket:
+                "panelcoiqa.firebasestorage.app",
+
+            messagingSenderId:
+                "562964190698",
+
+            appId:
+                "1:562964190698:web:bac52f098b5b3a5ada8e93"
+
         };
 
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const app =
+            initializeApp(firebaseConfig);
 
 
-        const questionText = document.getElementById("questionText");
-        const statusText = document.getElementById("status");
-        const message = document.getElementById("message");
+        const db =
+            getFirestore(app);
+
+
+        // ==================================================
+        // ELEMENTS
+        // ==================================================
+
+        const questionIdElement =
+            document.getElementById("questionId");
+
+
+        const questionElement =
+            document.getElementById("question");
+
+
+        const statusElement =
+            document.getElementById("status");
+
+
+        const messageElement =
+            document.getElementById("message");
+
+
+        const previousButton =
+            document.getElementById("previousBtn");
+
+
+        const nextButton =
+            document.getElementById("nextBtn");
+
+
+        const selectButton =
+            document.getElementById("selectBtn");
+
+
+        const openButton =
+            document.getElementById("openBtn");
+
+
+        const closeButton =
+            document.getElementById("closeBtn");
+
+
+        const playedButton =
+            document.getElementById("playedBtn");
+
+
+        const timerEnabledElement =
+            document.getElementById("timerEnabled");
+
+
+        const answerSecondsElement =
+            document.getElementById("answerSeconds");
+
+
+        const newQuestionElement =
+            document.getElementById("newQuestion");
+
+
+        const newAnswerElement =
+            document.getElementById("newAnswer");
+
+
+        const addQuestionButton =
+            document.getElementById("addQuestionBtn");
+
+
+        const questionBankBody =
+            document.getElementById("questionBankBody");
+
+
+        // ==================================================
+        // VARIABLES
+        // ==================================================
+
+        const gameRef =
+            doc(db, "game", "current");
+
+
+        const settingsRef =
+            doc(db, "game", "settings");
+
+
+        let questions = [];
+
+
+        let browseIndex = -1;
 
 
         let currentQuestionId = null;
 
 
-        // Load current game information
+        // ==================================================
+        // LOAD QUESTIONS
+        // ==================================================
 
-        async function loadCurrentQuestion() {
+        async function loadQuestions() {
 
-            try {
+            const questionsRef =
+                collection(
+                    db,
+                    "questions"
+                );
 
-                const gameRef = doc(db, "game", "current");
-                const gameSnap = await getDoc(gameRef);
 
-                if (!gameSnap.exists()) {
-                    message.textContent = "game/current document does not exist.";
-                    return;
+            const snapshot =
+                await getDocs(
+                    questionsRef
+                );
+
+
+            questions = [];
+
+
+            snapshot.forEach(
+                (questionDoc) => {
+
+                    questions.push({
+
+                        id: questionDoc.id,
+
+                        data: questionDoc.data()
+
+                    });
+
                 }
-
-                const gameData = gameSnap.data();
-
-                currentQuestionId = gameData.questionId;
-
-                statusText.textContent = gameData.status;
+            );
 
 
-                // Load the actual question
+            // Q001, Q002, Q003...
 
-                const questionRef = doc(
+            questions.sort(
+                (a, b) =>
+                    a.id.localeCompare(
+                        b.id,
+                        undefined,
+                        {
+                            numeric: true
+                        }
+                    )
+            );
+
+
+            return questions;
+
+        }
+
+
+        // ==================================================
+        // LOAD TIMER SETTINGS
+        // ==================================================
+
+        async function loadTimerSettings() {
+
+            const settingsSnapshot =
+                await getDoc(settingsRef);
+
+
+            if (
+                !settingsSnapshot.exists()
+            ) {
+
+                timerEnabledElement.checked =
+                    false;
+
+                answerSecondsElement.value =
+                    15;
+
+                return;
+
+            }
+
+
+            const settings =
+                settingsSnapshot.data();
+
+
+            timerEnabledElement.checked =
+                settings.timerEnabled === true;
+
+
+            answerSecondsElement.value =
+                settings.answerSeconds || 15;
+
+        }
+
+
+        // ==================================================
+        // LOAD CURRENT GAME
+        // ==================================================
+
+        async function loadCurrentGame() {
+
+            const gameSnapshot =
+                await getDoc(gameRef);
+
+
+            if (!gameSnapshot.exists()) {
+
+                currentQuestionId = null;
+
+                questionIdElement.textContent =
+                    "Question: -";
+
+                questionElement.textContent =
+                    "No current game.";
+
+                statusElement.textContent =
+                    "Status: -";
+
+                return;
+
+            }
+
+
+            const gameData =
+                gameSnapshot.data();
+
+
+            currentQuestionId =
+                gameData.questionId || null;
+
+
+            const status =
+                gameData.status || "closed";
+
+
+            questionIdElement.textContent =
+                "Question: " +
+                (currentQuestionId || "-");
+
+
+            statusElement.textContent =
+                "Status: " +
+                status.toUpperCase();
+
+
+            if (!currentQuestionId) {
+
+                questionElement.textContent =
+                    "No question selected.";
+
+                return;
+
+            }
+
+
+            const questionRef =
+                doc(
                     db,
                     "questions",
                     currentQuestionId
                 );
 
-                const questionSnap = await getDoc(questionRef);
 
-                if (!questionSnap.exists()) {
-                    questionText.textContent =
-                        "Question " + currentQuestionId + " does not exist.";
-
-                    return;
-                }
-
-                const questionData = questionSnap.data();
-
-                questionText.textContent = questionData.question;
+            const questionSnapshot =
+                await getDoc(questionRef);
 
 
-            } catch (error) {
+            if (questionSnapshot.exists()) {
 
-                console.error(error);
+                const data =
+                    questionSnapshot.data();
 
-                message.textContent =
-                    "Error loading question: " + error.message;
+
+                questionElement.textContent =
+                    data.question || "";
+
             }
+            else {
+
+                questionElement.textContent =
+                    "Question not found.";
+
+            }
+
+
+            // Make navigation point to current question
+
+            const index =
+                questions.findIndex(
+                    q =>
+                        q.id === currentQuestionId
+                );
+
+
+            if (index >= 0) {
+
+                browseIndex = index;
+
+            }
+
+
+            updateNavigationButtons();
+
         }
 
 
-        // OPEN QUESTION
+        // ==================================================
+        // DISPLAY BROWSED QUESTION
+        // ==================================================
 
-        document.getElementById("openBtn").addEventListener(
+        function displayBrowsedQuestion() {
+
+            if (
+                browseIndex < 0 ||
+                browseIndex >= questions.length
+            ) {
+
+                return;
+
+            }
+
+
+            const item =
+                questions[browseIndex];
+
+
+            questionIdElement.textContent =
+                "Selected: " + item.id;
+
+
+            questionElement.textContent =
+                item.data.question || "";
+
+
+            statusElement.textContent =
+                "Question Bank: " +
+                (
+                    item.data.played === true
+                        ? "PLAYED"
+                        : "UNPLAYED"
+                );
+
+
+            updateNavigationButtons();
+
+        }
+
+
+        // ==================================================
+        // NAVIGATION BUTTON STATE
+        // ==================================================
+
+        function updateNavigationButtons() {
+
+            previousButton.disabled =
+                browseIndex <= 0;
+
+
+            nextButton.disabled =
+                browseIndex < 0 ||
+                browseIndex >= questions.length - 1;
+
+
+            selectButton.disabled =
+                browseIndex < 0;
+
+        }
+
+
+        // ==================================================
+        // PREVIOUS
+        // ==================================================
+
+        previousButton.addEventListener(
             "click",
-            async () => {
+            () => {
 
-                if (!currentQuestionId) {
-                    message.textContent = "No current question.";
-                    return;
+                if (browseIndex > 0) {
+
+                    browseIndex--;
+
+                    displayBrowsedQuestion();
+
                 }
 
-                try {
-
-                    const gameRef = doc(db, "game", "current");
-
-                    await updateDoc(gameRef, {
-                        status: "open"
-                    });
-
-                    statusText.textContent = "open";
-
-                    message.textContent =
-                        "Question is now OPEN.";
-
-                } catch (error) {
-
-                    console.error(error);
-
-                    message.textContent =
-                        "Error opening question: " + error.message;
-                }
             }
         );
 
 
-        // CLOSE QUESTION
+        // ==================================================
+        // NEXT
+        // ==================================================
 
-        document.getElementById("closeBtn").addEventListener(
+        nextButton.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    browseIndex <
+                    questions.length - 1
+                ) {
+
+                    browseIndex++;
+
+                    displayBrowsedQuestion();
+
+                }
+
+            }
+        );
+
+
+        // ==================================================
+        // SELECT QUESTION
+        // ==================================================
+
+        selectButton.addEventListener(
+            "click",
+            async () => {
+
+                if (
+                    browseIndex < 0 ||
+                    browseIndex >= questions.length
+                ) {
+
+                    return;
+
+                }
+
+
+                const selected =
+                    questions[browseIndex];
+
+
+                try {
+
+                    await setDoc(
+                        gameRef,
+                        {
+                            questionId:
+                                selected.id,
+
+                            status:
+                                "closed"
+                        },
+                        {
+                            merge: true
+                        }
+                    );
+
+
+                    currentQuestionId =
+                        selected.id;
+
+
+                    messageElement.textContent =
+                        selected.id +
+                        " selected. Question is CLOSED.";
+
+
+                    await loadCurrentGame();
+
+                    await loadQuestionBank();
+
+                }
+                catch (error) {
+
+                    console.error(error);
+
+                    messageElement.textContent =
+                        "Unable to select question.";
+
+                }
+
+            }
+        );
+
+
+        // ==================================================
+        // OPEN QUESTION
+        // ==================================================
+
+        openButton.addEventListener(
             "click",
             async () => {
 
                 if (!currentQuestionId) {
-                    message.textContent = "No current question.";
+
+                    alert(
+                        "No question selected."
+                    );
+
                     return;
+
                 }
+
+
+                let timerEnabled =
+                    timerEnabledElement.checked;
+
+
+                let answerSeconds =
+                    Number(
+                        answerSecondsElement.value
+                    );
+
+
+                if (timerEnabled) {
+
+                    if (
+                        !Number.isFinite(answerSeconds) ||
+                        answerSeconds < 1
+                    ) {
+
+                        alert(
+                            "Enter a valid number of seconds."
+                        );
+
+                        answerSecondsElement.focus();
+
+                        return;
+
+                    }
+
+
+                    answerSeconds =
+                        Math.min(
+                            Math.floor(answerSeconds),
+                            300
+                        );
+
+                }
+                else {
+
+                    answerSeconds = 0;
+
+                }
+
 
                 try {
 
-                    const gameRef = doc(db, "game", "current");
+                    // ----------------------------------------------
+                    // SAVE TIMER SETTINGS
+                    // ----------------------------------------------
 
-                    await updateDoc(gameRef, {
-                        status: "closed"
-                    });
+                    await setDoc(
+                        settingsRef,
+                        {
+                            timerEnabled:
+                                timerEnabled,
 
-                    statusText.textContent = "closed";
+                            answerSeconds:
+                                answerSeconds
+                        },
+                        {
+                            merge: true
+                        }
+                    );
 
-                    message.textContent =
+
+                    // ----------------------------------------------
+                    // OPEN QUESTION
+                    // IMPORTANT:
+                    // serverTimestamp() creates a NEW openedAt
+                    // every time this button is clicked.
+                    // ----------------------------------------------
+
+                    await setDoc(
+                        gameRef,
+                        {
+                            questionId:
+                                currentQuestionId,
+
+                            status:
+                                "open",
+
+                            openedAt:
+                                serverTimestamp()
+                        },
+                        {
+                            merge: true
+                        }
+                    );
+
+
+                    messageElement.textContent =
+                        timerEnabled
+                            ? "Question is OPEN. Timer: " +
+                            answerSeconds +
+                            " seconds."
+                            : "Question is now OPEN. Timer disabled.";
+
+
+                    await loadCurrentGame();
+
+                }
+                catch (error) {
+
+                    console.error(
+                        "Unable to open question:",
+                        error
+                    );
+
+
+                    messageElement.textContent =
+                        "Unable to open question.";
+
+                }
+
+            }
+        );
+
+
+        // ==================================================
+        // CLOSE QUESTION
+        // ==================================================
+
+        closeButton.addEventListener(
+            "click",
+            async () => {
+
+                if (!currentQuestionId) {
+
+                    alert(
+                        "No question selected."
+                    );
+
+                    return;
+
+                }
+
+
+                try {
+
+                    await updateDoc(
+                        gameRef,
+                        {
+                            status:
+                                "closed"
+                        }
+                    );
+
+
+                    messageElement.textContent =
                         "Question is now CLOSED.";
 
-                } catch (error) {
+
+                    await loadCurrentGame();
+
+                }
+                catch (error) {
 
                     console.error(error);
 
-                    message.textContent =
-                        "Error closing question: " + error.message;
+                    messageElement.textContent =
+                        "Unable to close question.";
+
                 }
+
             }
         );
 
 
-        // Initial load
+        // ==================================================
+        // MARK PLAYED
+        // ==================================================
 
-        loadCurrentQuestion();
+        playedButton.addEventListener(
+            "click",
+            async () => {
+
+                if (!currentQuestionId) {
+
+                    alert(
+                        "No question selected."
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    !confirm(
+                        "Mark " +
+                        currentQuestionId +
+                        " as PLAYED?"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                try {
+
+                    const questionRef =
+                        doc(
+                            db,
+                            "questions",
+                            currentQuestionId
+                        );
+
+
+                    await updateDoc(
+                        questionRef,
+                        {
+                            played: true
+                        }
+                    );
+
+
+                    messageElement.textContent =
+                        currentQuestionId +
+                        " marked as PLAYED.";
+
+
+                    await loadQuestions();
+
+                    await loadQuestionBank();
+
+                }
+                catch (error) {
+
+                    console.error(error);
+
+                    messageElement.textContent =
+                        "Unable to mark question as played.";
+
+                }
+
+            }
+        );
+
+
+        // ==================================================
+        // ADD QUESTION
+        // ==================================================
+
+        addQuestionButton.addEventListener(
+            "click",
+            async () => {
+
+                const question =
+                    newQuestionElement.value.trim();
+
+
+                const answer =
+                    newAnswerElement.value.trim();
+
+
+                if (!question) {
+
+                    alert(
+                        "Please enter the question."
+                    );
+
+                    newQuestionElement.focus();
+
+                    return;
+
+                }
+
+
+                if (!answer) {
+
+                    alert(
+                        "Please enter the correct answer."
+                    );
+
+                    newAnswerElement.focus();
+
+                    return;
+
+                }
+
+
+                try {
+
+                    await loadQuestions();
+
+
+                    let highestNumber = 0;
+
+
+                    questions.forEach(
+                        (item) => {
+
+                            if (
+                                /^Q\d+$/.test(item.id)
+                            ) {
+
+                                const number =
+                                    parseInt(
+                                        item.id.substring(1),
+                                        10
+                                    );
+
+
+                                if (
+                                    number >
+                                    highestNumber
+                                ) {
+
+                                    highestNumber =
+                                        number;
+
+                                }
+
+                            }
+
+                        }
+                    );
+
+
+                    const nextNumber =
+                        highestNumber + 1;
+
+
+                    const nextId =
+                        "Q" +
+                        String(nextNumber)
+                            .padStart(3, "0");
+
+
+                    const questionRef =
+                        doc(
+                            db,
+                            "questions",
+                            nextId
+                        );
+
+
+                    await setDoc(
+                        questionRef,
+                        {
+
+                            question:
+                                question,
+
+                            answer:
+                                answer,
+
+                            played:
+                                false
+
+                        }
+                    );
+
+
+                    newQuestionElement.value = "";
+
+                    newAnswerElement.value = "";
+
+
+                    messageElement.textContent =
+                        nextId +
+                        " added successfully.";
+
+
+                    await loadQuestions();
+
+                    await loadQuestionBank();
+
+
+                    // Select newly added question
+
+                    browseIndex =
+                        questions.findIndex(
+                            q =>
+                                q.id === nextId
+                        );
+
+
+                    displayBrowsedQuestion();
+
+                }
+                catch (error) {
+
+                    console.error(error);
+
+                    messageElement.textContent =
+                        "Unable to add question.";
+
+                }
+
+            }
+        );
+
+
+        // ==================================================
+        // EDIT QUESTION
+        // ==================================================
+
+        async function editQuestion(item) {
+
+            const newQuestion =
+                prompt(
+                    "Edit question:",
+                    item.data.question || ""
+                );
+
+
+            if (newQuestion === null) {
+
+                return;
+
+            }
+
+
+            const newAnswer =
+                prompt(
+                    "Edit answer:",
+                    item.data.answer || ""
+                );
+
+
+            if (newAnswer === null) {
+
+                return;
+
+            }
+
+
+            if (
+                !newQuestion.trim() ||
+                !newAnswer.trim()
+            ) {
+
+                alert(
+                    "Question and answer cannot be blank."
+                );
+
+                return;
+
+            }
+
+
+            try {
+
+                const questionRef =
+                    doc(
+                        db,
+                        "questions",
+                        item.id
+                    );
+
+
+                await updateDoc(
+                    questionRef,
+                    {
+
+                        question:
+                            newQuestion.trim(),
+
+                        answer:
+                            newAnswer.trim()
+
+                    }
+                );
+
+
+                messageElement.textContent =
+                    item.id +
+                    " updated.";
+
+
+                await loadQuestions();
+
+                await loadQuestionBank();
+
+                await loadCurrentGame();
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                messageElement.textContent =
+                    "Unable to edit question.";
+
+            }
+
+        }
+
+
+        // ==================================================
+        // DELETE QUESTION
+        // ==================================================
+
+        async function deleteQuestion(item) {
+
+            if (
+                item.data.played === true
+            ) {
+
+                alert(
+                    "Played questions cannot be deleted."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                item.id === currentQuestionId
+            ) {
+
+                alert(
+                    "The current question cannot be deleted. Select another question first."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                !confirm(
+                    "Delete " +
+                    item.id +
+                    "?"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            try {
+
+                const questionRef =
+                    doc(
+                        db,
+                        "questions",
+                        item.id
+                    );
+
+
+                await deleteDoc(
+                    questionRef
+                );
+
+
+                messageElement.textContent =
+                    item.id +
+                    " deleted.";
+
+
+                await loadQuestions();
+
+                await loadQuestionBank();
+
+
+                if (questions.length === 0) {
+
+                    browseIndex = -1;
+
+                }
+                else if (
+                    browseIndex >= questions.length
+                ) {
+
+                    browseIndex =
+                        questions.length - 1;
+
+                }
+
+
+                displayBrowsedQuestion();
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                messageElement.textContent =
+                    "Unable to delete question.";
+
+            }
+
+        }
+
+
+        // ==================================================
+        // QUESTION BANK DISPLAY
+        // ==================================================
+
+        async function loadQuestionBank() {
+
+            questionBankBody.innerHTML = "";
+
+
+            try {
+
+                await loadQuestions();
+
+
+                questions.forEach(
+                    (item, index) => {
+
+                        const row =
+                            document.createElement("tr");
+
+
+                        // Highlight current
+
+                        if (
+                            item.id === currentQuestionId
+                        ) {
+
+                            row.className =
+                                "current";
+
+                        }
+
+
+                        const idCell =
+                            document.createElement("td");
+
+                        idCell.textContent =
+                            item.id;
+
+
+                        const questionCell =
+                            document.createElement("td");
+
+                        questionCell.textContent =
+                            item.data.question || "";
+
+
+                        const answerCell =
+                            document.createElement("td");
+
+                        answerCell.textContent =
+                            item.data.answer || "";
+
+
+                        const statusCell =
+                            document.createElement("td");
+
+
+                        if (
+                            item.data.played === true
+                        ) {
+
+                            statusCell.textContent =
+                                "PLAYED";
+
+                            statusCell.className =
+                                "played";
+
+                        }
+                        else {
+
+                            statusCell.textContent =
+                                "UNPLAYED";
+
+                            statusCell.className =
+                                "unplayed";
+
+                        }
+
+
+                        const actionCell =
+                            document.createElement("td");
+
+
+                        // Select
+
+                        const selectButtonRow =
+                            document.createElement("button");
+
+
+                        selectButtonRow.textContent =
+                            "SELECT";
+
+
+                        selectButtonRow.addEventListener(
+                            "click",
+                            () => {
+
+                                browseIndex =
+                                    index;
+
+                                displayBrowsedQuestion();
+
+                            }
+                        );
+
+
+                        actionCell.appendChild(
+                            selectButtonRow
+                        );
+
+
+                        // Edit
+
+                        const editButton =
+                            document.createElement("button");
+
+
+                        editButton.textContent =
+                            "EDIT";
+
+
+                        editButton.addEventListener(
+                            "click",
+                            () => {
+
+                                editQuestion(item);
+
+                            }
+                        );
+
+
+                        actionCell.appendChild(
+                            editButton
+                        );
+
+
+                        // Delete
+
+                        const deleteButton =
+                            document.createElement("button");
+
+
+                        deleteButton.textContent =
+                            "DELETE";
+
+
+                        if (
+                            item.data.played === true ||
+                            item.id === currentQuestionId
+                        ) {
+
+                            deleteButton.disabled =
+                                true;
+
+                        }
+
+
+                        deleteButton.addEventListener(
+                            "click",
+                            () => {
+
+                                deleteQuestion(item);
+
+                            }
+                        );
+
+
+                        actionCell.appendChild(
+                            deleteButton
+                        );
+
+
+                        row.appendChild(idCell);
+
+                        row.appendChild(
+                            questionCell
+                        );
+
+                        row.appendChild(
+                            answerCell
+                        );
+
+                        row.appendChild(
+                            statusCell
+                        );
+
+                        row.appendChild(
+                            actionCell
+                        );
+
+
+                        questionBankBody.appendChild(
+                            row
+                        );
+
+                    }
+                );
+
+
+                if (questions.length === 0) {
+
+                    const row =
+                        document.createElement("tr");
+
+
+                    const cell =
+                        document.createElement("td");
+
+
+                    cell.colSpan = 5;
+
+
+                    cell.textContent =
+                        "No questions yet.";
+
+
+                    row.appendChild(cell);
+
+
+                    questionBankBody.appendChild(
+                        row
+                    );
+
+                }
+
+
+                updateNavigationButtons();
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                messageElement.textContent =
+                    "Unable to load question bank.";
+
+            }
+
+        }
+
+
+        // ==================================================
+        // INITIALIZATION
+        // ==================================================
+
+        async function initialize() {
+
+            await loadQuestions();
+
+            await loadQuestionBank();
+
+            await loadTimerSettings();
+
+            await loadCurrentGame();
+
+        }
+
+
+        initialize();
+
 
     </script>
 
 </body>
+
 </html>
