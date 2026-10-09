@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>QMS System Administration</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+body{
+    background:#111;
+    color:white;
+    font-family:Arial;
+    margin:0;
+    padding:20px;
+}
+
+h2{
+    text-align:center;
+}
+
+.container{
+    max-width:1100px;
+    margin:auto;
+}
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+button{
+    padding:10px 15px;
+    margin:5px;
+    cursor:pointer;
+    border:none;
+    border-radius:5px;
+}
+
+.addBtn{
+    background:#0066cc;
+    color:white;
+}
+
+.saveBtn{
+    background:green;
+    color:white;
+}
+
+.deleteBtn{
+    background:red;
+    color:white;
+}
+
+.editBtn{
+    background:#555;
+    color:white;
+}
+
+.logoutBtn{
+    background:#444;
+    color:white;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    border:1px solid #444;
+    padding:10px;
+    text-align:left;
+}
+
+th{
+    background:#222;
+}
+
+tr:nth-child(even){
+    background:#1a1a1a;
+}
+
+.company{
+    margin-bottom:25px;
+    border:1px solid #444;
+    border-radius:6px;
+    overflow:hidden;
+}
+
+.companyHeader{
+    background:#222;
+    padding:15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.companyName{
+    font-size:20px;
+    font-weight:bold;
+}
+
+.companyId{
+    color:#aaa;
+    font-size:12px;
+    margin-top:4px;
+}
+
+.branchHeader{
+    background:#181818;
+    padding:10px 15px;
+    color:#ccc;
+}
+
+.branchRow{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 15px;
+    border-top:1px solid #333;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.branchName{
+    font-size:16px;
+}
+
+.branchId{
+    color:#888;
+    font-size:12px;
+    margin-top:3px;
+}
+
+.empty{
+    text-align:center;
+    color:#aaa;
+    padding:30px;
+}
+
+input{
+    padding:9px;
+    font-size:16px;
+    background:#222;
+    color:white;
+    border:1px solid #555;
+    border-radius:4px;
+    width:100%;
+}
+
+.modal{
+    display:none;
+    position:fixed;
+    z-index:1000;
+    left:0;
+    top:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,.75);
+}
+
+.modalContent{
+    background:#181818;
+    border:1px solid #444;
+    width:90%;
+    max-width:450px;
+    margin:100px auto;
+    padding:20px;
+    border-radius:6px;
+}
+
+.modalContent h3{
+    margin-top:0;
+}
+
+.modalButtons{
+    text-align:right;
+    margin-top:15px;
+}
+
+.status{
+    text-align:center;
+    color:#aaa;
+    margin-bottom:15px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+<h2>QMS SYSTEM ADMINISTRATION</h2>
+
+<div class="status" id="status">
+    Loading...
+</div>
+
+
+<div class="topbar">
+
+    <div>
+        <button
+            class="addBtn"
+            onclick="addCompany()">
+            ADD COMPANY
+        </button>
+    </div>
+
+    <div>
+        <button
+            class="logoutBtn"
+            onclick="logout()">
+            SWITCH ACCOUNT
+        </button>
+    </div>
+
+</div>
+
+
+<div id="companyList">
+
+    <div class="empty">
+        Loading...
+    </div>
+
+</div>
+
+</div>
+
+
+<!-- COMPANY MODAL -->
+
+<div
+    id="companyModal"
+    class="modal">
+
+    <div class="modalContent">
+
+        <h3 id="companyModalTitle">
+            ADD COMPANY
+        </h3>
+
+        <input
+            type="text"
+            id="companyName"
+            placeholder="Company Name">
+
+        <div class="modalButtons">
+
+            <button
+                onclick="closeCompanyModal()">
+                CANCEL
+            </button>
+
+            <button
+                class="saveBtn"
+                onclick="saveCompany()">
+                SAVE
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- BRANCH MODAL -->
+
+<div
+    id="branchModal"
+    class="modal">
+
+    <div class="modalContent">
+
+        <h3 id="branchModalTitle">
+            ADD BRANCH
+        </h3>
+
+        <input
+            type="text"
+            id="branchName"
+            placeholder="Branch / Office Name">
+
+        <div class="modalButtons">
+
+            <button
+                onclick="closeBranchModal()">
+                CANCEL
+            </button>
+
+            <button
+                class="saveBtn"
+                onclick="saveBranch()">
+                SAVE
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script type="module">
+
+import {
+    initializeApp
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+
+import {
+    getAuth,
+    onAuthStateChanged,
+    signOut
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+
+import {
+    getDatabase,
+    ref,
+    onValue,
+    update,
+    set,
+    remove
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+
+/* =====================================================
+   FIREBASE CONFIG
+===================================================== */
+
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+
+    authDomain:
+        "panelco-i-queue-system.firebaseapp.com",
+
+    databaseURL:
+        "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+    projectId:
+        "panelco-i-queue-system",
+
+    storageBucket:
+        "panelco-i-queue-system.firebasestorage.app",
+
+    messagingSenderId:
+        "1075037996413",
+
+    appId:
+        "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+
+};
+
+
+const app =
+    initializeApp(firebaseConfig);
+
+
+const db =
+    getDatabase(app);
+
+
+const auth =
+    getAuth(app);
+
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let companies = {};
+
+let editingCompanyId = null;
+
+let editingBranchCompanyId = null;
+
+let editingBranchId = null;
+
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+window.logout = function(){
+
+    signOut(auth).then(() => {
+
+        window.location.href =
+            "index.html";
+
+    });
+
+};
+
+
+/* =====================================================
+   AUTHENTICATION
+===================================================== */
+
+onAuthStateChanged(auth, (user) => {
+
+    if (!user) {
+
+        window.location.href =
+            "login.html";
+
+        return;
+
+    }
+
+
+    const admins = [
+
+        "admin@panelcoi.com",
+        "operator@panelcoi.com"
+
+    ];
+
+
+    if (
+        !user.email ||
+        !admins.includes(
+            user.email.toLowerCase()
+        )
+    ){
+
+        alert("Unauthorized");
+
+        window.location.href =
+            "staff2.html";
+
+        return;
+
+    }
+
+
+    loadCompanies();
+
+});
+
+
+/* =====================================================
+   LOAD COMPANIES
+===================================================== */
+
+function loadCompanies(){
+
+    const companiesRef =
+        ref(db, "companies");
+
+
+    onValue(
+        companiesRef,
+        (snap) => {
+
+            companies =
+                snap.val() || {};
+
+            renderCompanies();
+
+            document.getElementById(
+                "status"
+            ).textContent =
+                "Connected";
+
+        },
+        (error) => {
+
+            console.error(error);
+
+            document.getElementById(
+                "status"
+            ).textContent =
+                "Unable to load companies.";
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   RENDER COMPANIES
+===================================================== */
+
+function renderCompanies(){
+
+    const container =
+        document.getElementById(
+            "companyList"
+        );
+
+
+    container.innerHTML = "";
+
+
+    const companyIds =
+        Object.keys(companies);
+
+
+    if(companyIds.length === 0){
+
+        container.innerHTML = `
+
+            <div class="empty">
+
+                No companies found.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    companyIds.sort();
+
+
+    companyIds.forEach(companyId => {
+
+        const company =
+            companies[companyId] || {};
+
+
+        const companyName =
+            company.name ||
+            prettyName(companyId);
+
+
+        const companyDiv =
+            document.createElement(
+                "div"
+            );
+
+
+        companyDiv.className =
+            "company";
+
+
+        let branchesHTML = "";
+
+
+        const offices =
+            company.offices || {};
+
+
+        const branchIds =
+            Object.keys(offices);
+
+
+        branchIds.sort();
+
+
+        if(branchIds.length === 0){
+
+            branchesHTML = `
+
+                <div class="empty">
+
+                    No branches configured.
+
+                </div>
+
+            `;
+
+        }else{
+
+            branchIds.forEach(
+                branchId => {
+
+                    const branch =
+                        offices[branchId] || {};
+
+
+                    const branchName =
+                        branch.name ||
+                        prettyName(branchId);
+
+
+                    branchesHTML += `
+
+                        <div class="branchRow">
+
+                            <div>
+
+                                <div class="branchName">
+
+                                    ${escapeHTML(
+                                        branchName
+                                    )}
+
+                                </div>
+
+                                <div class="branchId">
+
+                                    ID:
+                                    ${escapeHTML(
+                                        branchId
+                                    )}
+
+                                </div>
+
+                            </div>
+
+
+                            <div>
+
+                                <button
+                                    class="editBtn"
+                                    onclick="editBranch(
+                                        '${escapeJS(companyId)}',
+                                        '${escapeJS(branchId)}'
+                                    )">
+
+                                    EDIT
+
+                                </button>
+
+
+                                <button
+                                    class="deleteBtn"
+                                    onclick="deleteBranch(
+                                        '${escapeJS(companyId)}',
+                                        '${escapeJS(branchId)}'
+                                    )">
+
+                                    DELETE
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            );
+
+        }
+
+
+        companyDiv.innerHTML = `
+
+            <div class="companyHeader">
+
+                <div>
+
+                    <div class="companyName">
+
+                        ${escapeHTML(
+                            companyName
+                        )}
+
+                    </div>
+
+                    <div class="companyId">
+
+                        ID:
+                        ${escapeHTML(
+                            companyId
+                        )}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <button
+                        class="addBtn"
+                        onclick="addBranch(
+                            '${escapeJS(companyId)}'
+                        )">
+
+                        ADD BRANCH
+
+                    </button>
+
+
+                    <button
+                        class="editBtn"
+                        onclick="editCompany(
+                            '${escapeJS(companyId)}'
+                        )">
+
+                        EDIT
+
+                    </button>
+
+
+                    <button
+                        class="deleteBtn"
+                        onclick="deleteCompany(
+                            '${escapeJS(companyId)}'
+                        )">
+
+                        DELETE
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="branchHeader">
+
+                BRANCHES / OFFICES
+
+            </div>
+
+
+            ${branchesHTML}
+
+        `;
+
+
+        container.appendChild(
+            companyDiv
+        );
+
+    });
+
+}
+
+
+/* =====================================================
+   ADD COMPANY
+===================================================== */
+
+window.addCompany = function(){
+
+    editingCompanyId = null;
+
+
+    document.getElementById(
+        "companyModalTitle"
+    ).textContent =
+        "ADD COMPANY";
+
+
+    document.getElementById(
+        "companyName"
+    ).value = "";
+
+
+    document.getElementById(
+        "companyModal"
+    ).style.display =
+        "block";
+
+
+    document.getElementById(
+        "companyName"
+    ).focus();
+
+};
+
+
+/* =====================================================
+   EDIT COMPANY
+===================================================== */
+
+window.editCompany = function(
+    companyId
+){
+
+    const company =
+        companies[companyId];
+
+
+    if(!company) return;
+
+
+    editingCompanyId =
+        companyId;
+
+
+    document.getElementById(
+        "companyModalTitle"
+    ).textContent =
+        "EDIT COMPANY";
+
+
+    document.getElementById(
+        "companyName"
+    ).value =
+        company.name || "";
+
+
+    document.getElementById(
+        "companyModal"
+    ).style.display =
+        "block";
+
+};
+
+
+/* =====================================================
+   SAVE COMPANY
+===================================================== */
+
+window.saveCompany = async function(){
+
+    const name =
+        document.getElementById(
+            "companyName"
+        ).value.trim();
+
+
+    if(!name){
+
+        alert(
+            "Please enter a company name."
+        );
+
+        return;
+
+    }
+
+
+    try{
+
+        if(editingCompanyId){
+
+            await update(
+
+                ref(
+                    db,
+                    "companies/" +
+                    editingCompanyId
+                ),
+
+                {
+                    name:name
+                }
+
+            );
+
+
+            alert(
+                "Company updated."
+            );
+
+        }else{
+
+            const companyId =
+                createUniqueId(
+                    name,
+                    companies
+                );
+
+
+            await set(
+
+                ref(
+                    db,
+                    "companies/" +
+                    companyId
+                ),
+
+                {
+
+                    name:name,
+
+                    offices:{}
+
+                }
+
+            );
+
+
+            alert(
+                "Company created."
+            );
+
+        }
+
+
+        closeCompanyModal();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Error saving company:\n" +
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   DELETE COMPANY
+===================================================== */
+
+window.deleteCompany = async function(
+    companyId
+){
+
+    const company =
+        companies[companyId];
+
+
+    if(!company) return;
+
+
+    const companyName =
+        company.name ||
+        companyId;
+
+
+    const branchCount =
+        Object.keys(
+            company.offices || {}
+        ).length;
+
+
+    let message =
+        "Delete " +
+        companyName +
+        " ?";
+
+
+    if(branchCount > 0){
+
+        message +=
+            "\n\nThis company has " +
+            branchCount +
+            " branch(es).";
+
+    }
+
+
+    message +=
+        "\n\nAll data under this company will be deleted.";
+
+
+    if(!confirm(message)){
+
+        return;
+
+    }
+
+
+    try{
+
+        await remove(
+
+            ref(
+                db,
+                "companies/" +
+                companyId
+            )
+
+        );
+
+
+        alert(
+            "Company deleted."
+        );
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Error deleting company:\n" +
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   ADD BRANCH
+===================================================== */
+
+window.addBranch = function(
+    companyId
+){
+
+    editingBranchCompanyId =
+        companyId;
+
+    editingBranchId = null;
+
+
+    document.getElementById(
+        "branchModalTitle"
+    ).textContent =
+        "ADD BRANCH";
+
+
+    document.getElementById(
+        "branchName"
+    ).value = "";
+
+
+    document.getElementById(
+        "branchModal"
+    ).style.display =
+        "block";
+
+
+    document.getElementById(
+        "branchName"
+    ).focus();
+
+};
+
+
+/* =====================================================
+   EDIT BRANCH
+===================================================== */
+
+window.editBranch = function(
+    companyId,
+    branchId
+){
+
+    const company =
+        companies[companyId];
+
+
+    if(!company) return;
+
+
+    const branch =
+        company.offices?.[branchId];
+
+
+    if(!branch) return;
+
+
+    editingBranchCompanyId =
+        companyId;
+
+    editingBranchId =
+        branchId;
+
+
+    document.getElementById(
+        "branchModalTitle"
+    ).textContent =
+        "EDIT BRANCH";
+
+
+    document.getElementById(
+        "branchName"
+    ).value =
+        branch.name ||
+        prettyName(branchId);
+
+
+    document.getElementById(
+        "branchModal"
+    ).style.display =
+        "block";
+
+};
+
+
+/* =====================================================
+   SAVE BRANCH
+===================================================== */
+
+window.saveBranch = async function(){
+
+    const name =
+        document.getElementById(
+            "branchName"
+        ).value.trim();
+
+
+    if(!name){
+
+        alert(
+            "Please enter a branch name."
+        );
+
+        return;
+
+    }
+
+
+    try{
+
+        if(editingBranchId){
+
+            /*
+             * IMPORTANT:
+             *
+             * Only the name is changed.
+             *
+             * Existing windows remain untouched.
+             */
+
+            await update(
+
+                ref(
+                    db,
+                    "companies/" +
+                    editingBranchCompanyId +
+                    "/offices/" +
+                    editingBranchId
+                ),
+
+                {
+                    name:name
+                }
+
+            );
+
+
+            alert(
+                "Branch updated."
+            );
+
+        }else{
+
+            const company =
+                companies[
+                    editingBranchCompanyId
+                ] || {};
+
+
+            const offices =
+                company.offices || {};
+
+
+            const branchId =
+                createUniqueId(
+                    name,
+                    offices
+                );
+
+
+            await set(
+
+                ref(
+                    db,
+                    "companies/" +
+                    editingBranchCompanyId +
+                    "/offices/" +
+                    branchId
+                ),
+
+                {
+
+                    name:name,
+
+                    windows:{}
+
+                }
+
+            );
+
+
+            alert(
+                "Branch created."
+            );
+
+        }
+
+
+        closeBranchModal();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Error saving branch:\n" +
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   DELETE BRANCH
+===================================================== */
+
+window.deleteBranch = async function(
+    companyId,
+    branchId
+){
+
+    const company =
+        companies[companyId];
+
+
+    if(!company) return;
+
+
+    const branch =
+        company.offices?.[branchId];
+
+
+    if(!branch) return;
+
+
+    const branchName =
+        branch.name ||
+        prettyName(branchId);
+
+
+    const windowCount =
+        Object.keys(
+            branch.windows || {}
+        ).length;
+
+
+    let message =
+        "Delete " +
+        branchName +
+        " ?";
+
+
+    if(windowCount > 0){
+
+        message +=
+            "\n\nThis branch contains " +
+            windowCount +
+            " window(s).";
+
+    }
+
+
+    message +=
+        "\n\nAll data under this branch will be deleted.";
+
+
+    if(!confirm(message)){
+
+        return;
+
+    }
+
+
+    try{
+
+        await remove(
+
+            ref(
+                db,
+                "companies/" +
+                companyId +
+                "/offices/" +
+                branchId
+            )
+
+        );
+
+
+        alert(
+            "Branch deleted."
+        );
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Error deleting branch:\n" +
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   CLOSE COMPANY MODAL
+===================================================== */
+
+window.closeCompanyModal =
+function(){
+
+    document.getElementById(
+        "companyModal"
+    ).style.display =
+        "none";
+
+};
+
+
+/* =====================================================
+   CLOSE BRANCH MODAL
+===================================================== */
+
+window.closeBranchModal =
+function(){
+
+    document.getElementById(
+        "branchModal"
+    ).style.display =
+        "none";
+
+};
+
+
+/* =====================================================
+   CLOSE MODALS WHEN CLICKING OUTSIDE
+===================================================== */
+
+window.onclick = function(event){
+
+    if(
+        event.target ===
+        document.getElementById(
+            "companyModal"
+        )
+    ){
+
+        closeCompanyModal();
+
+    }
+
+
+    if(
+        event.target ===
+        document.getElementById(
+            "branchModal"
+        )
+    ){
+
+        closeBranchModal();
+
+    }
+
+};
+
+
+/* =====================================================
+   CREATE FIREBASE ID
+===================================================== */
+
+function createId(name){
+
+    return name
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g,"")
+        .substring(0,30);
+
+}
+
+
+function createUniqueId(
+    name,
+    existing
+){
+
+    let base =
+        createId(name);
+
+
+    if(!base){
+
+        base = "item";
+
+    }
+
+
+    let id = base;
+
+    let number = 2;
+
+
+    while(
+        Object.prototype.hasOwnProperty.call(
+            existing,
+            id
+        )
+    ){
+
+        id =
+            base +
+            number;
+
+        number++;
+
+    }
+
+
+    return id;
+
+}
+
+
+/* =====================================================
+   DISPLAY NAME
+===================================================== */
+
+function prettyName(id){
+
+    return id
+        .replace(/[-_]+/g," ")
+        .replace(/\b\w/g,c =>
+            c.toUpperCase()
+        );
+
+}
+
+
+/* =====================================================
+   HTML SAFETY
+===================================================== */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+function escapeJS(value){
+
+    return String(value)
+        .replace(/\\/g,"\\\\")
+        .replace(/'/g,"\\'")
+        .replace(/"/g,"&quot;")
+        .replace(/\n/g,"\\n")
+        .replace(/\r/g,"\\r");
+
+}
+
+</script>
+
+</body>
+
+</html>

@@ -1,568 +1,2181 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Queue Display</title>
+
+<title>QUEUE DISPLAY</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&display=swap"
+    rel="stylesheet"
+>
+
 <style>
+
 :root {
-    --bg:        #0B0F13;
-    --bg-lift:   #131A21;
-    --surface:   #161E26;
-    --line:      #26323C;
-    --text:      #EAF0F4;
-    --muted:     #7D8C99;
-    --go:        #35D57F;
-    --go-deep:   #0E3D28;
+
+    --bg: #0B0F13;
+    --bg-lift: #131A21;
+    --surface: #161E26;
+    --line: #26323C;
+    --text: #EAF0F4;
+    --muted: #7D8C99;
+    --go: #35D57F;
+    --go-deep: #0E3D28;
+    --danger: #E0533D;
     --gap: clamp(8px, 1.1vw, 20px);
+
 }
 
-* { box-sizing: border-box; }
 
-html, body {
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+
+    box-sizing: border-box;
+
+}
+
+
+html,
+body {
+
+    width: 100%;
     height: 100%;
     margin: 0;
     overflow: hidden;
+
     background: var(--bg);
     color: var(--text);
-    font-family: "Barlow", system-ui, sans-serif;
+
+    font-family:
+        "Barlow",
+        system-ui,
+        sans-serif;
+
     -webkit-font-smoothing: antialiased;
+
 }
 
-/* Subtle vignette so the screen doesn't read as a flat black rectangle */
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
 body::before {
+
     content: "";
+
     position: fixed;
     inset: 0;
-    background: radial-gradient(120% 90% at 50% 0%, #1A242E 0%, var(--bg) 62%);
+
+    background:
+        radial-gradient(
+            120% 90% at 50% 0%,
+            #1A242E 0%,
+            var(--bg) 62%
+        );
+
     z-index: -1;
+
 }
+
+
+/* =========================================================
+   MAIN SCREEN
+========================================================= */
 
 .screen {
+
+    width: 100%;
     height: 100%;
+
     display: flex;
     flex-direction: column;
-    padding: clamp(12px, 1.6vw, 28px);
+
+    padding:
+        clamp(12px, 1.6vw, 28px);
+
     gap: var(--gap);
+
 }
 
-/* ---------- top bar ---------- */
 
-.bar {
+/* =========================================================
+   HEADER
+========================================================= */
+
+.header {
+
+    flex: 0 0 auto;
+
     display: flex;
     align-items: baseline;
     justify-content: space-between;
+
     gap: 16px;
-    flex: 0 0 auto;
+
+    text-align: left;
+
+    padding: 0;
+
+    background: transparent;
+    border: 0;
+
 }
 
-.bar__office {
-    font-size: clamp(16px, 2.1vw, 40px);
-    font-weight: 600;
-    letter-spacing: 0.01em;
+
+.header-left {
+
+    min-width: 0;
+
+}
+
+
+.title {
+
     margin: 0;
+
+    font-size:
+        clamp(16px, 2.1vw, 40px);
+
+    font-weight: 600;
+
+    letter-spacing: 0.01em;
+
+    line-height: 1.05;
+
 }
 
-.bar__office span {
+
+.office {
+
+    margin-top: 3px;
+
+    font-size:
+        clamp(11px, 1vw, 18px);
+
     color: var(--muted);
+
     font-weight: 400;
+
 }
 
-.bar__right {
+
+.header-right {
+
+    flex: 0 0 auto;
+
     display: flex;
+
     align-items: baseline;
-    gap: clamp(10px, 1.2vw, 22px);
+
+    gap:
+        clamp(10px, 1.2vw, 22px);
+
 }
 
-.clock {
-    font-family: "Bebas Neue", Impact, sans-serif;
-    font-size: clamp(20px, 2.6vw, 48px);
-    line-height: 1;
-    letter-spacing: 0.02em;
-    font-variant-numeric: tabular-nums;
-}
 
-.date {
-    font-size: clamp(11px, 1vw, 18px);
-    color: var(--muted);
-}
+/* =========================================================
+   CONNECTION
+========================================================= */
 
-.link {
+.connection {
+
     display: inline-flex;
+
     align-items: center;
+
     gap: 0.5em;
-    font-size: clamp(11px, 1vw, 18px);
+
+    font-size:
+        clamp(11px, 1vw, 18px);
+
     color: var(--muted);
+
+    white-space: nowrap;
+
 }
 
-.link::before {
+
+.connection::before {
+
     content: "";
+
     width: 0.62em;
     height: 0.62em;
+
+    flex: 0 0 auto;
+
     border-radius: 50%;
+
     background: var(--muted);
+
 }
 
-.link.is-live::before { background: var(--go); }
-.link.is-down::before { background: #E0533D; }
 
-/* ---------- counters ---------- */
+.connection.is-live::before {
 
-.board {
+    background: var(--go);
+
+}
+
+
+.connection.is-down::before {
+
+    background: var(--danger);
+
+}
+
+
+/* =========================================================
+   DATE / CLOCK
+========================================================= */
+
+.date {
+
+    font-size:
+        clamp(11px, 1vw, 18px);
+
+    color: var(--muted);
+
+    white-space: nowrap;
+
+}
+
+
+.clock {
+
+    font-family:
+        "Bebas Neue",
+        Impact,
+        sans-serif;
+
+    font-size:
+        clamp(20px, 2.6vw, 48px);
+
+    line-height: 1;
+
+    letter-spacing: 0.02em;
+
+    font-variant-numeric: tabular-nums;
+
+    white-space: nowrap;
+
+}
+
+
+/* =========================================================
+   BOARD
+========================================================= */
+
+#board {
+
     flex: 1 1 auto;
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    justify-content: center;
-    gap: var(--gap);
+
     min-height: 0;
+
+    width: 100%;
+
+    display: grid;
+
+    gap: var(--gap);
+
+    align-content: stretch;
+
+    justify-content: stretch;
+
+    overflow: hidden;
+
     --cols: 1;
     --rows: 1;
+
+    grid-template-columns:
+        repeat(
+            var(--cols),
+            minmax(0, 1fr)
+        );
+
+    grid-template-rows:
+        repeat(
+            var(--rows),
+            minmax(0, 1fr)
+        );
+
 }
 
-.counter {
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.card {
+
     position: relative;
-    flex: 0 1 auto;
-    width: calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));
-    height: calc((100% - (var(--rows) - 1) * var(--gap)) / var(--rows));
-    display: flex;
-    flex-direction: column;
+
     min-width: 0;
     min-height: 0;
-    border: 2px solid var(--line);
-    border-radius: 14px;
-    background: var(--surface);
-    overflow: hidden;
-    transition: border-color .25s ease, background-color .25s ease, box-shadow .25s ease;
-}
 
-.counter__label {
-    flex: 0 0 auto;
-    padding: 0.45em 0.7em;
-    background: var(--bg-lift);
-    border-bottom: 2px solid var(--line);
-    color: var(--muted);
-    font-size: clamp(12px, 1.35vw, 26px);
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: color .25s ease, background-color .25s ease, border-color .25s ease;
-}
-
-.counter__num {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 0;
-    padding: 0.1em 0.15em;
-}
-
-.counter__num span {
-    font-family: "Bebas Neue", Impact, sans-serif;
-    line-height: 0.82;
-    letter-spacing: 0.01em;
-    display: block;
-    white-space: nowrap;
-    transition: transform .3s cubic-bezier(.2, .9, .3, 1.3), color .25s ease;
-}
-
-.counter__num.is-empty span { color: var(--muted); opacity: .45; }
-
-/* the one moment of drama: a window just called a new number */
-.counter.is-called {
-    border-color: var(--go);
-    background: linear-gradient(180deg, var(--go-deep) 0%, var(--surface) 70%);
-    box-shadow: 0 0 0 1px var(--go), 0 0 44px -6px rgba(53, 213, 127, .55);
-}
-
-.counter.is-called .counter__label {
-    background: var(--go);
-    border-bottom-color: var(--go);
-    color: #06170E;
-}
-
-.counter.is-called .counter__num span {
-    color: var(--go);
-    transform: scale(1.06);
-}
-
-.board__empty {
-    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4em;
-    border: 2px dashed var(--line);
+
+    border:
+        2px solid var(--line);
+
     border-radius: 14px;
-    color: var(--muted);
+
+    background: var(--surface);
+
+    overflow: hidden;
+
     text-align: center;
-    padding: 2em;
+
+    transition:
+        border-color .25s ease,
+        background-color .25s ease,
+        box-shadow .25s ease,
+        transform .25s ease;
+
 }
 
-.board__empty strong {
-    font-family: "Bebas Neue", Impact, sans-serif;
-    font-weight: 400;
-    font-size: clamp(24px, 4vw, 72px);
-    color: var(--text);
-    letter-spacing: 0.02em;
-}
 
-.board__empty span { font-size: clamp(12px, 1.2vw, 22px); }
+/* =========================================================
+   WINDOW NAME
+========================================================= */
 
-/* ---------- footer ---------- */
+.window-name {
 
-.foot {
     flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+
+    width: 100%;
+
+    padding:
+        0.45em
+        0.7em;
+
+    background: var(--bg-lift);
+
+    border-bottom:
+        2px solid var(--line);
+
     color: var(--muted);
-    font-size: clamp(11px, 1.05vw, 20px);
+
+    font-size:
+        clamp(12px, 1.35vw, 26px);
+
+    font-weight: 600;
+
+    letter-spacing: 0.02em;
+
+    line-height: 1.15;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    transition:
+        color .25s ease,
+        background-color .25s ease,
+        border-color .25s ease;
+
 }
 
-.foot__brand strong { color: var(--text); font-weight: 600; }
 
-.controls { display: flex; gap: 8px; }
+/* =========================================================
+   SERVICE NAME
+========================================================= */
+
+.service-name {
+
+    flex: 0 0 auto;
+
+    width: 100%;
+
+    padding:
+        2px
+        10px
+        0;
+
+    color: var(--muted);
+
+    font-size:
+        clamp(11px, 1.1vw, 20px);
+
+    font-weight: 500;
+
+    line-height: 1;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+}
+
+
+/* =========================================================
+   QUEUE NUMBER
+========================================================= */
+
+.queue-number {
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding:
+        0
+        8px
+        4px;
+
+    font-family:
+        "Bebas Neue",
+        Impact,
+        sans-serif;
+
+    font-size: 240px;
+
+    font-weight: 400;
+
+    line-height: 0.75;
+
+    letter-spacing: 0.01em;
+
+    color: var(--text);
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    transition:
+        transform .3s cubic-bezier(.2, .9, .3, 1.3),
+        color .25s ease;
+
+}
+
+
+/* =========================================================
+   EMPTY QUEUE
+========================================================= */
+
+.queue-number.empty {
+
+    color: var(--muted);
+
+    opacity: .45;
+
+}
+
+
+/* =========================================================
+   CALLED / HIGHLIGHT
+========================================================= */
+
+.card.called {
+
+    border-color: var(--go);
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--go-deep) 0%,
+            var(--surface) 70%
+        );
+
+    box-shadow:
+        0 0 0 1px var(--go),
+        0 0 44px -6px
+        rgba(53, 213, 127, .55);
+
+    transform: scale(1.005);
+
+}
+
+
+.card.called .window-name {
+
+    background: var(--go);
+
+    border-bottom-color: var(--go);
+
+    color: #06170E;
+
+}
+
+
+.card.called .queue-number {
+
+    color: var(--go);
+
+    transform: scale(1.06);
+
+}
+
+
+/* =========================================================
+   EMPTY BOARD
+========================================================= */
+
+.board-empty {
+
+    grid-column: 1 / -1;
+
+    grid-row: 1 / -1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 0.4em;
+
+    border:
+        2px dashed var(--line);
+
+    border-radius: 14px;
+
+    color: var(--muted);
+
+    text-align: center;
+
+    padding: 2em;
+
+}
+
+
+.board-empty strong {
+
+    font-family:
+        "Bebas Neue",
+        Impact,
+        sans-serif;
+
+    font-weight: 400;
+
+    font-size:
+        clamp(24px, 4vw, 72px);
+
+    color: var(--text);
+
+    letter-spacing: 0.02em;
+
+}
+
+
+.board-empty span {
+
+    font-size:
+        clamp(12px, 1.2vw, 22px);
+
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer {
+
+    flex: 0 0 auto;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    color: var(--muted);
+
+    font-size:
+        clamp(11px, 1.05vw, 20px);
+
+}
+
+
+.footer-brand strong {
+
+    color: var(--text);
+
+    font-weight: 600;
+
+}
+
+
+.controls {
+
+    display: flex;
+
+    gap: 8px;
+
+}
+
 
 .btn {
+
     font: inherit;
+
     font-weight: 600;
+
     color: var(--text);
+
     background: var(--bg-lift);
-    border: 1px solid var(--line);
+
+    border:
+        1px solid var(--line);
+
     border-radius: 999px;
-    padding: 0.45em 1.1em;
+
+    padding:
+        0.45em
+        1.1em;
+
     cursor: pointer;
+
 }
 
-.btn:hover { border-color: var(--muted); }
+
+.btn:hover {
+
+    border-color: var(--muted);
+
+}
+
 
 .btn:focus-visible {
-    outline: 2px solid var(--go);
+
+    outline:
+        2px solid var(--go);
+
     outline-offset: 2px;
+
 }
+
 
 .btn--go {
+
     background: var(--go);
+
     border-color: var(--go);
+
     color: #06170E;
+
 }
 
-@media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .screen {
+
+        padding: 8px;
+
+        gap: 8px;
+
+    }
+
+    .header {
+
+        align-items: center;
+
+    }
+
+    .header-right {
+
+        gap: 8px;
+
+    }
+
+    .date {
+
+        display: none;
+
+    }
+
+    .connection {
+
+        font-size: 11px;
+
+    }
+
+    .clock {
+
+        font-size: 24px;
+
+    }
+
+    #board {
+
+        gap: 8px;
+
+    }
+
+    .window-name {
+
+        font-size:
+            clamp(12px, 4vw, 24px);
+
+    }
+
+    .service-name {
+
+        font-size:
+            clamp(11px, 3.5vw, 20px);
+
+    }
+
+    .footer {
+
+        font-size: 11px;
+
+    }
+
+    .controls {
+
+        gap: 4px;
+
+    }
+
+    .btn {
+
+        padding:
+            0.4em
+            .8em;
+
+    }
+
 }
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    * {
+
+        transition: none !important;
+
+        animation: none !important;
+
+    }
+
+}
+
 </style>
+
 </head>
+
 
 <body>
 
 <div class="screen">
 
-    <header class="bar">
-        <h1 class="bar__office" id="officeTitle">Now serving</h1>
-        <div class="bar__right">
-            <span class="link" id="conn">Connecting</span>
-            <span class="date" id="date"></span>
-            <span class="clock" id="clock">--:--</span>
-        </div>
-    </header>
 
-    <main class="board" id="board">
-        <div class="board__empty">
-            <strong>Getting today&rsquo;s numbers</strong>
-            <span>This screen updates on its own.</span>
-        </div>
-    </main>
+<!-- =====================================================
+     HEADER
+====================================================== -->
 
-    <footer class="foot">
-        <div class="foot__brand"><strong>PANELCO I</strong> &nbsp;&middot;&nbsp; Making Lives Better</div>
-        <div class="controls">
-            <button class="btn btn--go" id="enableAudioBtn" type="button">Turn on sound</button>
-            <button class="btn" id="fullscreenBtn" type="button">Full screen</button>
+<header class="header">
+
+    <div class="header-left">
+
+        <div
+            class="title"
+            id="companyTitle"
+        >
+            QUEUE MANAGEMENT SYSTEM
         </div>
-    </footer>
+
+        <div
+            class="office"
+            id="officeName"
+        >
+            ---
+        </div>
+
+    </div>
+
+
+    <div class="header-right">
+
+        <span
+            class="connection"
+            id="connection"
+        >
+            Connecting
+        </span>
+
+        <span
+            class="date"
+            id="date"
+        >
+        </span>
+
+        <span
+            class="clock"
+            id="clock"
+        >
+            --:--
+        </span>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     BOARD
+====================================================== -->
+
+<main id="board">
+
+    <div class="board-empty">
+
+        <strong>
+            Getting today's numbers
+        </strong>
+
+        <span>
+            This screen updates on its own.
+        </span>
+
+    </div>
+
+</main>
+
+
+<!-- =====================================================
+     FOOTER
+====================================================== -->
+
+<footer class="footer">
+
+    <div class="footer-brand">
+
+        <strong id="footerCompany">
+            PANELCO I
+        </strong>
+
+        &nbsp;&middot;&nbsp;
+
+        Making Lives Better
+
+    </div>
+
+
+    <div class="controls">
+
+        <button
+            class="btn btn--go"
+            id="enableAudioBtn"
+            type="button"
+        >
+            Turn on sound
+        </button>
+
+        <button
+            class="btn"
+            id="fullscreenBtn"
+            type="button"
+        >
+            Full screen
+        </button>
+
+    </div>
+
+</footer>
+
 
 </div>
 
+
 <script type="module">
 
-// ==========================
-// GET OFFICE
-// ==========================
-const urlParams = new URLSearchParams(window.location.search);
-const office = urlParams.get("office") || "mainoffice";
 
-document.title = "Queue Display - " + office;
+/* =========================================================
+   FIREBASE
+========================================================= */
 
-// "mainoffice" -> "Main Office", "binmaley-sub" -> "Binmaley Sub"
-function prettyOffice(slug) {
-    return slug
-        .replace(/[-_]+/g, " ")
-        .replace(/office/gi, " Office")
-        .replace(/\s+/g, " ")
-        .trim()
-        .replace(/\b\w/g, (c) => c.toUpperCase());
+import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+    getDatabase,
+    ref,
+    onValue
 }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-document.getElementById("officeTitle").innerHTML =
-    prettyOffice(office) + ' <span>&mdash; now serving</span>';
-
-// ==========================
-// CLOCK
-// ==========================
-const clockEl = document.getElementById("clock");
-const dateEl = document.getElementById("date");
-
-function tick() {
-    const now = new Date();
-    clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    dateEl.textContent = now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
-}
-tick();
-setInterval(tick, 10000);
-
-// ==========================
-// FIREBASE
-// ==========================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
-    authDomain: "panelco-i-queue-system.firebaseapp.com",
-    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "panelco-i-queue-system",
-    storageBucket: "panelco-i-queue-system.firebasestorage.app",
-    messagingSenderId: "1075037996413",
-    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+
+    apiKey:
+        "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+
+    authDomain:
+        "panelco-i-queue-system.firebaseapp.com",
+
+    databaseURL:
+        "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+    projectId:
+        "panelco-i-queue-system",
+
+    storageBucket:
+        "panelco-i-queue-system.firebasestorage.app",
+
+    messagingSenderId:
+        "1075037996413",
+
+    appId:
+        "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 
-// ==========================
-// REFERENCES
-// ==========================
-const windowsRef = ref(db, `offices/${office}/windows`);
-const voiceRef = ref(db, "settings/voiceEnabled");
-const connRef = ref(db, ".info/connected");
+const app =
+    initializeApp(firebaseConfig);
 
-// ==========================
-// CONNECTION INDICATOR
-// ==========================
-const connEl = document.getElementById("conn");
 
-onValue(connRef, (snap) => {
-    const up = snap.val() === true;
-    connEl.classList.toggle("is-live", up);
-    connEl.classList.toggle("is-down", !up);
-    connEl.textContent = up ? "Live" : "Reconnecting";
-});
+const db =
+    getDatabase(app);
 
-// ==========================
-// AUDIO
-// ==========================
-let voiceEnabled = false;
-let audioUnlocked = false;
-let firstLoad = true;
-let last = {};
 
-const beep = new Audio("beep.mp3");
-const audioBtn = document.getElementById("enableAudioBtn");
+/* =========================================================
+   COMPANY / OFFICE
+========================================================= */
 
-audioBtn.addEventListener("click", async () => {
+const params =
+    new URLSearchParams(
+        window.location.search
+    );
+
+
+const company =
+    (
+        params.get("company") ||
+        "panelcoi"
+    ).toLowerCase();
+
+
+const office =
+    (
+        params.get("office") ||
+        "mainoffice"
+    ).toLowerCase();
+
+
+function prettyOffice(slug) {
+
+    return slug
+
+        .replace(/[-_]+/g, " ")
+
+        .replace(/office/gi, " Office")
+
+        .replace(/\s+/g, " ")
+
+        .trim()
+
+        .replace(
+            /\b\w/g,
+            c => c.toUpperCase()
+        );
+
+}
+
+
+/* =========================================================
+   COMPANY DISPLAY
+========================================================= */
+
+const companyTitleEl =
+    document.getElementById(
+        "companyTitle"
+    );
+
+
+const footerCompanyEl =
+    document.getElementById(
+        "footerCompany"
+    );
+
+
+const officeNameEl =
+    document.getElementById(
+        "officeName"
+    );
+
+
+officeNameEl.innerText =
+    prettyOffice(office);
+
+
+/* =========================================================
+   FIREBASE REFERENCES
+========================================================= */
+
+const companyRef =
+    ref(
+        db,
+        `companies/${company}`
+    );
+
+
+const windowsRef =
+    ref(
+        db,
+        `companies/${company}/offices/${office}/windows`
+    );
+
+
+const voiceRef =
+    ref(
+        db,
+        "settings/voiceEnabled"
+    );
+
+
+const connectionRef =
+    ref(
+        db,
+        ".info/connected"
+    );
+
+
+/* =========================================================
+   COMPANY NAME
+========================================================= */
+
+onValue(
+
+    companyRef,
+
+    snap => {
+
+        const data =
+            snap.val() || {};
+
+        const companyName =
+            data.name ||
+            company.toUpperCase();
+
+
+        companyTitleEl.textContent =
+            companyName +
+            " QUEUE MANAGEMENT SYSTEM";
+
+
+        footerCompanyEl.textContent =
+            companyName;
+
+    }
+
+);
+
+
+/* =========================================================
+   CLOCK
+========================================================= */
+
+const clockEl =
+    document.getElementById(
+        "clock"
+    );
+
+
+const dateEl =
+    document.getElementById(
+        "date"
+    );
+
+
+function updateClock() {
+
+    const now =
+        new Date();
+
+
+    clockEl.textContent =
+        now.toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+
+    dateEl.textContent =
+        now.toLocaleDateString(
+            [],
+            {
+                weekday: "short",
+                month: "short",
+                day: "numeric"
+            }
+        );
+
+}
+
+
+updateClock();
+
+
+setInterval(
+    updateClock,
+    10000
+);
+
+
+/* =========================================================
+   VARIABLES
+========================================================= */
+
+const board =
+    document.getElementById(
+        "board"
+    );
+
+
+const connection =
+    document.getElementById(
+        "connection"
+    );
+
+
+let windowData = {};
+
+
+let voiceEnabled =
+    false;
+
+
+let firstLoad =
+    true;
+
+
+const lastNumbers = {};
+
+
+const calledTimers = {};
+
+
+const calledUntil = {};
+
+
+const HIGHLIGHT_MS =
+    15000;
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+let audioUnlocked =
+    false;
+
+
+const beep =
+    new Audio("beep.mp3");
+
+
+beep.preload =
+    "auto";
+
+
+const audioBtn =
+    document.getElementById(
+        "enableAudioBtn"
+    );
+
+
+async function unlockAudio() {
+
+    if (audioUnlocked) {
+
+        return;
+
+    }
+
+
     try {
+
         await beep.play();
+
         beep.pause();
+
         beep.currentTime = 0;
 
-        speechSynthesis.speak(new SpeechSynthesisUtterance("Audio enabled"));
 
-        audioUnlocked = true;
-        audioBtn.remove();
+        audioUnlocked =
+            true;
 
-    } catch (err) {
-        audioBtn.textContent = "Sound blocked — tap again";
+
+        audioBtn.textContent =
+            "Sound on";
+
+
+        audioBtn.classList.add(
+            "btn--go"
+        );
+
     }
-});
 
-// ==========================
-// FULL SCREEN
-// ==========================
-const fsBtn = document.getElementById("fullscreenBtn");
+    catch (error) {
 
-fsBtn.addEventListener("click", () => {
-    if (document.fullscreenElement) {
-        document.exitFullscreen();
-    } else {
-        document.documentElement.requestFullscreen().catch(() => {});
+        audioBtn.textContent =
+            "Turn on sound";
+
     }
-});
 
-document.addEventListener("fullscreenchange", () => {
-    fsBtn.textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
-});
-
-// ==========================
-// VOICE SETTING
-// ==========================
-onValue(voiceRef, (snap) => {
-    voiceEnabled = snap.val() === true;
-});
-
-// ==========================
-// SPEAK
-// ==========================
-function speak(text) {
-    if (!audioUnlocked) return;
-
-    speechSynthesis.cancel();
-    const msg = new SpeechSynthesisUtterance(text);
-    msg.rate = 1;
-    speechSynthesis.speak(msg);
 }
 
-// ==========================
-// FIT THE NUMBER TO ITS CARD
-// Any office, any window count, any digit count.
-// ==========================
-function fitNumber(cell) {
-    const span = cell.firstElementChild;
-    const maxW = cell.clientWidth - 8;
-    const maxH = cell.clientHeight - 4;
-    if (maxW <= 0 || maxH <= 0) return;
 
-    let lo = 12, hi = 900, best = 12;
+audioBtn.addEventListener(
+    "click",
+    unlockAudio
+);
 
-    while (hi - lo > 2) {
-        const mid = (lo + hi) / 2;
-        span.style.fontSize = mid + "px";
-        if (span.scrollWidth <= maxW && span.scrollHeight <= maxH) {
-            best = mid;
-            lo = mid;
-        } else {
-            hi = mid;
+
+document.addEventListener(
+    "click",
+    unlockAudio
+);
+
+
+document.addEventListener(
+    "touchstart",
+    unlockAudio
+);
+
+
+/* =========================================================
+   FULL SCREEN
+========================================================= */
+
+const fullscreenBtn =
+    document.getElementById(
+        "fullscreenBtn"
+    );
+
+
+fullscreenBtn.addEventListener(
+
+    "click",
+
+    () => {
+
+        if (document.fullscreenElement) {
+
+            document.exitFullscreen();
+
         }
+
+        else {
+
+            document.documentElement
+
+                .requestFullscreen()
+
+                .catch(() => {});
+
+        }
+
     }
-    span.style.fontSize = best + "px";
+
+);
+
+
+document.addEventListener(
+
+    "fullscreenchange",
+
+    () => {
+
+        fullscreenBtn.textContent =
+
+            document.fullscreenElement
+
+                ? "Exit full screen"
+
+                : "Full screen";
+
+    }
+
+);
+
+
+/* =========================================================
+   VOICE SETTING
+========================================================= */
+
+onValue(
+
+    voiceRef,
+
+    snap => {
+
+        voiceEnabled =
+            snap.val() === true;
+
+    }
+
+);
+
+
+/* =========================================================
+   CONNECTION
+========================================================= */
+
+onValue(
+
+    connectionRef,
+
+    snap => {
+
+        const connected =
+            snap.val() === true;
+
+
+        connection.classList.toggle(
+            "is-live",
+            connected
+        );
+
+
+        connection.classList.toggle(
+            "is-down",
+            !connected
+        );
+
+
+        connection.textContent =
+
+            connected
+
+                ? "Live"
+
+                : "Reconnecting";
+
+    }
+
+);
+
+
+/* =========================================================
+   WINDOW NAME
+
+   CURRENT SYSTEM BEHAVIOR:
+   win.order determines Window number.
+   order 1 -> Window 1
+   order 2 -> Window 2
+========================================================= */
+
+function getWindowName(win) {
+
+    const order =
+        Number(win.order);
+
+
+    if (
+
+        Number.isFinite(order) &&
+
+        order > 0
+
+    ) {
+
+        return "Window " + order;
+
+    }
+
+
+    return "Window";
+
 }
+
+
+/* =========================================================
+   FIT QUEUE NUMBERS
+
+   IMPORTANT:
+   We measure the ACTUAL rendered text.
+========================================================= */
 
 function fitAll() {
-    const cells = [...document.querySelectorAll(".counter__num")];
-    if (!cells.length) return;
 
-    cells.forEach(fitNumber);
+    const cells = [
 
-    // One size for the whole board — a longer number shouldn't look louder.
-    const smallest = Math.min(...cells.map(c => parseFloat(c.firstElementChild.style.fontSize)));
-    cells.forEach(c => { c.firstElementChild.style.fontSize = smallest + "px"; });
-}
+        ...document.querySelectorAll(
+            ".queue-number"
+        )
 
-window.addEventListener("resize", fitAll);
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+    ];
 
-// ==========================
-// LAYOUT: pick a grid that keeps cards as square as possible
-// ==========================
-function layout(board, n) {
-    let best = { cols: n, score: Infinity };
 
-    for (let cols = 1; cols <= n; cols++) {
-        const rows = Math.ceil(n / cols);
-        // prefer cells close to a 4:3 landscape shape
-        const cell = (board.clientWidth / cols) / (board.clientHeight / rows);
-        const score = Math.abs(Math.log(cell / 1.35));
-        if (score < best.score) best = { cols, score };
+    if (!cells.length) {
+
+        return;
+
     }
 
-    board.style.setProperty("--cols", best.cols);
-    board.style.setProperty("--rows", Math.ceil(n / best.cols));
-}
 
-// ==========================
-// BUILD THE BOARD
-// ==========================
-const board = document.getElementById("board");
-const calledTimers = {};
-const calledUntil = {};
-const HIGHLIGHT_MS = 15000;
+    cells.forEach(cell => {
 
-onValue(windowsRef, (snap) => {
+        const parent =
+            cell.parentElement;
 
-    const data = snap.val();
-    if (!data) return;
 
-    const windows = Object.entries(data)
-        .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+        if (!parent) {
 
-    board.innerHTML = "";
+            return;
 
-    windows.forEach(([id, win]) => {
-
-        const val = win.queue || 0;
-
-        const card = document.createElement("article");
-        card.className = "counter";
-        card.id = id;
-
-        const label = document.createElement("div");
-        label.className = "counter__label";
-        label.textContent = win.label;
-
-        const numWrap = document.createElement("div");
-        numWrap.className = "counter__num" + (val ? "" : " is-empty");
-
-        const num = document.createElement("span");
-        num.textContent = val ? val : "—";
-
-        numWrap.appendChild(num);
-        card.appendChild(label);
-        card.appendChild(numWrap);
-        board.appendChild(card);
-
-        // AUDIO + CALLED STATE
-        if (!firstLoad && last[id] !== val) {
-
-            card.classList.add("is-called");
-            calledUntil[id] = Date.now() + HIGHLIGHT_MS;
-            clearTimeout(calledTimers[id]);
-            calledTimers[id] = setTimeout(() => {
-                delete calledUntil[id];
-                document.getElementById(id)?.classList.remove("is-called");
-            }, HIGHLIGHT_MS);
-
-            if (audioUnlocked) {
-                beep.currentTime = 0;
-                beep.play().catch(() => {});
-            }
-
-            if (audioUnlocked && voiceEnabled) {
-                speak(win.label + " now serving number " + val);
-            }
-
-        } else if (calledUntil[id] > Date.now()) {
-            // a re-render while this window is still highlighted
-            card.classList.add("is-called");
         }
 
-        last[id] = val;
+
+        const maxW =
+            parent.clientWidth - 20;
+
+
+        const maxH =
+            parent.clientHeight - 10;
+
+
+        if (
+
+            maxW <= 0 ||
+
+            maxH <= 0
+
+        ) {
+
+            return;
+
+        }
+
+
+        const measure =
+            document.createElement(
+                "span"
+            );
+
+
+        measure.textContent =
+            cell.textContent;
+
+
+        measure.style.position =
+            "fixed";
+
+
+        measure.style.left =
+            "-10000px";
+
+
+        measure.style.top =
+            "0";
+
+
+        measure.style.visibility =
+            "hidden";
+
+
+        measure.style.whiteSpace =
+            "nowrap";
+
+
+        measure.style.fontFamily =
+            '"Bebas Neue", Impact, sans-serif';
+
+
+        measure.style.fontWeight =
+            "400";
+
+
+        measure.style.lineHeight =
+            "0.75";
+
+
+        measure.style.letterSpacing =
+            "0.01em";
+
+
+        document.body.appendChild(
+            measure
+        );
+
+
+        let size =
+            Math.min(
+                500,
+                maxH * 1.8
+            );
+
+
+        while (size > 40) {
+
+            measure.style.fontSize =
+                size + "px";
+
+
+            const rect =
+                measure.getBoundingClientRect();
+
+
+            if (
+
+                rect.width <= maxW &&
+
+                rect.height <= maxH
+
+            ) {
+
+                break;
+
+            }
+
+
+            size -= 2;
+
+        }
+
+
+        cell.style.fontSize =
+            size + "px";
+
+
+        document.body.removeChild(
+            measure
+        );
+
     });
 
-    layout(board, windows.length);
-    requestAnimationFrame(fitAll);
+}
 
-    firstLoad = false;
-});
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+window.addEventListener(
+
+    "resize",
+
+    () => {
+
+        requestAnimationFrame(
+            fitAll
+        );
+
+    }
+
+);
+
+
+/* =========================================================
+   WAIT FOR FONT
+========================================================= */
+
+if (
+
+    document.fonts &&
+
+    document.fonts.ready
+
+) {
+
+    document.fonts.ready.then(
+        fitAll
+    );
+
+}
+
+
+/* =========================================================
+   LAYOUT
+
+   Choose a grid according to the available
+   board dimensions.
+========================================================= */
+
+function layoutBoard(
+    board,
+    count
+) {
+
+    if (!count) {
+
+        return;
+
+    }
+
+
+    let best = {
+
+        cols: count,
+
+        rows: 1,
+
+        score: Infinity
+
+    };
+
+
+    for (
+
+        let cols = 1;
+
+        cols <= count;
+
+        cols++
+
+    ) {
+
+        const rows =
+            Math.ceil(
+                count / cols
+            );
+
+
+        const width =
+            board.clientWidth /
+            cols;
+
+
+        const height =
+            board.clientHeight /
+            rows;
+
+
+        if (
+
+            width <= 0 ||
+
+            height <= 0
+
+        ) {
+
+            continue;
+
+        }
+
+
+        const ratio =
+            width / height;
+
+
+        const score =
+            Math.abs(
+
+                Math.log(
+                    ratio / 1.35
+                )
+
+            );
+
+
+        if (
+
+            score < best.score
+
+        ) {
+
+            best = {
+
+                cols,
+
+                rows,
+
+                score
+
+            };
+
+        }
+
+    }
+
+
+    board.style.setProperty(
+        "--cols",
+        best.cols
+    );
+
+
+    board.style.setProperty(
+        "--rows",
+        best.rows
+    );
+
+}
+
+
+/* =========================================================
+   HIGHLIGHT
+========================================================= */
+
+function highlightCard(id) {
+
+    const card =
+        document.getElementById(
+            "card-" + id
+        );
+
+
+    if (!card) {
+
+        return;
+
+    }
+
+
+    card.classList.add(
+        "called"
+    );
+
+
+    calledUntil[id] =
+        Date.now() +
+        HIGHLIGHT_MS;
+
+
+    clearTimeout(
+        calledTimers[id]
+    );
+
+
+    calledTimers[id] =
+        setTimeout(
+
+            () => {
+
+                const current =
+                    document.getElementById(
+                        "card-" + id
+                    );
+
+
+                if (current) {
+
+                    current.classList.remove(
+                        "called"
+                    );
+
+                }
+
+
+                delete calledUntil[id];
+
+            },
+
+            HIGHLIGHT_MS
+
+        );
+
+}
+
+
+/* =========================================================
+   BEEP
+========================================================= */
+
+function playBeep() {
+
+    if (!audioUnlocked) {
+
+        return;
+
+    }
+
+
+    try {
+
+        beep.currentTime =
+            0;
+
+
+        beep.play()
+            .catch(() => {});
+
+    }
+
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   VOICE
+========================================================= */
+
+function speakNumber(
+    serviceName,
+    value
+) {
+
+    if (!voiceEnabled) {
+
+        return;
+
+    }
+
+
+    if (
+
+        !(
+            "speechSynthesis"
+            in window
+        )
+
+    ) {
+
+        return;
+
+    }
+
+
+    window.speechSynthesis.cancel();
+
+
+    const text =
+        serviceName +
+        " now serving number " +
+        value;
+
+
+    const utterance =
+        new SpeechSynthesisUtterance(
+            text
+        );
+
+
+    utterance.rate =
+        0.9;
+
+
+    utterance.pitch =
+        1;
+
+
+    utterance.volume =
+        1;
+
+
+    window.speechSynthesis.speak(
+        utterance
+    );
+
+}
+
+
+/* =========================================================
+   RENDER BOARD
+========================================================= */
+
+function renderBoard() {
+
+    const windows =
+        Object.entries(
+            windowData
+        )
+
+        .sort(
+
+            (a, b) =>
+
+                (
+                    Number(a[1].order) || 0
+                )
+
+                -
+
+                (
+                    Number(b[1].order) || 0
+                )
+
+        );
+
+
+    if (!windows.length) {
+
+        board.innerHTML = `
+
+            <div class="board-empty">
+
+                <strong>
+                    No active windows
+                </strong>
+
+                <span>
+                    This screen updates on its own.
+                </span>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    board.innerHTML =
+        "";
+
+
+    windows.forEach(
+        ([id, win]) => {
+
+            const value =
+                Number(
+                    win.queue || 0
+                );
+
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "card";
+
+
+            card.id =
+                "card-" + id;
+
+
+            const windowName =
+                getWindowName(
+                    win
+                );
+
+
+            const windowEl =
+                document.createElement(
+                    "div"
+                );
+
+
+            windowEl.className =
+                "window-name";
+
+
+            windowEl.textContent =
+                windowName;
+
+
+            const serviceName =
+                win.label || "";
+
+
+            const serviceEl =
+                document.createElement(
+                    "div"
+                );
+
+
+            serviceEl.className =
+                "service-name";
+
+
+            serviceEl.textContent =
+                serviceName;
+
+
+            const numberEl =
+                document.createElement(
+                    "div"
+                );
+
+
+            numberEl.className =
+                "queue-number";
+
+
+            if (value > 0) {
+
+                numberEl.textContent =
+                    value;
+
+            }
+
+            else {
+
+                numberEl.textContent =
+                    "—";
+
+                numberEl.classList.add(
+                    "empty"
+                );
+
+            }
+
+
+            card.appendChild(
+                windowEl
+            );
+
+
+            card.appendChild(
+                serviceEl
+            );
+
+
+            card.appendChild(
+                numberEl
+            );
+
+
+            board.appendChild(
+                card
+            );
+
+
+            if (
+
+                calledUntil[id] &&
+
+                calledUntil[id] > Date.now()
+
+            ) {
+
+                card.classList.add(
+                    "called"
+                );
+
+            }
+
+
+            if (
+
+                !firstLoad &&
+
+                lastNumbers[id] !== undefined &&
+
+                lastNumbers[id] !== value
+
+            ) {
+
+                highlightCard(
+                    id
+                );
+
+
+                if (value > 0) {
+
+                    playBeep();
+
+
+                    speakNumber(
+                        serviceName,
+                        value
+                    );
+
+                }
+
+            }
+
+
+            lastNumbers[id] =
+                value;
+
+        }
+
+    );
+
+
+    layoutBoard(
+        board,
+        windows.length
+    );
+
+
+    requestAnimationFrame(
+
+        () => {
+
+            requestAnimationFrame(
+                fitAll
+            );
+
+        }
+
+    );
+
+
+    firstLoad =
+        false;
+
+}
+
+
+/* =========================================================
+   FIREBASE WINDOW LISTENER
+
+   Reads:
+   companies/{company}/offices/{office}/windows/{windowId}
+
+   Each individual window queue is displayed.
+========================================================= */
+
+onValue(
+
+    windowsRef,
+
+    snap => {
+
+        windowData =
+            snap.val() || {};
+
+
+        renderBoard();
+
+    }
+
+);
+
 
 </script>
 
 </body>
+
 </html>

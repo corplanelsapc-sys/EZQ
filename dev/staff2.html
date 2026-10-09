@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
 <title>Queue Clicker Dashboard</title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+
 body {
     background:#111;
     color:white;
@@ -14,7 +18,9 @@ body {
     padding:20px;
 }
 
-h2 { margin:10px 0; }
+h2 {
+    margin:10px 0;
+}
 
 .toggle {
     margin:10px;
@@ -64,8 +70,15 @@ button {
     cursor:pointer;
 }
 
-.next { background:red; color:white; }
-.back { background:#555; color:white; }
+.next {
+    background:red;
+    color:white;
+}
+
+.back {
+    background:#555;
+    color:white;
+}
 
 .reset {
     background:#222;
@@ -79,7 +92,9 @@ button {
     font-size:20px;
     color:#0f0;
 }
+
 </style>
+
 </head>
 
 <body>
@@ -87,171 +102,586 @@ button {
 <h2>PANELCO I QUEUE MANAGEMENT SYSTEM (QMS)</h2>
 
 <div class="toggle">
+
     <label>
+
         <input type="checkbox" id="voiceToggle">
+
         Enable Voice Announcement
+
     </label>
+
 </div>
 
 <div class="selected">
-    Office: <span id="officeName">---</span><br>
-    Selected: <span id="selectedWin">---</span>
+
+    Office:
+    <span id="officeName">---</span>
+
+    <br>
+
+    Selected:
+    <span id="selectedWin">---</span>
+
 </div>
 
 <div class="windows" id="windows"></div>
 
 <div>
-    <button class="next" onclick="change(1)">NEXT (+1)</button>
-    <button class="back" onclick="change(-1)">BACK (-1)</button>
-    <button class="reset" onclick="resetAll()">RESET ALL</button>
-    <button onclick="goToDisplay()">GO TO DISPLAY</button>
-    <button onclick="logout()">SWITCH ACCOUNT</button>
+
+    <button class="next" onclick="change(1)">
+        NEXT (+1)
+    </button>
+
+    <button class="back" onclick="change(-1)">
+        BACK (-1)
+    </button>
+
+    <button class="reset" onclick="resetAll()">
+        RESET ALL
+    </button>
+
+    <button onclick="goToDisplay()">
+        GO TO DISPLAY
+    </button>
+
+    <button onclick="logout()">
+        SWITCH ACCOUNT
+    </button>
+
 </div>
+
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, runTransaction, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+    getDatabase,
+    ref,
+    runTransaction,
+    onValue,
+    set
+}
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+import {
+    getAuth,
+    onAuthStateChanged,
+    signOut
+}
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 
-window.logout = function () {
+const firebaseConfig = {
+
+    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+
+    authDomain: "panelco-i-queue-system.firebaseapp.com",
+
+    databaseURL:
+        "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+    projectId: "panelco-i-queue-system",
+
+    storageBucket:
+        "panelco-i-queue-system.firebasestorage.app",
+
+    messagingSenderId: "1075037996413",
+
+    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+const auth = getAuth(app);
+
+
+let office = null;
+
+let selected = null;
+
+let windowData = {};
+
+let queueData = {};
+
+
+// =========================================================
+// CREATE SAFE ROLE KEY
+// =========================================================
+
+function getRoleKey(label) {
+    return String(label || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[.#$[\]/]/g, "")
+        .replace(/\s+/g, "_");
+}
+
+
+// =========================================================
+// LOGOUT
+// =========================================================
+
+window.logout = function() {
 
     signOut(auth).then(() => {
+
         window.location.href = "index.html";
+
     });
 
 };
 
-const firebaseConfig = {
-    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
-    authDomain: "panelco-i-queue-system.firebaseapp.com",
-    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "panelco-i-queue-system",
-    storageBucket: "panelco-i-queue-system.firebasestorage.app",
-    messagingSenderId: "1075037996413",
-    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
-};
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
-
-let office = null;
-let selected = null;
-let windowData = {};
+// =========================================================
+// AUTHENTICATION
+// =========================================================
 
 onAuthStateChanged(auth, (user) => {
 
     if (!user) {
+
         window.location.href = "index.html";
+
         return;
+
     }
 
-    office = user.email.split("@")[0].toLowerCase();
+
+    office = user.email
+        .split("@")[0]
+        .toLowerCase();
+
 
     const validOffices = [
+
         "mainoffice",
         "bani",
         "bolinao",
         "dasol",
-        "alaminos"
+        "alaminos",
+        "anda",
+        "agno",
+        "burgos",
+        "mabini",
+        "infanta"
+
     ];
 
+
     if (!validOffices.includes(office)) {
+
         alert("Invalid office assignment");
+
         return;
+
     }
 
-    document.getElementById("officeName").innerText = office.toUpperCase();
+
+    document.getElementById("officeName").innerText =
+        office.toUpperCase();
+
 
     startApp();
+
 });
+
+
+// =========================================================
+// START APPLICATION
+// =========================================================
 
 function startApp() {
 
-    const windowsRef = ref(db, `offices/${office}/windows`);
 
-    const voiceToggle = document.getElementById("voiceToggle");
+const windowsRef =
+    ref(db, `companies/panelcoi/offices/${office}/windows`);
 
-    set(ref(db, "settings/voiceEnabled"), voiceToggle.checked);
+
+    const queuesRef =
+        ref(db, `companies/panelcoi/offices/${office}/queues`);
+
+
+    const voiceToggle =
+        document.getElementById("voiceToggle");
+
+
+    set(
+        ref(db, "settings/voiceEnabled"),
+        voiceToggle.checked
+    );
+
 
     voiceToggle.addEventListener("change", (e) => {
-        set(ref(db, "settings/voiceEnabled"), e.target.checked);
+
+        set(
+            ref(db, "settings/voiceEnabled"),
+            e.target.checked
+        );
+
     });
 
-    onValue(ref(db, "settings/voiceEnabled"), (snap) => {
-        voiceToggle.checked = snap.val() || false;
-    });
+
+    onValue(
+        ref(db, "settings/voiceEnabled"),
+        (snap) => {
+
+            voiceToggle.checked =
+                snap.val() || false;
+
+        }
+    );
+
+
+    // =====================================================
+    // LOAD WINDOWS
+    // =====================================================
 
     onValue(windowsRef, (snap) => {
 
         windowData = snap.val() || {};
 
-        const container = document.getElementById("windows");
-        container.innerHTML = "";
+        renderWindows();
 
-        const windows = Object.entries(windowData)
-            .sort((a,b) => (a[1].order || 0) - (b[1].order || 0));
-
-        windows.forEach(([id, win], index) => {
-
-            const box = document.createElement("div");
-            box.className = "box";
-            box.id = "box-" + id;
-
-            box.innerHTML = `
-                <div class="label">${win.label}</div>
-                <div class="value">${win.queue || 0}</div>
-            `;
-
-            box.onclick = () => {
-
-                selected = id;
-
-                document.getElementById("selectedWin").innerText = win.label;
-
-                document.querySelectorAll(".box")
-                    .forEach(x => x.classList.remove("active"));
-
-                box.classList.add("active");
-            };
-
-            container.appendChild(box);
-
-            if (index === 0 && !selected) {
-                selected = id;
-                document.getElementById("selectedWin").innerText = win.label;
-                box.classList.add("active");
-            }
-        });
     });
 
-    window.change = function(amount) {
 
-        if (!selected) return;
+    // =====================================================
+    // LOAD SHARED SERVICE COUNTERS
+    // =====================================================
 
-        runTransaction(
-            ref(db, `offices/${office}/windows/${selected}/queue`),
-            (v) => Math.max(0, (v || 0) + amount)
-        );
-    };
+    onValue(queuesRef, (snap) => {
 
-    window.resetAll = function() {
+        queueData = snap.val() || {};
 
-        if (!confirm("Reset all queues?")) return;
+        renderWindows();
 
-        Object.keys(windowData).forEach(id => {
-            set(ref(db, `offices/${office}/windows/${id}/queue`), 0);
-        });
-    };
+    });
+
 }
 
-window.goToDisplay = function() {
-    window.open("display.html?office=" + office, "_blank");
+
+// =========================================================
+// RENDER STAFF WINDOWS
+// =========================================================
+
+function renderWindows() {
+
+
+    const container =
+        document.getElementById("windows");
+
+
+    container.innerHTML = "";
+
+
+    const windows =
+        Object.entries(windowData)
+            .sort(
+                (a, b) =>
+                    (a[1].order || 0) -
+                    (b[1].order || 0)
+            );
+
+
+    windows.forEach(([id, win], index) => {
+
+        const roleKey =
+            getRoleKey(win.label);
+
+        const value =
+            win.queue || 0;
+
+        const windowName =
+            Number(win.order) > 0
+                ? "Window " + win.order
+                : "Window";
+
+
+        const box =
+            document.createElement("div");
+
+
+        box.className = "box";
+
+        box.id = "box-" + id;
+
+
+        box.innerHTML = `
+            <div class="label">
+                ${windowName}<br>
+                ${win.label || ""}
+            </div>
+            <div class="value">
+                ${value}
+            </div>
+        `;
+
+
+        box.onclick = () => {
+
+
+            selected = id;
+
+
+            document.getElementById("selectedWin").innerText =
+                windowName + " — " + (win.label || "");
+
+
+            document.querySelectorAll(".box")
+                .forEach(x =>
+                    x.classList.remove("active")
+                );
+
+
+            box.classList.add("active");
+
+        };
+
+
+        container.appendChild(box);
+
+
+        if (index === 0 && !selected) {
+
+            selected = id;
+
+
+            document.getElementById("selectedWin").innerText =
+            windowName + " — " + (win.label || "");
+
+
+            box.classList.add("active");
+
+        }
+
+
+    });
+
+}
+
+
+// =========================================================
+// NEXT / BACK
+//
+// Shared counter:
+// offices/{office}/queues/{roleKey}
+//
+// Individual display:
+// offices/{office}/windows/{windowId}/queue
+// =========================================================
+
+window.change = async function(amount) {
+
+
+    if (!selected) {
+
+        alert("Please select a window.");
+
+        return;
+
+    }
+
+
+    const win = windowData[selected];
+
+
+    if (!win) return;
+
+
+    const roleKey =
+        getRoleKey(win.label);
+
+
+    if (!roleKey) {
+
+        alert("This window has no valid service label.");
+
+        return;
+
+    }
+
+
+    const queueRef =
+        ref(
+            db,
+            `offices/${office}/queues/${roleKey}`
+        );
+
+
+    try {
+
+
+        const result =
+            await runTransaction(
+                queueRef,
+                (currentValue) => {
+
+                    return Math.max(
+                        0,
+                        (currentValue || 0) + amount
+                    );
+
+                }
+            );
+
+
+        if (!result.committed) {
+
+            return;
+
+        }
+
+
+        const newNumber =
+            result.snapshot.val() || 0;
+
+
+        // Store the number currently being displayed
+        // by THIS physical window.
+
+        await set(
+            ref(
+                db,
+                `companies/panelcoi/offices/${office}/windows/${selected}/queue`
+            ),
+            newNumber
+        );
+
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to update queue: " +
+            error.message
+        );
+
+    }
+
 };
+
+
+// =========================================================
+// RESET ALL
+//
+// Reset each shared service counter once.
+// Also reset every physical window's displayed number.
+// =========================================================
+
+window.resetAll = async function() {
+
+
+    if (!confirm("Reset all queues?")) {
+
+        return;
+
+    }
+
+
+    const roles = new Set();
+
+
+    Object.entries(windowData).forEach(
+        ([id, win]) => {
+
+            const roleKey =
+                getRoleKey(win.label);
+
+
+            if (roleKey) {
+
+                roles.add(roleKey);
+
+            }
+
+        }
+    );
+
+
+    const promises = [];
+
+
+    // Reset shared service counters
+
+    roles.forEach((roleKey) => {
+
+        promises.push(
+
+            set(
+                ref(
+                    db,
+                    `offices/${office}/queues/${roleKey}`
+                ),
+                0
+            )
+
+        );
+
+    });
+
+
+    // Reset each physical window's current number
+
+    Object.keys(windowData).forEach((id) => {
+
+        promises.push(
+
+            set(
+                ref(
+                    db,
+                    `companies/panelcoi/offices/${office}/windows/${id}/queue`
+                ),
+                0
+            )
+
+        );
+
+    });
+
+
+    try {
+
+        await Promise.all(promises);
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to reset queues: " +
+            error.message
+        );
+
+    }
+
+};
+
+
+// =========================================================
+// GO TO DISPLAY
+// =========================================================
+
+window.goToDisplay = function() {
+
+    window.open(
+        "display.html?office=" + office,
+        "_blank"
+    );
+
+};
+
 </script>
 
 </body>
+
 </html>

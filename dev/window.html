@@ -1,5 +1,7 @@
 <!DOCTYPE html>
+
 <html>
+
 <head>
 <title>QMS Window Administration</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -73,285 +75,724 @@ button{
 </style>
 </head>
 
+
 <body>
 
 <h2>QMS WINDOW ADMINISTRATION</h2>
+
 
 <div class="controls">
 
     Office:
 
     <select id="officeSelect">
-        <option value="mainoffice">Main Office</option>
-        <option value="alaminos">Alaminos</option>
-        <option value="bani">Bani</option>
-        <option value="bolinao">Bolinao</option>
-        <option value="dasol">Dasol</option>
+        <option value="">Loading offices...</option>
     </select>
 
-    <button class="addBtn" onclick="addWindow()">
+    <button
+        class="addBtn"
+        onclick="addWindow()">
         ADD WINDOW
     </button>
 
 </div>
 
+
 <table>
 
 <thead>
+
 <tr>
     <th>Window ID</th>
     <th>Label</th>
     <th>Order</th>
     <th>Delete</th>
 </tr>
+
 </thead>
 
-<tbody id="windowTable">
-</tbody>
+<tbody id="windowTable"></tbody>
 
 </table>
 
+
 <br>
 
-<button class="saveBtn" onclick="saveAll()">
+<button
+    class="saveBtn"
+    onclick="saveAll()">
     SAVE CHANGES
 </button>
-<button onclick="logout()">SWITCH ACCOUNT</button>
+
+<button onclick="logout()">
+    SWITCH ACCOUNT
+</button>
+
 
 <script type="module">
 
-import { initializeApp }
+import {
+    initializeApp
+}
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-// authentication 
+
+
 import {
     getAuth,
-    onAuthStateChanged
+    onAuthStateChanged,
+    signOut
 }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
 
 import {
     getDatabase,
     ref,
+    get,
     onValue,
     update,
     remove
 }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-window.logout = function () {
 
-    signOut(auth).then(() => {
-        window.location.href = "index.html";
-    });
 
-};
-
-// const admins = [
-//     "admin@panelcoi.com"
-// ];
-
-// if (!admins.includes(user.email)) {
-//     alert("Unauthorized");
-//     location.href = "staff2.html";
-// }
+/* =========================================================
+   FIREBASE CONFIG
+   ========================================================= */
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
-    authDomain: "panelco-i-queue-system.firebaseapp.com",
-    databaseURL: "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "panelco-i-queue-system",
-    storageBucket: "panelco-i-queue-system.firebasestorage.app",
-    messagingSenderId: "1075037996413",
-    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+
+    apiKey:
+        "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+
+    authDomain:
+        "panelco-i-queue-system.firebaseapp.com",
+
+    databaseURL:
+        "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+    projectId:
+        "panelco-i-queue-system",
+
+    storageBucket:
+        "panelco-i-queue-system.firebasestorage.app",
+
+    messagingSenderId:
+        "1075037996413",
+
+    appId:
+        "1:1075037996413:web:98dc8a2877d5c7b1a7814"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 
-const auth = getAuth(app);
 
-onAuthStateChanged(auth, (user) => {
+/* =========================================================
+   FIREBASE INITIALIZATION
+   ========================================================= */
 
-    if (!user) {
-        window.location.href = "login.html";
-        return;
-    }
+const app =
+    initializeApp(firebaseConfig);
 
-    const admins = [
-        "admin@panelcoi.com"
-    ];
+const db =
+    getDatabase(app);
 
-    if (!admins.includes(user.email.toLowerCase())) {
+const auth =
+    getAuth(app);
 
-        alert("Unauthorized");
 
-        window.location.href = "staff2.html";
 
-        return;
-    }
+/* =========================================================
+   VARIABLES
+   ========================================================= */
 
-    // If User is admin
-    loadWindows();
-
-});
-
-let currentOffice = "mainoffice";
+let currentCompany = "";
+let currentOffice = "";
 let currentData = {};
 
 const officeSelect =
     document.getElementById("officeSelect");
 
-officeSelect.addEventListener("change", () => {
 
-    currentOffice = officeSelect.value;
-    loadWindows();
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+window.logout = function () {
+
+    signOut(auth).then(() => {
+
+        window.location.href = "index.html";
+
+    });
+
+};
+
+
+
+/* =========================================================
+   AUTHENTICATION
+   ========================================================= */
+
+onAuthStateChanged(auth, async (user) => {
+
+    if (!user) {
+
+        window.location.href = "login.html";
+        return;
+
+    }
+
+
+    console.log(
+        "AUTH USER:",
+        user.email
+    );
+
+    console.log(
+        "AUTH UID:",
+        user.uid
+    );
+
+
+    try {
+
+        /*
+         * Get this user's profile.
+         *
+         * users/{Firebase UID}
+         */
+
+        const userRef =
+            ref(db, `users/${user.uid}`);
+
+        const userSnap =
+            await get(userRef);
+
+
+        if (!userSnap.exists()) {
+
+            alert(
+                "User profile not found."
+            );
+
+            return;
+        }
+
+
+        const userData =
+            userSnap.val();
+
+
+        console.log(
+            "USER DATA:",
+            userData
+        );
+
+
+        /*
+         * Only User Admin can access
+         * this administration page.
+         */
+
+        if (
+            userData.role !== "userAdmin"
+        ) {
+
+            alert("Unauthorized");
+
+            window.location.href =
+                "staff2.html";
+
+            return;
+        }
+
+
+        /*
+         * Get company assigned to this user.
+         */
+
+        currentCompany =
+            userData.companyId;
+
+
+        console.log(
+            "USER COMPANY:",
+            currentCompany
+        );
+
+
+        if (!currentCompany) {
+
+            alert(
+                "No company assigned to this user."
+            );
+
+            return;
+        }
+
+
+        /*
+         * Now load the offices belonging
+         * to this company.
+         */
+
+        loadOffices();
+
+    }
+    catch (error) {
+
+        console.error(
+            "ERROR:",
+            error
+        );
+
+        alert(
+            "Error loading user information:\n\n" +
+            error.message
+        );
+
+    }
 
 });
 
-// loadWindows();
 
-function loadWindows(){
+
+/* =========================================================
+   LOAD OFFICES
+   ========================================================= */
+
+
+function loadOffices() {
+
+    const officesRef =
+        ref(
+            db,
+            `companies/${currentCompany}/offices`
+        );
+
+    console.log(
+        "LOADING OFFICES:",
+        `companies/${currentCompany}/offices`
+    );
+
+    onValue(
+        officesRef,
+        (snap) => {
+
+            const offices =
+                snap.val() || {};
+
+            console.log(
+                "OFFICES DATA:",
+                offices
+            );
+
+            /*
+             * Remember the office that is
+             * currently selected.
+             */
+            const selectedOffice =
+                currentOffice;
+
+            officeSelect.innerHTML = "";
+
+            const officeEntries =
+                Object.entries(offices);
+
+            if (officeEntries.length === 0) {
+
+                officeSelect.innerHTML =
+                    `<option value="">
+                        No offices found
+                    </option>`;
+
+                document.getElementById(
+                    "windowTable"
+                ).innerHTML = "";
+
+                currentOffice = "";
+
+                return;
+            }
+
+            /*
+             * Rebuild the office dropdown.
+             */
+            officeEntries.forEach(
+                ([officeId, office]) => {
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+                    option.value =
+                        officeId;
+
+                    option.textContent =
+                        office.name ||
+                        office.label ||
+                        officeId;
+
+                    officeSelect.appendChild(
+                        option
+                    );
+
+                }
+            );
+
+            /*
+             * Keep the previously selected
+             * office if it still exists.
+             *
+             * Otherwise use the first office.
+             */
+            if (
+                selectedOffice &&
+                offices[selectedOffice]
+            ) {
+
+                officeSelect.value =
+                    selectedOffice;
+
+            }
+            else {
+
+                officeSelect.selectedIndex = 0;
+
+            }
+
+            currentOffice =
+                officeSelect.value;
+
+            loadWindows();
+
+        },
+        (error) => {
+
+            console.error(
+                "OFFICE READ ERROR:",
+                error
+            );
+
+            alert(
+                "Error loading offices:\n\n" +
+                error.message
+            );
+
+        }
+    );
+}
+
+
+/* =========================================================
+   OFFICE CHANGE
+   ========================================================= */
+
+officeSelect.addEventListener(
+    "change",
+    () => {
+
+        currentOffice =
+            officeSelect.value;
+
+        loadWindows();
+
+    }
+);
+
+
+
+/* =========================================================
+   LOAD WINDOWS
+   ========================================================= */
+
+function loadWindows() {
+
+    if (
+        !currentCompany ||
+        !currentOffice
+    ) {
+        return;
+    }
+
 
     const windowsRef =
-        ref(db, `offices/${currentOffice}/windows`);
+        ref(
+            db,
+            `companies/${currentCompany}/offices/${currentOffice}/windows`
+        );
 
-    onValue(windowsRef, (snap)=>{
 
-        currentData = snap.val() || {};
+    console.log(
+        "LOADING WINDOWS:",
+        `companies/${currentCompany}/offices/${currentOffice}/windows`
+    );
 
-        renderTable();
 
-    });
+    onValue(
+        windowsRef,
+        (snap) => {
+
+            currentData =
+                snap.val() || {};
+
+            renderTable();
+
+        },
+        (error) => {
+
+            console.error(
+                "WINDOW READ ERROR:",
+                error
+            );
+
+            alert(
+                "Error loading windows:\n\n" +
+                error.message
+            );
+
+        }
+    );
 
 }
 
-function renderTable(){
+
+
+/* =========================================================
+   RENDER WINDOW TABLE
+   ========================================================= */
+
+function renderTable() {
 
     const tbody =
-        document.getElementById("windowTable");
+        document.getElementById(
+            "windowTable"
+        );
+
 
     tbody.innerHTML = "";
 
+
     const windows =
         Object.entries(currentData)
-        .sort((a,b)=>
-            (a[1].order||0) -
-            (b[1].order||0)
+        .sort(
+            (a, b) =>
+                (a[1].order || 0) -
+                (b[1].order || 0)
         );
 
-    windows.forEach(([id,win])=>{
 
-        const row =
-            document.createElement("tr");
+    windows.forEach(
+        ([id, win]) => {
 
-        row.innerHTML = `
-            <td>${id}</td>
+            const row =
+                document.createElement("tr");
 
-            <td>
-                <input
-                    type="text"
-                    value="${win.label||''}"
-                    data-id="${id}"
-                    class="labelInput"
-                >
-            </td>
 
-            <td>
-                <input
-                    type="number"
-                    value="${win.order||0}"
-                    data-id="${id}"
-                    class="orderInput"
-                    style="width:80px"
-                >
-            </td>
+            row.innerHTML = `
 
-            <td>
-                <button
-                    class="deleteBtn"
-                    onclick="deleteWindow('${id}')">
-                    DELETE
-                </button>
-            </td>
-        `;
+                <td>
+                    ${id}
+                </td>
 
-        tbody.appendChild(row);
+                <td>
 
-    });
+                    <input
+                        type="text"
+                        value="${win.label || ''}"
+                        data-id="${id}"
+                        class="labelInput"
+                    >
+
+                </td>
+
+                <td>
+
+                    <input
+                        type="number"
+                        value="${win.order || 0}"
+                        data-id="${id}"
+                        class="orderInput"
+                        style="width:80px"
+                    >
+
+                </td>
+
+                <td>
+
+                    <button
+                        class="deleteBtn"
+                        onclick="deleteWindow('${id}')">
+
+                        DELETE
+
+                    </button>
+
+                </td>
+
+            `;
+
+
+            tbody.appendChild(row);
+
+        }
+    );
 
 }
 
-window.saveAll = async function(){
+
+
+/* =========================================================
+   SAVE CHANGES
+   ========================================================= */
+
+window.saveAll = async function () {
+
+    if (
+        !currentCompany ||
+        !currentOffice
+    ) {
+        return;
+    }
+
 
     const updates = {};
 
-    document
-    .querySelectorAll(".labelInput")
-    .forEach(input=>{
 
-        const id = input.dataset.id;
-
-        updates[
-            `${id}/label`
-        ] = input.value;
-
-    });
+    /*
+     * Save labels.
+     */
 
     document
-    .querySelectorAll(".orderInput")
-    .forEach(input=>{
+        .querySelectorAll(".labelInput")
+        .forEach(input => {
 
-        const id = input.dataset.id;
+            const id =
+                input.dataset.id;
 
-        updates[
-            `${id}/order`
-        ] = Number(input.value);
+            updates[
+                `${id}/label`
+            ] =
+                input.value;
 
-    });
+        });
+
+
+    /*
+     * Save order.
+     */
+
+    document
+        .querySelectorAll(".orderInput")
+        .forEach(input => {
+
+            const id =
+                input.dataset.id;
+
+            updates[
+                `${id}/order`
+            ] =
+                Number(input.value);
+
+        });
+
 
     await update(
-        ref(db,
-        `offices/${currentOffice}/windows`
+        ref(
+            db,
+            `companies/${currentCompany}/offices/${currentOffice}/windows`
         ),
         updates
     );
+
 
     alert("Saved");
 
 };
 
-window.addWindow = async function(){
+
+
+/* =========================================================
+   ADD WINDOW
+   ========================================================= */
+
+window.addWindow = async function () {
+
+    if (
+        !currentCompany ||
+        !currentOffice
+    ) {
+        return;
+    }
+
+
+    /*
+     * Same basic logic as the
+     * original program.
+     */
 
     const nextNo =
         Object.keys(currentData).length + 1;
 
-    const id = "w" + nextNo;
+
+    const id =
+        "w" + nextNo;
+
 
     await update(
-        ref(db, `offices/${currentOffice}/windows`),
+
+        ref(
+            db,
+            `companies/${currentCompany}/offices/${currentOffice}/windows`
+        ),
+
         {
+
             [id]: {
-                label: "New Window",
-                queue: 0,
-                order: nextNo
+
+                label:
+                    "New Window",
+
+                order:
+                    nextNo,
+                queue:
+                    0
+
             }
+
         }
+
     );
 
 };
 
-window.deleteWindow = async function(id){
 
-    if(!confirm(
-        "Delete " + id + " ?"
-    )) return;
+
+/* =========================================================
+   DELETE WINDOW
+   ========================================================= */
+
+window.deleteWindow = async function (id) {
+
+    if (
+        !confirm(
+            "Delete " + id + " ?"
+        )
+    ) {
+        return;
+    }
+
 
     await remove(
+
         ref(
             db,
-            `offices/${currentOffice}/windows/${id}`
+            `companies/${currentCompany}/offices/${currentOffice}/windows/${id}`
         )
+
     );
 
 };
@@ -359,4 +800,5 @@ window.deleteWindow = async function(id){
 </script>
 
 </body>
+
 </html>

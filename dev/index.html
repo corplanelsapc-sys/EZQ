@@ -104,8 +104,11 @@ onAuthStateChanged(auth, (user) => {
     if (email === "admin@panelcoi.com") {
 
         window.location.href = "window.html";
-
-    } else {
+        
+    } else if (email === "operator@panelcoi.com") {
+        
+        window.location.href = "system-admin.html";        
+    }else {
 
         const office = email.split("@")[0];
         
@@ -138,11 +141,13 @@ window.login = function() {
             "bani",
             "bolinao",
             "dasol",
-            "alaminos"
+            "alaminos",
+            "operator"            
         ];
 
         const isAdmin =
             user.email.toLowerCase() === "admin@panelcoi.com";
+            user.email.toLowerCase() === "operator@panelcoi.com";
 
         if (!validOffices.includes(office) && !isAdmin) {
 
@@ -165,6 +170,10 @@ window.login = function() {
         if (user.email.toLowerCase() === "admin@panelcoi.com") {
 
          window.location.href = "window.html";
+
+        } else if (email === "operator@panelcoi.com") {
+        
+        window.location.href = "system-admin.html";  
 
         } else {
 
