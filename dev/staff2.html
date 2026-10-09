@@ -1,96 +1,670 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+
+<meta charset="UTF-8">
 
 <title>Queue Clicker Dashboard</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- Same fonts as the display page so both screens feel like one system -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&display=swap"
+    rel="stylesheet"
+>
+
 <style>
 
+/* Same palette as display.html */
+:root {
+
+    --bg: #0B0F13;
+    --bg-lift: #131A21;
+    --surface: #161E26;
+    --line: #26323C;
+    --text: #EAF0F4;
+    --muted: #7D8C99;
+    --go: #35D57F;
+    --go-deep: #0E3D28;
+    --danger: #E0533D;
+
+}
+
+* {
+
+    box-sizing: border-box;
+
+}
+
+html,
 body {
-    background:#111;
-    color:white;
-    font-family:Arial;
-    text-align:center;
-    margin:0;
-    padding:20px;
+
+    margin: 0;
+    min-height: 100%;
+
+    background: var(--bg);
+    color: var(--text);
+
+    font-family: "Barlow", system-ui, sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+
 }
 
-h2 {
-    margin:10px 0;
+/* Soft spotlight at the top, behind everything */
+body::before {
+
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    background:
+        radial-gradient(
+            120% 90% at 50% 0%,
+            #1A242E 0%,
+            var(--bg) 62%
+        );
+
+    z-index: -1;
+
 }
 
-.toggle {
-    margin:10px;
-    font-size:16px;
+
+/* =========================================================
+   PAGE FRAME
+========================================================= */
+
+.app {
+
+    min-height: 100vh;
+    min-height: 100dvh;
+
+    max-width: 1100px;
+    margin: 0 auto;
+
+    padding: clamp(12px, 2vw, 28px);
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 16px;
+
 }
 
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.topbar {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+}
+
+.eyebrow {
+
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+
+    color: var(--go);
+
+}
+
+h1 {
+
+    margin: 2px 0 0;
+
+    font-size: clamp(18px, 3vw, 28px);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.1;
+
+}
+
+.chip {
+
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: baseline;
+
+    gap: 8px;
+
+    padding: 8px 14px;
+
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+
+    font-weight: 600;
+    letter-spacing: 0.04em;
+
+}
+
+.chip-label {
+
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    color: var(--muted);
+
+}
+
+
+/* =========================================================
+   STATUS PANEL (selected window + voice switch)
+========================================================= */
+
+.panel {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: 12px 24px;
+
+    padding: 14px 18px;
+
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+
+}
+
+.selected-info {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 2px;
+
+    min-width: 0;
+
+}
+
+.selected-value {
+
+    font-size: clamp(16px, 2.4vw, 22px);
+    font-weight: 600;
+
+    color: var(--go);
+
+}
+
+/* Voice toggle styled as a switch.
+   The real checkbox (#voiceToggle) is kept, just visually hidden. */
+.switch {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+
+    font-weight: 500;
+
+    user-select: none;
+
+}
+
+.switch input {
+
+    position: absolute;
+
+    opacity: 0;
+
+    width: 1px;
+    height: 1px;
+
+}
+
+.track {
+
+    position: relative;
+
+    flex: 0 0 auto;
+
+    width: 44px;
+    height: 24px;
+
+    background: var(--bg-lift);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+
+    transition: background-color .2s ease, border-color .2s ease;
+
+}
+
+.track::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: 2px;
+    left: 2px;
+
+    width: 18px;
+    height: 18px;
+
+    border-radius: 50%;
+
+    background: var(--muted);
+
+    transition: transform .2s ease, background-color .2s ease;
+
+}
+
+.switch input:checked + .track {
+
+    background: var(--go-deep);
+    border-color: var(--go);
+
+}
+
+.switch input:checked + .track::after {
+
+    transform: translateX(20px);
+
+    background: var(--go);
+
+}
+
+.switch input:focus-visible + .track {
+
+    outline: 2px solid var(--go);
+    outline-offset: 2px;
+
+}
+
+
+/* =========================================================
+   WINDOWS
+========================================================= */
+
+.section-head {
+
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin: 0 2px 10px;
+
+}
+
+.section-title {
+
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+
+    color: var(--muted);
+
+}
+
+.section-hint {
+
+    font-size: 13px;
+
+    color: var(--muted);
+
+}
+
+/* Cards fill the width automatically, no fixed percentages */
 .windows {
-    display:flex;
-    justify-content:space-around;
-    flex-wrap:wrap;
-    margin-top:20px;
-    gap:10px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(min(100%, 170px), 1fr)
+        );
+
+    gap: 12px;
+
 }
 
+/* These class names (box, label, value, active) are created and toggled
+   by the script, so they must keep these exact names. */
 .box {
-    background:#222;
-    border:2px solid #333;
-    border-radius:10px;
-    padding:20px;
-    width:22%;
-    min-width:120px;
-    cursor:pointer;
+
+    padding: 14px 12px 12px;
+
+    text-align: center;
+
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+
+    cursor: pointer;
+
+    transition:
+        border-color .2s ease,
+        background-color .2s ease,
+        box-shadow .2s ease;
+
 }
 
+.box:hover {
+
+    border-color: var(--muted);
+
+}
+
+/* Second line of the label (the service name): small, muted, uppercase */
 .label {
-    font-size:20px;
-    color:#aaa;
+
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    color: var(--muted);
+
+}
+
+/* First line of the label ("Window 3"): larger and brighter */
+.label::first-line {
+
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+
+    color: var(--text);
+
 }
 
 .value {
-    font-size:60px;
-    font-weight:bold;
+
+    margin-top: 4px;
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(52px, 8vw, 76px);
+    font-weight: 400;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+
+    color: var(--text);
+
 }
 
+/* Selected window: green, matching the "called" look on the display */
 .active {
-    border:4px solid yellow;
-    box-shadow:0 0 15px yellow;
+
+    border-color: var(--go);
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--go-deep) 0%,
+            var(--surface) 80%
+        );
+
+    box-shadow:
+        0 0 0 1px var(--go),
+        0 0 28px -8px rgba(53, 213, 127, .5);
+
 }
 
-button {
-    font-size:25px;
-    padding:15px;
-    margin:10px;
-    width:40%;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
+.active .value {
+
+    color: var(--go);
+
 }
 
-.next {
-    background:red;
-    color:white;
+
+/* =========================================================
+   ACTION DOCK
+   Stays at the bottom of the screen so the main buttons are
+   always reachable, even with many windows.
+========================================================= */
+
+.dock {
+
+    position: sticky;
+    bottom: 0;
+
+    margin-top: auto;
+
+    padding:
+        14px
+        0
+        calc(6px + env(safe-area-inset-bottom));
+
+    background:
+        linear-gradient(
+            to top,
+            var(--bg) 72%,
+            rgba(11, 15, 19, 0)
+        );
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+
 }
 
-.back {
-    background:#555;
-    color:white;
+.dock-main {
+
+    display: grid;
+
+    grid-template-columns: 1fr 2fr;
+
+    gap: 10px;
+
 }
 
-.reset {
-    background:#222;
-    color:#aaa;
-    width:85%;
-    font-size:18px;
+.dock-util {
+
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 10px;
+
 }
 
-.selected {
-    margin-top:10px;
-    font-size:20px;
-    color:#0f0;
+.btn {
+
+    font: inherit;
+    font-weight: 600;
+
+    color: var(--text);
+
+    background: var(--bg-lift);
+
+    border: 1px solid var(--line);
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    transition:
+        border-color .15s ease,
+        background-color .15s ease,
+        transform .08s ease;
+
+}
+
+.btn:hover {
+
+    border-color: var(--muted);
+
+}
+
+.btn:active {
+
+    transform: scale(0.98);
+
+}
+
+.btn:focus-visible {
+
+    outline: 2px solid var(--go);
+    outline-offset: 2px;
+
+}
+
+/* Main NEXT / BACK buttons: big, easy targets */
+.btn-main {
+
+    min-height: 76px;
+
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+
+    gap: 10px;
+
+    padding: 0 16px;
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+
+}
+
+.btn-main small {
+
+    font-family: "Barlow", system-ui, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0;
+
+    opacity: .7;
+
+}
+
+.btn-next {
+
+    background: var(--go);
+    border-color: var(--go);
+
+    color: #06170E;
+
+}
+
+.btn-next:hover {
+
+    border-color: var(--text);
+
+}
+
+.btn-back {
+
+    background: var(--surface);
+
+}
+
+/* Secondary buttons */
+.btn-util {
+
+    min-height: 46px;
+
+    padding: 0 10px;
+
+    font-size: 14px;
+
+    color: var(--muted);
+
+}
+
+.btn-util:hover {
+
+    color: var(--text);
+
+}
+
+/* Reset is deliberately quiet until hovered, and kept away from NEXT */
+.btn-danger {
+
+    color: var(--danger);
+
+    border-color: rgba(224, 83, 61, .35);
+
+}
+
+.btn-danger:hover {
+
+    color: var(--text);
+
+    background: var(--danger);
+    border-color: var(--danger);
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 560px) {
+
+    .topbar {
+
+        align-items: flex-start;
+
+    }
+
+    .btn-main {
+
+        min-height: 68px;
+
+    }
+
+    .dock-util {
+
+        gap: 8px;
+
+    }
+
+    .btn-util {
+
+        font-size: 13px;
+
+        padding: 0 6px;
+
+    }
+
+    .section-hint {
+
+        display: none;
+
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    * {
+
+        transition: none !important;
+
+    }
+
 }
 
 </style>
@@ -99,55 +673,130 @@ button {
 
 <body>
 
-<h2>PANELCO I QUEUE MANAGEMENT SYSTEM (QMS)</h2>
+<div class="app">
 
-<div class="toggle">
 
-    <label>
+<!-- =====================================================
+     TOP BAR
+====================================================== -->
+
+<header class="topbar">
+
+    <div>
+
+        <div class="eyebrow">
+            PANELCO I
+        </div>
+
+        <h1>
+            Queue Management System
+        </h1>
+
+    </div>
+
+    <div class="chip">
+
+        <span class="chip-label">
+            Office
+        </span>
+
+        <span id="officeName">---</span>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     STATUS: selected window + voice switch
+====================================================== -->
+
+<section class="panel">
+
+    <div class="selected-info">
+
+        <span class="chip-label">
+            Now controlling
+        </span>
+
+        <span class="selected-value" id="selectedWin">---</span>
+
+    </div>
+
+    <label class="switch">
 
         <input type="checkbox" id="voiceToggle">
 
-        Enable Voice Announcement
+        <span class="track"></span>
+
+        <span>Voice announcement</span>
 
     </label>
 
-</div>
+</section>
 
-<div class="selected">
 
-    Office:
-    <span id="officeName">---</span>
+<!-- =====================================================
+     WINDOWS (cards are created by the script)
+====================================================== -->
 
-    <br>
+<main>
 
-    Selected:
-    <span id="selectedWin">---</span>
+    <div class="section-head">
 
-</div>
+        <span class="section-title">
+            Windows
+        </span>
 
-<div class="windows" id="windows"></div>
+        <span class="section-hint">
+            Tap a window to select it
+        </span>
 
-<div>
+    </div>
 
-    <button class="next" onclick="change(1)">
-        NEXT (+1)
-    </button>
+    <div class="windows" id="windows"></div>
 
-    <button class="back" onclick="change(-1)">
-        BACK (-1)
-    </button>
+</main>
 
-    <button class="reset" onclick="resetAll()">
-        RESET ALL
-    </button>
 
-    <button onclick="goToDisplay()">
-        GO TO DISPLAY
-    </button>
+<!-- =====================================================
+     ACTIONS
+====================================================== -->
 
-    <button onclick="logout()">
-        SWITCH ACCOUNT
-    </button>
+<footer class="dock">
+
+    <div class="dock-main">
+
+        <button class="btn btn-main btn-back" onclick="change(-1)">
+            <span>BACK</span>
+            <small>&minus;1</small>
+        </button>
+
+        <button class="btn btn-main btn-next" onclick="change(1)">
+            <span>NEXT</span>
+            <small>+1</small>
+        </button>
+
+    </div>
+
+    <div class="dock-util">
+
+        <button class="btn btn-util" onclick="goToDisplay()">
+            Open display
+        </button>
+
+        <button class="btn btn-util" onclick="logout()">
+            Switch account
+        </button>
+
+        <button class="btn btn-util btn-danger" onclick="resetAll()">
+            Reset all
+        </button>
+
+    </div>
+
+</footer>
+
 
 </div>
 

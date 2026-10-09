@@ -6,14 +6,17 @@
 
 <meta charset="UTF-8">
 
+<!-- Makes the page scale correctly on phones and tablets -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>QUEUE DISPLAY</title>
 
+<!-- Speeds up loading of Google Fonts by opening the connections early -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
+<!-- Bebas Neue = big queue numbers and clock. Barlow = all other text. -->
 <link
     href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&display=swap"
     rel="stylesheet"
@@ -21,18 +24,19 @@
 
 <style>
 
+/* Color palette and spacing. Change colors here and they update everywhere. */
 :root {
 
-    --bg: #0B0F13;
-    --bg-lift: #131A21;
-    --surface: #161E26;
-    --line: #26323C;
-    --text: #EAF0F4;
-    --muted: #7D8C99;
-    --go: #35D57F;
-    --go-deep: #0E3D28;
-    --danger: #E0533D;
-    --gap: clamp(8px, 1.1vw, 20px);
+    --bg: #0B0F13;          /* page background */
+    --bg-lift: #131A21;     /* slightly lighter strips (window name bar, buttons) */
+    --surface: #161E26;     /* card background */
+    --line: #26323C;        /* borders */
+    --text: #EAF0F4;        /* main text */
+    --muted: #7D8C99;       /* secondary text */
+    --go: #35D57F;          /* green accent when a number is called */
+    --go-deep: #0E3D28;     /* dark green used in the called-card gradient */
+    --danger: #E0533D;      /* red dot when disconnected */
+    --gap: clamp(8px, 1.1vw, 20px);   /* space between cards, scales with screen width */
 
 }
 
@@ -41,6 +45,7 @@
    RESET
 ========================================================= */
 
+/* Padding and borders count inside an element's width/height */
 * {
 
     box-sizing: border-box;
@@ -48,6 +53,7 @@
 }
 
 
+/* Fill the whole screen, never scroll (this is a display board) */
 html,
 body {
 
@@ -73,6 +79,7 @@ body {
    BACKGROUND
 ========================================================= */
 
+/* Soft spotlight glow at the top of the screen, sits behind everything */
 body::before {
 
     content: "";
@@ -96,6 +103,7 @@ body::before {
    MAIN SCREEN
 ========================================================= */
 
+/* Vertical stack: header on top, board in the middle, footer at the bottom */
 .screen {
 
     width: 100%;
@@ -116,6 +124,7 @@ body::before {
    HEADER
 ========================================================= */
 
+/* Company/office on the left, connection + date + clock on the right */
 .header {
 
     flex: 0 0 auto;
@@ -143,6 +152,7 @@ body::before {
 }
 
 
+/* "PANELCO I QUEUE MANAGEMENT SYSTEM" */
 .title {
 
     margin: 0;
@@ -159,6 +169,7 @@ body::before {
 }
 
 
+/* Office name under the title, e.g. "Main Office" */
 .office {
 
     margin-top: 3px;
@@ -191,6 +202,7 @@ body::before {
    CONNECTION
 ========================================================= */
 
+/* "Live" / "Reconnecting" label with a small colored dot (the ::before) */
 .connection {
 
     display: inline-flex;
@@ -209,6 +221,7 @@ body::before {
 }
 
 
+/* The dot. Gray by default (still connecting) */
 .connection::before {
 
     content: "";
@@ -225,6 +238,7 @@ body::before {
 }
 
 
+/* Added by JavaScript when Firebase is connected: green dot */
 .connection.is-live::before {
 
     background: var(--go);
@@ -232,6 +246,7 @@ body::before {
 }
 
 
+/* Added by JavaScript when Firebase is disconnected: red dot */
 .connection.is-down::before {
 
     background: var(--danger);
@@ -255,6 +270,7 @@ body::before {
 }
 
 
+/* tabular-nums keeps digits the same width so the clock doesn't jiggle */
 .clock {
 
     font-family:
@@ -280,6 +296,9 @@ body::before {
    BOARD
 ========================================================= */
 
+/* The grid that holds all window cards.
+   --cols and --rows are set by JavaScript (layoutBoard) based on
+   how many windows there are, so the cards fill the space evenly. */
 #board {
 
     flex: 1 1 auto;
@@ -320,6 +339,7 @@ body::before {
    CARD
 ========================================================= */
 
+/* One card per service window: name bar, service label, big number */
 .card {
 
     position: relative;
@@ -341,6 +361,7 @@ body::before {
 
     text-align: center;
 
+    /* Smooth change when the card turns green (".called") and back */
     transition:
         border-color .25s ease,
         background-color .25s ease,
@@ -354,6 +375,7 @@ body::before {
    WINDOW NAME
 ========================================================= */
 
+/* Top bar of the card: "Window 1", "Window 2", ... */
 .window-name {
 
     flex: 0 0 auto;
@@ -398,6 +420,7 @@ body::before {
    SERVICE NAME
 ========================================================= */
 
+/* Small label under the window name (the window's "label" from Firebase) */
 .service-name {
 
     flex: 0 0 auto;
@@ -431,6 +454,8 @@ body::before {
    QUEUE NUMBER
 ========================================================= */
 
+/* The big number. font-size here (240px) is only a starting value;
+   JavaScript (fitAll) overwrites it to fit each card exactly. */
 .queue-number {
 
     flex: 1 1 auto;
@@ -459,7 +484,7 @@ body::before {
 
     font-weight: 400;
 
-    line-height: 0.75;
+    line-height: 1;
 
     letter-spacing: 0.01em;
 
@@ -469,6 +494,7 @@ body::before {
 
     overflow: hidden;
 
+    /* Slight "pop" when the number is highlighted */
     transition:
         transform .3s cubic-bezier(.2, .9, .3, 1.3),
         color .25s ease;
@@ -480,6 +506,7 @@ body::before {
    EMPTY QUEUE
 ========================================================= */
 
+/* Dim "—" shown when a window has no number yet (queue is 0) */
 .queue-number.empty {
 
     color: var(--muted);
@@ -493,6 +520,8 @@ body::before {
    CALLED / HIGHLIGHT
 ========================================================= */
 
+/* Added by JavaScript for 15 seconds whenever a window's number changes.
+   Green border, green glow, green window bar, green number. */
 .card.called {
 
     border-color: var(--go);
@@ -538,6 +567,8 @@ body::before {
    EMPTY BOARD
 ========================================================= */
 
+/* Message shown while loading or when the office has no windows.
+   Spans the whole grid (all columns and rows). */
 .board-empty {
 
     grid-column: 1 / -1;
@@ -599,6 +630,7 @@ body::before {
    FOOTER
 ========================================================= */
 
+/* Company tagline on the left, sound/full screen buttons on the right */
 .footer {
 
     flex: 0 0 auto;
@@ -637,6 +669,7 @@ body::before {
 }
 
 
+/* Pill-shaped buttons */
 .btn {
 
     font: inherit;
@@ -668,6 +701,7 @@ body::before {
 }
 
 
+/* Visible outline when navigating with the keyboard */
 .btn:focus-visible {
 
     outline:
@@ -678,6 +712,7 @@ body::before {
 }
 
 
+/* Green button style, used for the sound button */
 .btn--go {
 
     background: var(--go);
@@ -693,6 +728,7 @@ body::before {
    MOBILE
 ========================================================= */
 
+/* Phones and narrow screens: tighter spacing, date hidden to save room */
 @media (max-width: 700px) {
 
     .screen {
@@ -780,6 +816,7 @@ body::before {
    REDUCED MOTION
 ========================================================= */
 
+/* Respects the device setting for people who prefer no animations */
 @media (prefers-reduced-motion: reduce) {
 
     * {
@@ -804,6 +841,8 @@ body::before {
 
 <!-- =====================================================
      HEADER
+     The title text is replaced by JavaScript with the
+     company name from Firebase.
 ====================================================== -->
 
 <header class="header">
@@ -817,6 +856,7 @@ body::before {
             QUEUE MANAGEMENT SYSTEM
         </div>
 
+        <!-- Filled in by JavaScript from the ?office= value in the URL -->
         <div
             class="office"
             id="officeName"
@@ -829,6 +869,7 @@ body::before {
 
     <div class="header-right">
 
+        <!-- "Live" / "Reconnecting" indicator -->
         <span
             class="connection"
             id="connection"
@@ -856,6 +897,8 @@ body::before {
 
 <!-- =====================================================
      BOARD
+     JavaScript fills this with one card per window.
+     The message below shows only until the first data arrives.
 ====================================================== -->
 
 <main id="board">
@@ -883,6 +926,7 @@ body::before {
 
     <div class="footer-brand">
 
+        <!-- Company name here is replaced by JavaScript from Firebase -->
         <strong id="footerCompany">
             PANELCO I
         </strong>
@@ -896,6 +940,8 @@ body::before {
 
     <div class="controls">
 
+        <!-- Browsers block sound until the user interacts with the page,
+             so this button (or any click/tap) unlocks the beep. -->
         <button
             class="btn btn--go"
             id="enableAudioBtn"
@@ -925,6 +971,8 @@ body::before {
 
 /* =========================================================
    FIREBASE
+   Loads the Firebase tools straight from Google's servers
+   and connects to the project's Realtime Database.
 ========================================================= */
 
 import { initializeApp }
@@ -938,6 +986,8 @@ import {
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 
+// Project connection details. These identify which Firebase project to use;
+// they are not passwords (access is controlled by the database rules).
 const firebaseConfig = {
 
     apiKey:
@@ -968,12 +1018,16 @@ const app =
     initializeApp(firebaseConfig);
 
 
+// "db" is the handle used for all database reads below
 const db =
     getDatabase(app);
 
 
 /* =========================================================
    COMPANY / OFFICE
+   Read from the page address, e.g.
+   display.html?company=panelcoi&office=mainoffice
+   If missing, defaults to panelcoi / mainoffice.
 ========================================================= */
 
 const params =
@@ -996,18 +1050,24 @@ const office =
     ).toLowerCase();
 
 
+// Turns a URL value like "main-office" or "mainoffice" into a nice
+// label like "Main Office" for the header.
 function prettyOffice(slug) {
 
     return slug
 
+        // dashes/underscores -> spaces
         .replace(/[-_]+/g, " ")
 
+        // make sure "office" is its own word: "mainoffice" -> "main Office"
         .replace(/office/gi, " Office")
 
+        // collapse double spaces
         .replace(/\s+/g, " ")
 
         .trim()
 
+        // capitalize the first letter of each word
         .replace(
             /\b\w/g,
             c => c.toUpperCase()
@@ -1018,6 +1078,7 @@ function prettyOffice(slug) {
 
 /* =========================================================
    COMPANY DISPLAY
+   Grab the page elements that show company/office names.
 ========================================================= */
 
 const companyTitleEl =
@@ -1044,8 +1105,10 @@ officeNameEl.innerText =
 
 /* =========================================================
    FIREBASE REFERENCES
+   Database locations this page listens to.
 ========================================================= */
 
+// companies/<company>  -> company info (e.g. its display name)
 const companyRef =
     ref(
         db,
@@ -1053,6 +1116,7 @@ const companyRef =
     );
 
 
+// companies/<company>/offices/<office>/windows  -> all windows and their queue numbers
 const windowsRef =
     ref(
         db,
@@ -1060,6 +1124,7 @@ const windowsRef =
     );
 
 
+// settings/voiceEnabled  -> true/false, set from the admin page
 const voiceRef =
     ref(
         db,
@@ -1067,6 +1132,7 @@ const voiceRef =
     );
 
 
+// Special Firebase path that is true when this screen is connected
 const connectionRef =
     ref(
         db,
@@ -1076,6 +1142,8 @@ const connectionRef =
 
 /* =========================================================
    COMPANY NAME
+   Updates the header title and footer whenever the company
+   name changes in Firebase. Falls back to the URL value.
 ========================================================= */
 
 onValue(
@@ -1121,6 +1189,7 @@ const dateEl =
     );
 
 
+// Writes the current time and date into the header
 function updateClock() {
 
     const now =
@@ -1150,6 +1219,7 @@ function updateClock() {
 }
 
 
+// Show it right away, then refresh every 10 seconds
 updateClock();
 
 
@@ -1161,6 +1231,7 @@ setInterval(
 
 /* =========================================================
    VARIABLES
+   State kept while the page is open.
 ========================================================= */
 
 const board =
@@ -1175,26 +1246,35 @@ const connection =
     );
 
 
+// Latest windows data from Firebase, keyed by window ID
 let windowData = {};
 
 
+// Mirrors settings/voiceEnabled
 let voiceEnabled =
     false;
 
 
+// True until the first render is done, so existing numbers
+// on page load don't trigger a beep/highlight
 let firstLoad =
     true;
 
 
+// Last number shown per window, used to detect changes
 const lastNumbers = {};
 
 
+// Timers that remove the green highlight, per window
 const calledTimers = {};
 
 
+// When each window's highlight should end (timestamp), so it
+// survives a re-render while still active
 const calledUntil = {};
 
 
+// How long a card stays green after its number changes (15 seconds)
 const HIGHLIGHT_MS =
     15000;
 
@@ -1203,10 +1283,12 @@ const HIGHLIGHT_MS =
    AUDIO
 ========================================================= */
 
+// Browsers only allow sound after the user clicks/taps once
 let audioUnlocked =
     false;
 
 
+// beep.mp3 must be in the same folder as this page
 const beep =
     new Audio("beep.mp3");
 
@@ -1221,6 +1303,8 @@ const audioBtn =
     );
 
 
+// Plays the beep silently once (play then pause) to get the
+// browser's permission, then marks sound as ready.
 async function unlockAudio() {
 
     if (audioUnlocked) {
@@ -1255,6 +1339,7 @@ async function unlockAudio() {
 
     catch (error) {
 
+        // Browser refused; keep the button as is so it can be tried again
         audioBtn.textContent =
             "Turn on sound";
 
@@ -1263,6 +1348,7 @@ async function unlockAudio() {
 }
 
 
+// Any of these interactions will unlock sound
 audioBtn.addEventListener(
     "click",
     unlockAudio
@@ -1291,6 +1377,7 @@ const fullscreenBtn =
     );
 
 
+// Toggle: enter full screen, or exit if already in it
 fullscreenBtn.addEventListener(
 
     "click",
@@ -1318,6 +1405,7 @@ fullscreenBtn.addEventListener(
 );
 
 
+// Keep the button text in sync (also when the user presses Esc)
 document.addEventListener(
 
     "fullscreenchange",
@@ -1339,6 +1427,7 @@ document.addEventListener(
 
 /* =========================================================
    VOICE SETTING
+   Turns spoken announcements on/off live from Firebase.
 ========================================================= */
 
 onValue(
@@ -1357,6 +1446,7 @@ onValue(
 
 /* =========================================================
    CONNECTION
+   Shows "Live" (green dot) or "Reconnecting" (red dot).
 ========================================================= */
 
 onValue(
@@ -1409,6 +1499,7 @@ function getWindowName(win) {
         Number(win.order);
 
 
+    // Use "Window <order>" when order is a positive number
     if (
 
         Number.isFinite(order) &&
@@ -1422,6 +1513,7 @@ function getWindowName(win) {
     }
 
 
+    // Otherwise show a plain "Window"
     return "Window";
 
 }
@@ -1432,6 +1524,10 @@ function getWindowName(win) {
 
    IMPORTANT:
    We measure the ACTUAL rendered text.
+
+   How it works: for each card, create a hidden copy of the number,
+   start with a big font size, and shrink it 2px at a time until
+   it fits inside the card. Then apply that size to the real number.
 ========================================================= */
 
 function fitAll() {
@@ -1465,14 +1561,17 @@ function fitAll() {
         }
 
 
+        // Available space for the number itself (the number area, not the
+        // whole card, so the window bar and service label are not counted)
         const maxW =
-            parent.clientWidth - 20;
+            cell.clientWidth - 16;
 
 
         const maxH =
-            parent.clientHeight - 10;
+            cell.clientHeight - 8;
 
 
+        // Card not visible/sized yet; skip it
         if (
 
             maxW <= 0 ||
@@ -1486,6 +1585,7 @@ function fitAll() {
         }
 
 
+        // Hidden, off-screen copy used only for measuring text size
         const measure =
             document.createElement(
                 "span"
@@ -1516,6 +1616,7 @@ function fitAll() {
             "nowrap";
 
 
+        // Must match the real number's font settings (see .queue-number CSS)
         measure.style.fontFamily =
             '"Bebas Neue", Impact, sans-serif';
 
@@ -1525,7 +1626,7 @@ function fitAll() {
 
 
         measure.style.lineHeight =
-            "0.75";
+            "1";
 
 
         measure.style.letterSpacing =
@@ -1537,6 +1638,7 @@ function fitAll() {
         );
 
 
+        // Starting size: up to 500px, or based on card height if smaller
         let size =
             Math.min(
                 500,
@@ -1544,6 +1646,7 @@ function fitAll() {
             );
 
 
+        // Shrink until the text fits both width and height (minimum 40px)
         while (size > 40) {
 
             measure.style.fontSize =
@@ -1576,6 +1679,7 @@ function fitAll() {
             size + "px";
 
 
+        // Clean up the hidden measuring element
         document.body.removeChild(
             measure
         );
@@ -1587,6 +1691,7 @@ function fitAll() {
 
 /* =========================================================
    RESIZE
+   Re-fit the numbers when the window size changes.
 ========================================================= */
 
 window.addEventListener(
@@ -1606,6 +1711,8 @@ window.addEventListener(
 
 /* =========================================================
    WAIT FOR FONT
+   Numbers are measured with Bebas Neue, so re-fit once the
+   font has finished loading.
 ========================================================= */
 
 if (
@@ -1628,6 +1735,10 @@ if (
 
    Choose a grid according to the available
    board dimensions.
+
+   How it works: try every possible number of columns, work out
+   the card shape (width / height) for each option, and pick the
+   one closest to a 1.35 : 1 landscape shape.
 ========================================================= */
 
 function layoutBoard(
@@ -1642,6 +1753,7 @@ function layoutBoard(
     }
 
 
+    // Starting guess: one row with all cards side by side
     let best = {
 
         cols: count,
@@ -1669,6 +1781,7 @@ function layoutBoard(
             );
 
 
+        // Size each card would be with this many columns/rows
         const width =
             board.clientWidth /
             cols;
@@ -1696,6 +1809,7 @@ function layoutBoard(
             width / height;
 
 
+        // Lower score = closer to the 1.35 target shape
         const score =
             Math.abs(
 
@@ -1727,6 +1841,7 @@ function layoutBoard(
     }
 
 
+    // Hand the chosen grid to the CSS (#board uses these two values)
     board.style.setProperty(
         "--cols",
         best.cols
@@ -1743,6 +1858,7 @@ function layoutBoard(
 
 /* =========================================================
    HIGHLIGHT
+   Turns a card green for HIGHLIGHT_MS (15 seconds).
 ========================================================= */
 
 function highlightCard(id) {
@@ -1765,11 +1881,13 @@ function highlightCard(id) {
     );
 
 
+    // Remember when it should end, so a re-render can restore it
     calledUntil[id] =
         Date.now() +
         HIGHLIGHT_MS;
 
 
+    // Restart the countdown if this window is called again
     clearTimeout(
         calledTimers[id]
     );
@@ -1780,6 +1898,7 @@ function highlightCard(id) {
 
             () => {
 
+                // Look the card up again; it may have been re-created
                 const current =
                     document.getElementById(
                         "card-" + id
@@ -1808,6 +1927,7 @@ function highlightCard(id) {
 
 /* =========================================================
    BEEP
+   Plays the beep sound, only if sound has been unlocked.
 ========================================================= */
 
 function playBeep() {
@@ -1821,6 +1941,7 @@ function playBeep() {
 
     try {
 
+        // Rewind so it plays fully even if triggered twice quickly
         beep.currentTime =
             0;
 
@@ -1843,6 +1964,8 @@ function playBeep() {
 
 /* =========================================================
    VOICE
+   Speaks e.g. "Cashier now serving number 12" using the
+   browser's built-in text-to-speech.
 ========================================================= */
 
 function speakNumber(
@@ -1850,6 +1973,7 @@ function speakNumber(
     value
 ) {
 
+    // Admin switch (settings/voiceEnabled) must be on
     if (!voiceEnabled) {
 
         return;
@@ -1857,6 +1981,7 @@ function speakNumber(
     }
 
 
+    // Some browsers don't support speech
     if (
 
         !(
@@ -1871,6 +1996,7 @@ function speakNumber(
     }
 
 
+    // Stop any announcement still being spoken
     window.speechSynthesis.cancel();
 
 
@@ -1907,10 +2033,13 @@ function speakNumber(
 
 /* =========================================================
    RENDER BOARD
+   Rebuilds all cards from windowData. Runs every time
+   Firebase sends new window data.
 ========================================================= */
 
 function renderBoard() {
 
+    // Sort windows by their "order" value (Window 1, 2, 3...)
     const windows =
         Object.entries(
             windowData
@@ -1933,6 +2062,7 @@ function renderBoard() {
         );
 
 
+    // No windows: show the "No active windows" message and stop
     if (!windows.length) {
 
         board.innerHTML = `
@@ -1956,6 +2086,7 @@ function renderBoard() {
     }
 
 
+    // Clear old cards, then build fresh ones
     board.innerHTML =
         "";
 
@@ -1963,12 +2094,14 @@ function renderBoard() {
     windows.forEach(
         ([id, win]) => {
 
+            // Current number being served at this window (0 = none yet)
             const value =
                 Number(
                     win.queue || 0
                 );
 
 
+            // ---- Card container ----
             const card =
                 document.createElement(
                     "div"
@@ -1983,6 +2116,7 @@ function renderBoard() {
                 "card-" + id;
 
 
+            // ---- Top bar: "Window 1" ----
             const windowName =
                 getWindowName(
                     win
@@ -2003,6 +2137,7 @@ function renderBoard() {
                 windowName;
 
 
+            // ---- Service label (also spoken in the voice announcement) ----
             const serviceName =
                 win.label || "";
 
@@ -2021,6 +2156,7 @@ function renderBoard() {
                 serviceName;
 
 
+            // ---- Big queue number ----
             const numberEl =
                 document.createElement(
                     "div"
@@ -2040,6 +2176,7 @@ function renderBoard() {
 
             else {
 
+                // Dim dash when nothing has been called yet
                 numberEl.textContent =
                     "—";
 
@@ -2050,6 +2187,7 @@ function renderBoard() {
             }
 
 
+            // Put the three parts into the card, and the card into the board
             card.appendChild(
                 windowEl
             );
@@ -2070,6 +2208,8 @@ function renderBoard() {
             );
 
 
+            // If this window was called recently, keep it green after
+            // the rebuild (the old card was thrown away above)
             if (
 
                 calledUntil[id] &&
@@ -2085,6 +2225,8 @@ function renderBoard() {
             }
 
 
+            // Detect a changed number. Skipped on the first load and
+            // for windows seen for the first time.
             if (
 
                 !firstLoad &&
@@ -2100,6 +2242,7 @@ function renderBoard() {
                 );
 
 
+                // Only beep/speak for a real number, not when reset to 0
                 if (value > 0) {
 
                     playBeep();
@@ -2115,6 +2258,7 @@ function renderBoard() {
             }
 
 
+            // Remember this number for the next comparison
             lastNumbers[id] =
                 value;
 
@@ -2123,12 +2267,14 @@ function renderBoard() {
     );
 
 
+    // Choose the best grid shape for this number of cards
     layoutBoard(
         board,
         windows.length
     );
 
 
+    // Wait for the browser to apply the new grid, then fit the numbers
     requestAnimationFrame(
 
         () => {
@@ -2142,6 +2288,7 @@ function renderBoard() {
     );
 
 
+    // After the first render, further changes count as real calls
     firstLoad =
         false;
 
@@ -2155,6 +2302,9 @@ function renderBoard() {
    companies/{company}/offices/{office}/windows/{windowId}
 
    Each individual window queue is displayed.
+
+   Runs once on load and again every time anything under
+   "windows" changes, so the display updates live.
 ========================================================= */
 
 onValue(
