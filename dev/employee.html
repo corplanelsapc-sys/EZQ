@@ -1,0 +1,3526 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Queue Command Center</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&display=swap"
+    rel="stylesheet"
+>
+
+<style>
+
+/* Same palette as display.html and customer.html */
+:root {
+
+    --bg: #0B0F13;
+    --bg-lift: #131A21;
+    --surface: #161E26;
+    --line: #26323C;
+    --text: #EAF0F4;
+    --muted: #7D8C99;
+    --go: #35D57F;
+    --go-deep: #0E3D28;
+    --danger: #E0533D;
+
+}
+
+* {
+
+    box-sizing: border-box;
+
+}
+
+html,
+body {
+
+    margin: 0;
+    min-height: 100%;
+
+    background: var(--bg);
+    color: var(--text);
+
+    font-family: "Barlow", system-ui, sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+
+}
+
+body::before {
+
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    background:
+        radial-gradient(
+            120% 90% at 50% 0%,
+            #1A242E 0%,
+            var(--bg) 62%
+        );
+
+    z-index: -1;
+
+}
+
+
+/* =========================================================
+   PAGE FRAME
+========================================================= */
+
+.app {
+
+    min-height: 100vh;
+    min-height: 100dvh;
+
+    max-width: 1100px;
+    margin: 0 auto;
+
+    padding: clamp(12px, 2vw, 28px);
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 16px;
+
+}
+
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.topbar {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+}
+
+.eyebrow {
+
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+
+    color: var(--go);
+
+}
+
+h1 {
+
+    margin: 2px 0 0;
+
+    font-size: clamp(18px, 3vw, 28px);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.1;
+
+}
+
+.top-actions {
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+}
+
+.chip {
+
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: baseline;
+
+    gap: 8px;
+
+    padding: 8px 14px;
+
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+
+    font-weight: 600;
+    letter-spacing: 0.04em;
+
+    white-space: nowrap;
+
+}
+
+.chip-label {
+
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    color: var(--muted);
+
+}
+
+
+/* =========================================================
+   STATUS PANEL (selected window + voice switch)
+========================================================= */
+
+.seg {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: 10px;
+
+    font-size: 14px;
+    color: var(--muted);
+
+}
+
+.seg-buttons {
+
+    display: inline-flex;
+
+    border: 1px solid var(--line);
+    border-radius: 999px;
+
+    overflow: hidden;
+
+}
+
+.seg-buttons button {
+
+    font: inherit;
+    font-weight: 600;
+
+    padding: 7px 14px;
+
+    color: var(--muted);
+    background: var(--bg-lift);
+
+    border: 0;
+
+    cursor: pointer;
+
+}
+
+.seg-buttons button + button {
+
+    border-left: 1px solid var(--line);
+
+}
+
+.seg-buttons button.is-on {
+
+    color: #06170E;
+    background: var(--go);
+
+}
+
+.panel {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: 12px 24px;
+
+    padding: 14px 18px;
+
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+
+}
+
+.selected-info {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 2px;
+
+    min-width: 0;
+
+}
+
+.selected-value {
+
+    font-size: clamp(16px, 2.4vw, 22px);
+    font-weight: 600;
+
+    color: var(--go);
+
+}
+
+.switch {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+
+    font-weight: 500;
+
+    user-select: none;
+
+}
+
+.switch input {
+
+    position: absolute;
+
+    opacity: 0;
+
+    width: 1px;
+    height: 1px;
+
+}
+
+.track {
+
+    position: relative;
+
+    flex: 0 0 auto;
+
+    width: 44px;
+    height: 24px;
+
+    background: var(--bg-lift);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+
+    transition: background-color .2s ease, border-color .2s ease;
+
+}
+
+.track::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: 2px;
+    left: 2px;
+
+    width: 18px;
+    height: 18px;
+
+    border-radius: 50%;
+
+    background: var(--muted);
+
+    transition: transform .2s ease, background-color .2s ease;
+
+}
+
+.switch input:checked + .track {
+
+    background: var(--go-deep);
+    border-color: var(--go);
+
+}
+
+.switch input:checked + .track::after {
+
+    transform: translateX(20px);
+
+    background: var(--go);
+
+}
+
+.switch input:focus-visible + .track {
+
+    outline: 2px solid var(--go);
+    outline-offset: 2px;
+
+}
+
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.section-head {
+
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin: 0 2px 10px;
+
+}
+
+.section-head.spaced {
+
+    margin-top: 22px;
+
+}
+
+.section-title {
+
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+
+    color: var(--muted);
+
+}
+
+.section-hint {
+
+    font-size: 13px;
+
+    color: var(--muted);
+
+}
+
+
+/* =========================================================
+   WINDOWS
+========================================================= */
+
+.windows {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(min(100%, 170px), 1fr)
+        );
+
+    gap: 12px;
+
+}
+
+.box {
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    font: inherit;
+    color: inherit;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 14px 12px 12px;
+
+    text-align: center;
+
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+
+    cursor: pointer;
+
+    transition:
+        border-color .2s ease,
+        background-color .2s ease,
+        box-shadow .2s ease;
+
+}
+
+.box:hover {
+
+    border-color: var(--muted);
+
+}
+
+.box:focus-visible {
+
+    outline: 2px solid var(--go);
+    outline-offset: 2px;
+
+}
+
+.label-win {
+
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+
+}
+
+.label-svc {
+
+    max-width: 100%;
+
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    color: var(--muted);
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+.value {
+
+    margin-top: 4px;
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(52px, 8vw, 76px);
+    font-weight: 400;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+
+    color: var(--text);
+
+}
+
+.value.empty {
+
+    color: var(--muted);
+
+    opacity: .45;
+
+}
+
+.badge {
+
+    margin-top: 6px;
+
+    padding: 3px 10px;
+
+    border: 1px solid var(--line);
+    border-radius: 999px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    color: var(--muted);
+
+}
+
+.badge.has {
+
+    border-color: var(--go);
+
+    color: var(--go);
+
+}
+
+.box.active {
+
+    border-color: var(--go);
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--go-deep) 0%,
+            var(--surface) 80%
+        );
+
+    box-shadow:
+        0 0 0 1px var(--go),
+        0 0 28px -8px rgba(53, 213, 127, .5);
+
+}
+
+.box.active .value:not(.empty) {
+
+    color: var(--go);
+
+}
+
+
+/* =========================================================
+   WAITING LINE
+========================================================= */
+
+.queue {
+
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+}
+
+.ticket {
+
+    min-width: 84px;
+
+    padding: 8px 14px 8px;
+
+    text-align: center;
+
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+
+}
+
+.ticket .t-no {
+
+    display: block;
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: 34px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+
+}
+
+.ticket .t-age {
+
+    display: block;
+
+    margin-top: 2px;
+
+    font-size: 12px;
+
+    color: var(--muted);
+
+}
+
+.ticket.next {
+
+    border-color: var(--go);
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--go-deep) 0%,
+            var(--surface) 100%
+        );
+
+}
+
+.ticket.next .t-no {
+
+    color: var(--go);
+
+}
+
+.ticket.next .t-age {
+
+    color: var(--go);
+    font-weight: 600;
+
+}
+
+.queue-empty {
+
+    flex: 1 1 100%;
+
+    padding: 22px;
+
+    text-align: center;
+
+    border: 2px dashed var(--line);
+    border-radius: 14px;
+
+    color: var(--muted);
+
+}
+
+
+/* =========================================================
+   ACTION DOCK
+   Stays at the bottom of the screen so the main buttons are
+   always reachable.
+========================================================= */
+
+.dock {
+
+    position: sticky;
+    bottom: 0;
+
+    margin-top: auto;
+
+    padding:
+        14px
+        0
+        calc(6px + env(safe-area-inset-bottom));
+
+    background:
+        linear-gradient(
+            to top,
+            var(--bg) 72%,
+            rgba(11, 15, 19, 0)
+        );
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+
+}
+
+.dock-main {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr 2fr;
+
+    grid-template-areas: "recall noshow call";
+
+    gap: 10px;
+
+}
+
+#recallBtn { grid-area: recall; }
+
+#noshowBtn { grid-area: noshow; }
+
+#callBtn   { grid-area: call; }
+
+.dock-util {
+
+    display: grid;
+
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 10px;
+
+}
+
+.btn {
+
+    font: inherit;
+    font-weight: 600;
+
+    color: var(--text);
+
+    background: var(--bg-lift);
+
+    border: 1px solid var(--line);
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    transition:
+        border-color .15s ease,
+        background-color .15s ease,
+        transform .08s ease,
+        opacity .15s ease;
+
+}
+
+.btn:hover:not(:disabled) {
+
+    border-color: var(--muted);
+
+}
+
+.btn:active:not(:disabled) {
+
+    transform: scale(0.98);
+
+}
+
+.btn:focus-visible {
+
+    outline: 2px solid var(--go);
+    outline-offset: 2px;
+
+}
+
+.btn:disabled {
+
+    color: var(--muted);
+
+    background: var(--bg-lift);
+    border-color: var(--line);
+
+    cursor: not-allowed;
+
+}
+
+.btn-main {
+
+    min-height: 76px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    padding: 0 16px;
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(24px, 4.2vw, 40px);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+
+}
+
+.btn-main small {
+
+    font-family: "Barlow", system-ui, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0;
+
+    opacity: .75;
+
+}
+
+.btn-next {
+
+    background: var(--go);
+    border-color: var(--go);
+
+    color: #06170E;
+
+}
+
+.btn-next:hover:not(:disabled) {
+
+    border-color: var(--text);
+
+}
+
+.btn-next:disabled {
+
+    background: var(--go-deep);
+    border-color: var(--go-deep);
+
+    color: #5E9E7E;
+
+}
+
+.btn-sec {
+
+    background: var(--surface);
+
+    align-items: center;
+
+}
+
+.btn-util {
+
+    min-height: 46px;
+
+    padding: 0 10px;
+
+    font-size: 14px;
+
+    color: var(--muted);
+
+}
+
+.btn-util:hover:not(:disabled) {
+
+    color: var(--text);
+
+}
+
+.btn-ghost {
+
+    padding: 8px 14px;
+
+    font-size: 14px;
+
+    color: var(--muted);
+
+}
+
+.btn-ghost:hover {
+
+    color: var(--text);
+
+}
+
+.btn-danger {
+
+    color: var(--danger);
+
+    border-color: rgba(224, 83, 61, .35);
+
+}
+
+.btn-danger:hover:not(:disabled) {
+
+    color: var(--text);
+
+    background: var(--danger);
+    border-color: var(--danger);
+
+}
+
+
+/* =========================================================
+   MESSAGE (toast) above the buttons
+========================================================= */
+
+.toast {
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 100%;
+
+    margin-bottom: 6px;
+
+    padding: 10px 14px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--line);
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+
+    transition: opacity .2s ease, transform .2s ease;
+
+}
+
+.toast.show {
+
+    opacity: 1;
+
+    transform: none;
+
+}
+
+.toast.error {
+
+    border-color: var(--danger);
+
+}
+
+
+/* =========================================================
+   FULL-PAGE MESSAGE (for account problems)
+========================================================= */
+
+.fatal {
+
+    margin: auto;
+
+    max-width: 520px;
+
+    padding: 28px;
+
+    text-align: center;
+
+    background: var(--surface);
+
+    border: 1px solid var(--line);
+    border-radius: 14px;
+
+}
+
+.fatal h2 {
+
+    margin: 0 0 8px;
+
+}
+
+.fatal p {
+
+    margin: 0 0 18px;
+
+    color: var(--muted);
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .dock-main {
+
+        grid-template-columns: 1fr 1fr;
+
+        grid-template-areas:
+            "call call"
+            "recall noshow";
+
+    }
+
+    .btn-sec {
+
+        min-height: 56px;
+
+    }
+
+}
+
+@media (max-width: 560px) {
+
+    .topbar {
+
+        align-items: flex-start;
+
+    }
+
+    .top-actions {
+
+        flex-direction: column;
+        align-items: flex-end;
+
+        gap: 6px;
+
+    }
+
+    .btn-main {
+
+        min-height: 68px;
+
+    }
+
+    .dock-util {
+
+        gap: 8px;
+
+    }
+
+    .btn-util {
+
+        font-size: 13px;
+
+        padding: 0 6px;
+
+    }
+
+    .section-hint.hide-mobile {
+
+        display: none;
+
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    * {
+
+        transition: none !important;
+
+    }
+
+}
+
+/* =========================================================
+   DAILY REPORT
+   A white "paper" sheet over a dimmed screen. The same sheet
+   is what gets printed (everything else is hidden in print).
+========================================================= */
+
+.pw-overlay { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(5, 8, 11, .85); }
+.pw-overlay.show { display: flex; }
+.pw-box { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+.pw-box h3 { margin: 0 0 14px; }
+.pw-box label { display: block; margin: 10px 0 4px; color: var(--muted); font-size: 13px; }
+.pw-box input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font-size: 16px; }
+.pw-msg { min-height: 20px; margin-top: 10px; font-size: 13px; color: var(--danger); }
+.pw-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+@media print { .pw-overlay { display: none !important; } }
+
+.report-overlay {
+
+    position: fixed;
+    inset: 0;
+
+    z-index: 50;
+
+    display: none;
+
+    overflow-y: auto;
+
+    padding: 20px 16px 40px;
+
+    background: rgba(5, 8, 11, .97);
+
+}
+
+.report-overlay.show {
+
+    display: block;
+
+}
+
+.report-bar {
+
+    max-width: 860px;
+
+    margin: 0 auto 14px;
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+
+}
+
+.report-bar label {
+
+    color: var(--muted);
+
+    font-size: 14px;
+
+}
+
+.report-bar input[type="date"] {
+
+    min-height: 44px;
+
+    padding: 0 10px;
+
+    border: 1px solid var(--line);
+    border-radius: 10px;
+
+    background: var(--surface);
+
+    color: var(--text);
+
+    font: inherit;
+
+    color-scheme: dark;
+
+}
+
+.report-bar .spacer {
+
+    flex: 1;
+
+}
+
+.report-sheet {
+
+    max-width: 860px;
+
+    margin: 0 auto;
+
+    padding: 36px 40px;
+
+    border-radius: 8px;
+
+    background: #fff;
+
+    color: #14191E;
+
+    font-size: 14px;
+
+    line-height: 1.4;
+
+}
+
+.report-sheet h2 {
+
+    margin: 0;
+
+    font-size: 22px;
+
+    letter-spacing: .02em;
+
+}
+
+.report-sheet h3 {
+
+    margin: 26px 0 8px;
+
+    font-size: 13px;
+
+    letter-spacing: .12em;
+
+    text-transform: uppercase;
+
+    color: #4A5560;
+
+}
+
+.report-sub {
+
+    margin-top: 4px;
+
+    color: #4A5560;
+
+}
+
+.report-head {
+
+    padding-bottom: 14px;
+
+    border-bottom: 2px solid #14191E;
+
+}
+
+.report-kpis {
+
+    display: grid;
+
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 10px;
+
+    margin-top: 18px;
+
+}
+
+.report-kpi {
+
+    padding: 10px 12px;
+
+    border: 1px solid #C9D1D8;
+    border-radius: 6px;
+
+}
+
+.report-kpi b {
+
+    display: block;
+
+    font-size: 26px;
+
+    line-height: 1.1;
+
+}
+
+.report-kpi span {
+
+    font-size: 12px;
+
+    color: #4A5560;
+
+}
+
+.report-sheet table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+}
+
+.report-sheet th,
+.report-sheet td {
+
+    padding: 6px 8px;
+
+    border-bottom: 1px solid #DDE3E8;
+
+    text-align: right;
+
+}
+
+.report-sheet th:first-child,
+.report-sheet td:first-child {
+
+    text-align: left;
+
+}
+
+.report-sheet th {
+
+    font-size: 12px;
+
+    color: #4A5560;
+
+    border-bottom: 1.5px solid #14191E;
+
+}
+
+.report-sheet tfoot td {
+
+    font-weight: 700;
+
+    border-top: 1.5px solid #14191E;
+
+    border-bottom: none;
+
+}
+
+.report-bar-cell {
+
+    width: 55%;
+
+    text-align: left !important;
+
+}
+
+.report-hbar {
+
+    display: inline-block;
+
+    height: 10px;
+
+    border-radius: 2px;
+
+    background: #2B8A5A;
+
+    vertical-align: middle;
+
+}
+
+.report-note {
+
+    margin-top: 22px;
+
+    font-size: 12px;
+
+    color: #6A7580;
+
+}
+
+.report-empty {
+
+    padding: 40px 0;
+
+    text-align: center;
+
+    color: #4A5560;
+
+}
+
+@media (max-width: 640px) {
+
+    .report-sheet {
+
+        padding: 22px 16px;
+
+    }
+
+    .report-kpis {
+
+        grid-template-columns: repeat(2, 1fr);
+
+    }
+
+}
+
+@media print {
+
+    @page {
+
+        size: A4;
+
+        margin: 14mm;
+
+    }
+
+    /* hide the whole app, show only the report sheet */
+    body > *:not(#reportOverlay) {
+
+        display: none !important;
+
+    }
+
+    html,
+    body {
+
+        background: #fff !important;
+
+    }
+
+    /* the dark spotlight behind the app */
+    body::before {
+
+        display: none !important;
+
+    }
+
+    .report-overlay {
+
+        position: static;
+
+        display: block !important;
+
+        padding: 0;
+
+        background: none;
+
+        overflow: visible;
+
+    }
+
+    .report-bar {
+
+        display: none !important;
+
+    }
+
+    .report-sheet {
+
+        max-width: none;
+
+        padding: 0;
+
+        border-radius: 0;
+
+    }
+
+    .report-sheet table,
+    .report-kpi {
+
+        break-inside: avoid;
+
+    }
+
+    .report-hbar {
+
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="app" id="app">
+
+
+<!-- =====================================================
+     TOP BAR
+====================================================== -->
+
+<header class="topbar">
+
+    <div>
+
+        <div class="eyebrow" id="companyName">
+            QUEUE
+        </div>
+
+        <h1>
+            Queue Command Center
+        </h1>
+
+    </div>
+
+    <div class="top-actions">
+
+        <div class="chip">
+
+            <span class="chip-label">
+                Office
+            </span>
+
+            <span id="officeName">---</span>
+
+        </div>
+
+        <div class="chip">
+
+            <span class="chip-label">
+                You
+            </span>
+
+            <span id="youName">---</span>
+
+        </div>
+
+        <button class="btn btn-ghost" id="pwOpenBtn" onclick="openPassword()">
+            Change password
+        </button>
+
+        <button class="btn btn-ghost" onclick="logout()">
+            Switch account
+        </button>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     STATUS: selected window + voice switch
+====================================================== -->
+
+<section class="panel">
+
+    <div class="selected-info">
+
+        <span class="chip-label">
+            Now controlling
+        </span>
+
+        <span class="selected-value" id="selectedWin">---</span>
+
+    </div>
+
+    <label class="switch">
+
+        <input type="checkbox" id="voiceToggle">
+
+        <span class="track"></span>
+
+        <span>Voice announcement</span>
+
+    </label>
+
+    <div class="seg" role="group" aria-label="Display screen layout">
+
+        <span>Display screen</span>
+
+        <span class="seg-buttons">
+
+            <button type="button" id="dispV1" data-v="1">Classic</button>
+
+            <button type="button" id="dispV2" data-v="2">Video + news</button>
+
+        </span>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     WINDOWS + WAITING LINE (filled in by the script)
+====================================================== -->
+
+<main>
+
+    <div class="section-head">
+
+        <span class="section-title">
+            Windows
+        </span>
+
+        <span class="section-hint hide-mobile">
+            Tap a window to select it
+        </span>
+
+    </div>
+
+    <div class="windows" id="windows"></div>
+
+
+    <div class="section-head spaced">
+
+        <span class="section-title" id="queueTitle">
+            Waiting line
+        </span>
+
+        <span class="section-hint" id="queueCount"></span>
+
+    </div>
+
+    <div class="queue" id="queue"></div>
+
+</main>
+
+
+<!-- =====================================================
+     ACTIONS
+====================================================== -->
+
+<footer class="dock">
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="dock-main">
+
+        <button class="btn btn-main btn-sec" id="recallBtn" onclick="recall()">
+            <span>RECALL</span>
+        </button>
+
+        <button class="btn btn-main btn-sec" id="noshowBtn" onclick="noShow()">
+            <span>NO SHOW</span>
+        </button>
+
+        <button class="btn btn-main btn-next" id="callBtn" onclick="callNext()">
+            <span>CALL NEXT</span>
+            <small id="nextHint"></small>
+        </button>
+
+    </div>
+
+    <div class="dock-util">
+
+        <button class="btn btn-util" onclick="goToDisplay()">
+            Open display
+        </button>
+
+        <button class="btn btn-util" onclick="goToKiosk()">
+            Open kiosk
+        </button>
+
+        <button class="btn btn-util" onclick="openReport()">
+            Daily report
+        </button>
+
+        <button class="btn btn-util btn-danger" onclick="resetAll()">
+            Reset today
+        </button>
+
+    </div>
+
+</footer>
+
+
+</div>
+
+
+<!-- =====================================================
+     DAILY REPORT (opened by the "Daily report" button)
+====================================================== -->
+
+<div class="pw-overlay" id="pwOverlay">
+    <div class="pw-box">
+        <h3>Change password</h3>
+        <label for="pwOld">Current password</label>
+        <input type="password" id="pwOld" autocomplete="current-password">
+        <label for="pwNew">New password (6 or more characters)</label>
+        <input type="password" id="pwNew" autocomplete="new-password">
+        <label for="pwNew2">Type the new password again</label>
+        <input type="password" id="pwNew2" autocomplete="new-password">
+        <div class="pw-msg" id="pwMsg"></div>
+        <div class="pw-actions">
+            <button class="btn btn-ghost" type="button" onclick="closePassword()">Cancel</button>
+            <button class="btn btn-main" type="button" id="pwSaveBtn" onclick="savePassword()">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="report-overlay" id="reportOverlay">
+
+    <div class="report-bar">
+
+        <label for="reportDate">From</label>
+
+        <input type="date" id="reportDate" onchange="loadReport()">
+
+        <label for="reportDateTo">To</label>
+
+        <input type="date" id="reportDateTo" onchange="loadReport()">
+
+        <span class="spacer"></span>
+
+        <button class="btn btn-util" onclick="exportCsv()">Export CSV</button>
+
+        <button class="btn btn-util" onclick="printReport()">Print</button>
+
+        <button class="btn btn-util" onclick="closeReport()">Close</button>
+
+    </div>
+
+    <div class="report-sheet" id="reportSheet"></div>
+
+</div>
+
+
+<script type="module">
+
+import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+    getDatabase,
+    ref,
+    runTransaction,
+    onValue,
+    get,
+    set,
+    push,
+    update,
+    serverTimestamp
+}
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+import {
+    getAuth,
+    onAuthStateChanged,
+    signOut,
+    EmailAuthProvider,
+    reauthenticateWithCredential,
+    updatePassword
+}
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+// Queue numbers start again at 1 when the date changes in this time zone.
+// (Replaced by the company's own time zone setting once it is loaded.)
+let TIMEZONE = "Asia/Manila";
+
+
+/* =========================================================
+   FIREBASE
+========================================================= */
+
+const firebaseConfig = {
+
+    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+
+    authDomain: "panelco-i-queue-system.firebaseapp.com",
+
+    databaseURL:
+        "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+    projectId: "panelco-i-queue-system",
+
+    storageBucket:
+        "panelco-i-queue-system.firebasestorage.app",
+
+    messagingSenderId: "1075037996413",
+
+    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+const auth = getAuth(app);
+
+
+/* =========================================================
+   WHO IS SIGNED IN?
+
+   The login name tells us the company and the branch:
+       mainoffice@panelcoi.com  ->  company "panelcoi", branch "mainoffice"
+       mainoffice@acwd.com      ->  company "acwd",     branch "mainoffice"
+========================================================= */
+
+let company = null;
+
+let office = null;
+
+let base = null;
+
+let selected = null;
+
+let windowData = {};
+
+let ticketsToday = {};
+
+let dayKey = null;
+
+let unsubTickets = null;
+
+let serverOffset = 0;
+
+let connected = false;
+
+let windowsLoaded = false;
+
+let ticketsLoaded = false;
+
+let cleanedDay = null;
+
+let busy = false;
+
+// Who is using this page: written on every call, no-show and reset.
+let me = { uid: "", name: "" };
+
+const $ = (id) => document.getElementById(id);
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+// Same rule as before: a service is identified by its window label,
+// so every window with the same label shares one queue.
+// The queue a window belongs to. Windows saved before the "serviceKey"
+// field existed fall back to the label, exactly as before.
+function serviceKeyOf(win) {
+
+    return win.serviceKey || getRoleKey(win.label);
+
+}
+
+function getRoleKey(label) {
+
+    return String(label || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[.#$[\]/]/g, "")
+        .replace(/\s+/g, "_");
+
+}
+
+function nowMs() {
+
+    return Date.now() + serverOffset;
+
+}
+
+// "2026-10-11": the day folder that tickets and counters live in.
+function todayKey() {
+
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).formatToParts(new Date(nowMs()));
+
+    const p = {};
+
+    parts.forEach((x) => { p[x.type] = x.value; });
+
+    return `${p.year}-${p.month}-${p.day}`;
+
+}
+
+function sortedWindows() {
+
+    return Object.entries(windowData).sort(
+        (a, b) =>
+            (Number(a[1].order) || 0) -
+            (Number(b[1].order) || 0)
+    );
+
+}
+
+function windowTitle(win) {
+
+    return Number(win.order) > 0
+        ? "Window " + win.order
+        : "Window";
+
+}
+
+// Customers waiting for one service today, oldest first.
+function waitingFor(serviceKey) {
+
+    return Object.entries(ticketsToday)
+        .filter(
+            ([, t]) =>
+                t &&
+                t.service === serviceKey &&
+                t.status === "waiting"
+        )
+        .map(([id, t]) => ({ id, ...t }))
+        .sort((a, b) => a.number - b.number);
+
+}
+
+function storeKey() {
+
+    return `ezq.window.${company}.${office}`;
+
+}
+
+let toastTimer = null;
+
+function toast(message, kind) {
+
+    const el = $("toast");
+
+    el.textContent = message;
+
+    el.className = "toast show" + (kind ? " " + kind : "");
+
+    clearTimeout(toastTimer);
+
+    toastTimer = setTimeout(
+        () => { el.className = "toast"; },
+        4500
+    );
+
+}
+
+function showFatal(title, message) {
+
+    $("app").innerHTML = `
+        <div class="fatal">
+            <h2></h2>
+            <p></p>
+            <button class="btn btn-util" onclick="logout()">Switch account</button>
+        </div>
+    `;
+
+    $("app").querySelector("h2").textContent = title;
+
+    $("app").querySelector("p").textContent = message;
+
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+window.openPassword = function () {
+    ["pwOld", "pwNew", "pwNew2"].forEach(id => $(id).value = "");
+    $("pwMsg").textContent = "";
+    $("pwOverlay").classList.add("show");
+    $("pwOld").focus();
+};
+
+window.closePassword = function () {
+    $("pwOverlay").classList.remove("show");
+};
+
+window.savePassword = async function () {
+    const msg = $("pwMsg");
+    const user = auth.currentUser;
+    const oldPw = $("pwOld").value, newPw = $("pwNew").value;
+    msg.textContent = "";
+    if (!user || !user.email) { msg.textContent = "You are not signed in."; return; }
+    if (!oldPw) { msg.textContent = "Type your current password."; return; }
+    if (newPw.length < 6) { msg.textContent = "The new password needs at least 6 characters."; return; }
+    if (newPw !== $("pwNew2").value) { msg.textContent = "The two new passwords do not match."; return; }
+    if (newPw === oldPw) { msg.textContent = "The new password must be different."; return; }
+    $("pwSaveBtn").disabled = true;
+    try {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, oldPw));
+        await updatePassword(user, newPw);
+        closePassword();
+        toast("Password changed.");
+    } catch (error) {
+        const bad = ["auth/wrong-password", "auth/invalid-credential", "auth/invalid-login-credentials"].includes(error.code);
+        msg.textContent = bad ? "The current password is wrong." : "Could not change the password: " + (error.message || error.code);
+    } finally {
+        $("pwSaveBtn").disabled = false;
+    }
+};
+
+window.logout = function () {
+
+    signOut(auth).then(() => {
+
+        window.location.href = "index.html";
+
+    });
+
+};
+
+
+/* =========================================================
+   AUTHENTICATION
+========================================================= */
+
+onAuthStateChanged(auth, async (user) => {
+
+    if (!user) {
+
+        window.location.href = "index.html";
+
+        return;
+
+    }
+
+    if (started || signingIn) return;
+
+    signingIn = true;
+
+    const email = (user.email || "").toLowerCase();
+
+    const [local, domain = ""] = email.split("@");
+
+    company = domain.split(".")[0];
+
+    office = local;
+
+    me = { uid: user.uid, name: local };
+
+    const ok = /^[a-z0-9_-]+$/;
+
+    // Is there a staff record (made in window.html) for this person?
+    // companies/<company>/users/<uid> = name, role, branch, active.
+    // Old shared branch logins (mainoffice@company.com) have none and
+    // keep working the old way: the branch is the part before the @.
+    try {
+
+        if (ok.test(company)) {
+
+            const snap = await get(
+                ref(db, `companies/${company}/users/${user.uid}`)
+            );
+
+            const record = snap.val();
+
+            if (record) {
+
+                if (record.active === false) {
+
+                    showFatal(
+                        "This account has been deactivated",
+                        "Please ask your administrator."
+                    );
+
+                    signingIn = false;
+
+                    return;
+
+                }
+
+                if (record.role === "kiosk") {
+
+                    window.location.href = "customer.html";
+
+                    return;
+
+                }
+
+                office = record.officeId;
+
+                me = { uid: user.uid, name: record.name || local };
+
+            }
+
+            // Company time zone (default Asia/Manila)
+            const tzSnap = await get(ref(db, `companies/${company}/timezone`));
+
+            const tz = tzSnap.val();
+
+            if (tz) {
+
+                new Intl.DateTimeFormat("en-US", { timeZone: tz });
+
+                TIMEZONE = tz;
+
+            }
+
+        }
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+    if (!ok.test(String(office)) || !ok.test(company)) {
+
+        showFatal(
+            "This account cannot open the queue",
+            "The login is not linked to a branch. Please ask your administrator."
+        );
+
+        signingIn = false;
+
+        return;
+
+    }
+
+    base = `companies/${company}/offices/${office}`;
+
+    $("youName").textContent = me.name;
+
+    startApp();
+
+});
+
+
+/* =========================================================
+   START
+========================================================= */
+
+let started = false;
+
+let signingIn = false;
+
+function startApp() {
+
+    if (started) return;
+
+    started = true;
+
+    onValue(
+        ref(db, `companies/${company}/name`),
+        (snap) => {
+
+            $("companyName").textContent =
+                String(snap.val() || company).toUpperCase();
+
+        }
+    );
+
+    onValue(
+        ref(db, `${base}/name`),
+        (snap) => {
+
+            $("officeName").textContent =
+                snap.val() || office.toUpperCase();
+
+        }
+    );
+
+    onValue(
+        ref(db, ".info/serverTimeOffset"),
+        (snap) => {
+
+            serverOffset = snap.val() || 0;
+
+        }
+    );
+
+    onValue(
+        ref(db, ".info/connected"),
+        (snap) => {
+
+            connected = snap.val() === true;
+
+            renderButtons();
+
+            clearOldWindowNumbers();
+
+        }
+    );
+
+
+    // ---- Voice announcement switch (one setting per branch) ----
+
+    const voiceToggle = $("voiceToggle");
+
+    voiceToggle.addEventListener("change", (e) => {
+
+        set(
+            ref(db, `${base}/settings/voiceEnabled`),
+            e.target.checked
+        ).catch((error) => toast(error.message, "error"));
+
+    });
+
+    onValue(
+        ref(db, `${base}/settings/voiceEnabled`),
+        (snap) => {
+
+            voiceToggle.checked = snap.val() === true;
+
+        }
+    );
+
+
+    // ---- Display screen layout (1 = classic, 2 = video + news) ----
+
+    const dispButtons = [$("dispV1"), $("dispV2")];
+
+    dispButtons.forEach((button) => {
+
+        button.addEventListener("click", () => {
+
+            set(
+                ref(db, `${base}/settings/displayVersion`),
+                Number(button.dataset.v)
+            ).catch((error) => toast(error.message, "error"));
+
+        });
+
+    });
+
+    onValue(
+        ref(db, `${base}/settings/displayVersion`),
+        (snap) => {
+
+            const v = Number(snap.val()) === 2 ? 2 : 1;
+
+            dispButtons.forEach((button) => {
+
+                button.classList.toggle(
+                    "is-on",
+                    Number(button.dataset.v) === v
+                );
+
+            });
+
+        }
+    );
+
+
+    // ---- Windows ----
+
+    onValue(
+        ref(db, `${base}/windows`),
+        (snap) => {
+
+            windowData = snap.val() || {};
+
+            windowsLoaded = true;
+
+            pickSelected();
+
+            render();
+
+            clearOldWindowNumbers();
+
+        },
+        (error) => {
+
+            console.error(error);
+
+            toast("Cannot read the windows: " + error.message, "error");
+
+        }
+    );
+
+
+    // ---- Today's tickets (and switch to a new day at midnight) ----
+
+    watchDay();
+
+    setInterval(watchDay, 30000);
+
+    // keep the "waiting for 5 min" labels fresh
+    setInterval(renderQueue, 30000);
+
+}
+
+function watchDay() {
+
+    const day = todayKey();
+
+    if (day === dayKey) return;
+
+    dayKey = day;
+
+    ticketsToday = {};
+
+    ticketsLoaded = false;
+
+    if (unsubTickets) unsubTickets();
+
+    unsubTickets = onValue(
+
+        ref(db, `${base}/tickets/${day}`),
+
+        (snap) => {
+
+            ticketsToday = snap.val() || {};
+
+            ticketsLoaded = true;
+
+            render();
+
+            clearOldWindowNumbers();
+
+        },
+
+        (error) => {
+
+            console.error(error);
+
+            toast("Cannot read today's queue: " + error.message, "error");
+
+        }
+
+    );
+
+}
+
+// A window may still show yesterday's number (or a number from the old
+// system). The first time the page opens each day, clear those so
+// the display starts fresh.
+async function clearOldWindowNumbers() {
+
+    if (
+        !connected ||
+        !windowsLoaded ||
+        !ticketsLoaded ||
+        cleanedDay === dayKey
+    ) {
+        return;
+    }
+
+    cleanedDay = dayKey;
+
+    const updates = {};
+
+    Object.entries(windowData).forEach(([id, win]) => {
+
+        const stale =
+            Number(win.queue) > 0 &&
+            !(win.ticketId && ticketsToday[win.ticketId]);
+
+        if (stale) {
+
+            updates[`windows/${id}/queue`] = 0;
+
+            updates[`windows/${id}/ticketId`] = null;
+
+            updates[`windows/${id}/calledAt`] = null;
+
+        }
+
+    });
+
+    if (!Object.keys(updates).length) return;
+
+    try {
+
+        await update(ref(db, base), updates);
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+
+function pickSelected() {
+
+    const ids = sortedWindows().map(([id]) => id);
+
+    if (selected && ids.includes(selected)) return;
+
+    let saved = null;
+
+    try { saved = localStorage.getItem(storeKey()); } catch (e) {}
+
+    selected = ids.includes(saved) ? saved : (ids[0] || null);
+
+}
+
+function setBusy(value) {
+
+    busy = value;
+
+    renderButtons();
+
+}
+
+
+/* =========================================================
+   DRAW THE PAGE
+========================================================= */
+
+function render() {
+
+    renderWindows();
+
+    renderQueue();
+
+    renderButtons();
+
+}
+
+function renderWindows() {
+
+    const container = $("windows");
+
+    container.innerHTML = "";
+
+    const list = sortedWindows();
+
+    if (!list.length) {
+
+        const empty = document.createElement("div");
+
+        empty.className = "queue-empty";
+
+        empty.style.gridColumn = "1 / -1";
+
+        empty.textContent = windowsLoaded
+            ? "No windows are set up for this branch yet. Ask your administrator to add them."
+            : "Loading windows...";
+
+        container.appendChild(empty);
+
+        $("selectedWin").textContent = "---";
+
+        return;
+
+    }
+
+    list.forEach(([id, win]) => {
+
+        const key = serviceKeyOf(win);
+
+        const waiting = key ? waitingFor(key).length : 0;
+
+        const value = Number(win.queue) || 0;
+
+        const box = document.createElement("button");
+
+        box.type = "button";
+
+        box.className = "box" + (id === selected ? " active" : "");
+
+        box.id = "box-" + id;
+
+        const name = document.createElement("div");
+
+        name.className = "label-win";
+
+        name.textContent = windowTitle(win);
+
+        const service = document.createElement("div");
+
+        service.className = "label-svc";
+
+        service.textContent = win.label || "(no service)";
+
+        const number = document.createElement("div");
+
+        number.className = "value" + (value > 0 ? "" : " empty");
+
+        number.textContent = value > 0 ? value : "—";
+
+        const badge = document.createElement("div");
+
+        badge.className = "badge" + (waiting > 0 ? " has" : "");
+
+        badge.textContent = waiting + " waiting";
+
+        box.append(name, service, number, badge);
+
+        box.addEventListener("click", () => {
+
+            selected = id;
+
+            try { localStorage.setItem(storeKey(), id); } catch (e) {}
+
+            render();
+
+        });
+
+        container.appendChild(box);
+
+    });
+
+    const win = windowData[selected];
+
+    $("selectedWin").textContent = win
+        ? windowTitle(win) + " — " + (win.label || "")
+        : "---";
+
+}
+
+function renderQueue() {
+
+    const win = windowData[selected];
+
+    const key = win ? serviceKeyOf(win) : "";
+
+    const list = key ? waitingFor(key) : [];
+
+    $("queueTitle").textContent =
+        win && win.label
+            ? "Waiting line · " + win.label
+            : "Waiting line";
+
+    $("queueCount").textContent =
+        list.length ? list.length + " waiting" : "";
+
+    const box = $("queue");
+
+    box.innerHTML = "";
+
+    if (!win) return;
+
+    if (!list.length) {
+
+        const empty = document.createElement("div");
+
+        empty.className = "queue-empty";
+
+        empty.textContent = "No one is waiting for this service.";
+
+        box.appendChild(empty);
+
+        return;
+
+    }
+
+    list.forEach((t, index) => {
+
+        const card = document.createElement("div");
+
+        card.className = "ticket" + (index === 0 ? " next" : "");
+
+        const no = document.createElement("span");
+
+        no.className = "t-no";
+
+        no.textContent = t.number;
+
+        const age = document.createElement("span");
+
+        age.className = "t-age";
+
+        if (index === 0) {
+
+            age.textContent = "NEXT";
+
+        }
+        else if (typeof t.createdAt === "number") {
+
+            const minutes = Math.max(
+                0,
+                Math.floor((nowMs() - t.createdAt) / 60000)
+            );
+
+            age.textContent = minutes + " min";
+
+        }
+
+        card.append(no, age);
+
+        box.appendChild(card);
+
+    });
+
+}
+
+function renderButtons() {
+
+    const win = windowData[selected];
+
+    const key = win ? serviceKeyOf(win) : "";
+
+    const next = key ? waitingFor(key)[0] : null;
+
+    const current =
+        win && win.ticketId && ticketsToday[win.ticketId]
+            ? ticketsToday[win.ticketId]
+            : null;
+
+    // No connection = the queue is suspended: nothing can be called.
+    const offline = !connected;
+
+    $("callBtn").disabled = busy || offline || !next;
+
+    $("nextHint").textContent =
+        offline ? "no connection" : (next ? "#" + next.number : "no one waiting");
+
+    $("recallBtn").disabled =
+        busy || offline || !(win && Number(win.queue) > 0);
+
+    $("noshowBtn").disabled =
+        busy || offline || !(current && current.status === "serving");
+
+}
+
+
+/* =========================================================
+   CALL NEXT
+
+   Takes the customer who has waited longest for this window's
+   service and marks them as "serving" at this window. The claim
+   is a transaction, so two windows pressing the button at the
+   same moment can never take the same customer.
+========================================================= */
+
+window.callNext = async function () {
+
+    const win = windowData[selected];
+
+    if (!win || busy) return;
+
+    const service = serviceKeyOf(win);
+
+    if (!service) {
+
+        toast(
+            "This window has no service label. Ask your administrator to set one.",
+            "error"
+        );
+
+        return;
+
+    }
+
+    const candidates = waitingFor(service);
+
+    if (!candidates.length) {
+
+        toast("No one is waiting for " + win.label + ".");
+
+        return;
+
+    }
+
+    const day = dayKey;
+
+    setBusy(true);
+
+    try {
+
+        for (const t of candidates) {
+
+            const ticketRef =
+                ref(db, `${base}/tickets/${day}/${t.id}`);
+
+            const result = await runTransaction(
+                ticketRef,
+                (current) => {
+
+                    // not loaded yet: let the server correct us
+                    if (current === null) return current;
+
+                    // already taken by another window: stop
+                    if (current.status !== "waiting") return;
+
+                    return {
+                        ...current,
+                        status: "serving",
+                        windowId: selected,
+                        calledAt: nowMs(),
+                        calledBy: me.uid,
+                        calledByName: me.name
+                    };
+
+                }
+            );
+
+            const claimed = result.snapshot.val();
+
+            if (
+                !result.committed ||
+                !claimed ||
+                claimed.status !== "serving" ||
+                claimed.windowId !== selected
+            ) {
+                continue;
+            }
+
+            const updates = {};
+
+            // The customer previously served here is now finished.
+            const previous = win.ticketId;
+
+            if (
+                previous &&
+                previous !== t.id &&
+                ticketsToday[previous] &&
+                ticketsToday[previous].status === "serving"
+            ) {
+
+                updates[`tickets/${day}/${previous}/status`] = "done";
+
+                updates[`tickets/${day}/${previous}/doneAt`] = nowMs();
+
+                updates[`tickets/${day}/${previous}/closedBy`] = me.uid;
+
+                updates[`tickets/${day}/${previous}/closedByName`] = me.name;
+
+            }
+
+            // These three values are what display.html shows.
+            updates[`windows/${selected}/queue`] = claimed.number;
+
+            updates[`windows/${selected}/ticketId`] = t.id;
+
+            updates[`windows/${selected}/calledAt`] = serverTimestamp();
+
+            await update(ref(db, base), updates);
+
+            return;
+
+        }
+
+        toast(
+            "Those customers were just called at another window. Please try again.",
+            "error"
+        );
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        toast("Could not call the next number: " + error.message, "error");
+
+    }
+    finally {
+
+        setBusy(false);
+
+    }
+
+};
+
+
+/* =========================================================
+   RECALL
+   Plays the beep and voice again for the number on screen.
+========================================================= */
+
+window.recall = async function () {
+
+    const win = windowData[selected];
+
+    if (!win || busy || !(Number(win.queue) > 0)) return;
+
+    try {
+
+        await update(
+            ref(db, `${base}/windows/${selected}`),
+            { calledAt: serverTimestamp() }
+        );
+
+        toast("Calling number " + win.queue + " again.");
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        toast("Could not recall: " + error.message, "error");
+
+    }
+
+};
+
+
+/* =========================================================
+   NO SHOW
+   The customer being called did not come. Mark them and clear
+   this window's number from the display.
+========================================================= */
+
+window.noShow = async function () {
+
+    const win = windowData[selected];
+
+    if (!win || busy) return;
+
+    const id = win.ticketId;
+
+    const current = id ? ticketsToday[id] : null;
+
+    if (!current || current.status !== "serving") return;
+
+    if (!confirm("Mark number " + current.number + " as a no-show?")) {
+
+        return;
+
+    }
+
+    setBusy(true);
+
+    try {
+
+        const updates = {};
+
+        updates[`tickets/${dayKey}/${id}/status`] = "noshow";
+
+        updates[`tickets/${dayKey}/${id}/doneAt`] = nowMs();
+
+        updates[`tickets/${dayKey}/${id}/closedBy`] = me.uid;
+
+        updates[`tickets/${dayKey}/${id}/closedByName`] = me.name;
+
+        updates[`windows/${selected}/queue`] = 0;
+
+        updates[`windows/${selected}/ticketId`] = null;
+
+        updates[`windows/${selected}/calledAt`] = null;
+
+        await update(ref(db, base), updates);
+
+        toast("Number " + current.number + " marked as no-show.");
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        toast("Could not update: " + error.message, "error");
+
+    }
+    finally {
+
+        setBusy(false);
+
+    }
+
+};
+
+
+/* =========================================================
+   RESET TODAY
+   Emergency button. Clears today's waiting line and every
+   window's number. Numbers start again from 1.
+   (Normally not needed: numbers restart by themselves each day.)
+========================================================= */
+
+window.resetAll = async function () {
+
+    if (
+        !confirm(
+            "Reset today's queue?\n\n" +
+            "This removes everyone who is waiting and clears every window. " +
+            "New numbers will start again from 1."
+        )
+    ) {
+        return;
+    }
+
+    setBusy(true);
+
+    try {
+
+        const updates = {};
+
+        updates[`counters/${dayKey}`] = null;
+
+        updates[`tickets/${dayKey}`] = null;
+
+        Object.keys(windowData).forEach((id) => {
+
+            updates[`windows/${id}/queue`] = 0;
+
+            updates[`windows/${id}/ticketId`] = null;
+
+            updates[`windows/${id}/calledAt`] = null;
+
+        });
+
+        await update(ref(db, base), updates);
+
+        // Reset deletes the day's tickets, so record who did it.
+        try {
+
+            await set(
+                push(ref(db, `companies/${company}/auditLog`)),
+                {
+                    at: serverTimestamp(),
+                    byEmail: (auth.currentUser && auth.currentUser.email) || "",
+                    byName: me.name,
+                    action: "queue-reset",
+                    detail: office + " " + dayKey
+                }
+            );
+
+        }
+        catch (logError) {
+
+            console.error(logError);
+
+        }
+
+        toast("Today's queue has been reset.");
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        toast("Unable to reset: " + error.message, "error");
+
+    }
+    finally {
+
+        setBusy(false);
+
+    }
+
+};
+
+
+/* =========================================================
+   TICKET REPORT
+   Summarises the tickets of THIS office for one day or a range of
+   days (up to 62): totals, by day, by service, by window, by employee
+   and by hour. Press Print for paper, or Export CSV to open the
+   individual tickets in Excel.
+========================================================= */
+
+const REPORT_MAX_DAYS = 62;
+
+function esc(value) {
+
+    return String(value == null ? "" : value).replace(
+        /[&<>"']/g,
+        (c) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[c])
+    );
+
+}
+
+function fmtTime(ms) {
+
+    return new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONE,
+        hour: "numeric",
+        minute: "2-digit"
+    }).format(new Date(ms));
+
+}
+
+// "2026-10-12 14:05:33" in the company time zone (for the CSV file)
+function fmtStamp(ms) {
+
+    if (!ms) return "";
+
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23"
+    }).formatToParts(new Date(ms));
+
+    const p = {};
+
+    parts.forEach((x) => { p[x.type] = x.value; });
+
+    return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+
+}
+
+function hourOf(ms) {
+
+    return Number(
+        new Intl.DateTimeFormat("en-US", {
+            timeZone: TIMEZONE,
+            hour: "2-digit",
+            hour12: false
+        }).format(new Date(ms))
+    ) % 24;
+
+}
+
+function hourLabel(h) {
+
+    const suffix = h < 12 ? "AM" : "PM";
+
+    return ((h + 11) % 12 + 1) + ":00 " + suffix;
+
+}
+
+function fmtDuration(ms) {
+
+    if (ms == null || isNaN(ms)) return "-";
+
+    const sec = Math.round(ms / 1000);
+
+    if (sec < 60) return sec + " sec";
+
+    const min = Math.floor(sec / 60);
+
+    if (min < 60) return min + " min " + (sec % 60) + " sec";
+
+    return Math.floor(min / 60) + " h " + (min % 60) + " min";
+
+}
+
+function fmtLongDate(day) {
+
+    return new Intl.DateTimeFormat("en-US", {
+        timeZone: "UTC",
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    }).format(new Date(day + "T12:00:00Z"));
+
+}
+
+function fmtShortDate(day) {
+
+    return new Intl.DateTimeFormat("en-US", {
+        timeZone: "UTC",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+    }).format(new Date(day + "T12:00:00Z"));
+
+}
+
+function addDays(day, n) {
+
+    const d = new Date(day + "T12:00:00Z");
+
+    d.setUTCDate(d.getUTCDate() + n);
+
+    return d.toISOString().slice(0, 10);
+
+}
+
+function average(list) {
+
+    return list.length
+        ? list.reduce((a, b) => a + b, 0) / list.length
+        : null;
+
+}
+
+let reportToken = 0;
+
+// What the open report was built from (used by Export CSV)
+let lastReport = { from: "", to: "", tickets: [] };
+
+window.openReport = function () {
+
+    const from = $("reportDate");
+
+    const to = $("reportDateTo");
+
+    from.max = todayKey();
+
+    to.max = todayKey();
+
+    if (!from.value) from.value = todayKey();
+
+    if (!to.value) to.value = from.value;
+
+    $("reportOverlay").classList.add("show");
+
+    loadReport();
+
+};
+
+window.closeReport = function () {
+
+    $("reportOverlay").classList.remove("show");
+
+};
+
+window.printReport = function () {
+
+    window.print();
+
+};
+
+document.addEventListener("keydown", (e) => {
+
+    if (e.key === "Escape") closeReport();
+
+});
+
+window.loadReport = async function () {
+
+    const fromInput = $("reportDate");
+
+    const toInput = $("reportDateTo");
+
+    if (!fromInput.value) return;
+
+    if (!toInput.value || toInput.value < fromInput.value) {
+
+        toInput.value = fromInput.value;
+
+    }
+
+    const from = fromInput.value;
+
+    let to = toInput.value;
+
+    if (to > addDays(from, REPORT_MAX_DAYS - 1)) {
+
+        to = addDays(from, REPORT_MAX_DAYS - 1);
+
+        toInput.value = to;
+
+        toast("A report covers at most " + REPORT_MAX_DAYS + " days.");
+
+    }
+
+    const days = [];
+
+    for (let d = from; d <= to; d = addDays(d, 1)) days.push(d);
+
+    const token = ++reportToken;
+
+    const sheet = $("reportSheet");
+
+    sheet.innerHTML = '<div class="report-empty">Loading report...</div>';
+
+    try {
+
+        const snaps = await Promise.all(
+            days.map((d) => get(ref(db, `${base}/tickets/${d}`)))
+        );
+
+        if (token !== reportToken) return;
+
+        const tickets = [];
+
+        snaps.forEach((snap, i) => {
+
+            Object.entries(snap.val() || {}).forEach(([id, t]) => {
+
+                tickets.push({ ...t, id: id, day: days[i] });
+
+            });
+
+        });
+
+        lastReport = { from: from, to: to, tickets: tickets };
+
+        sheet.innerHTML = buildReport(from, to, tickets);
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        if (token !== reportToken) return;
+
+        sheet.innerHTML =
+            '<div class="report-empty">Could not load the report (' +
+            esc(error.code || error.message) +
+            ").</div>";
+
+    }
+
+};
+
+function isServed(t) {
+
+    return t.status === "done" || t.status === "serving";
+
+}
+
+function waitOf(t) {
+
+    return t.calledAt && t.createdAt
+        ? Math.max(0, t.calledAt - t.createdAt)
+        : null;
+
+}
+
+// time spent at the window (only finished customers)
+function serviceTimeOf(t) {
+
+    return t.status === "done" && t.doneAt && t.calledAt
+        ? Math.max(0, t.doneAt - t.calledAt)
+        : null;
+
+}
+
+function longest(list) {
+
+    return list.length ? Math.max(...list) : null;
+
+}
+
+function nonNull(list) {
+
+    return list.filter((x) => x != null);
+
+}
+
+function buildReport(from, to, tickets) {
+
+    const range = from !== to;
+
+    const head =
+        '<div class="report-head">' +
+        "<h2>" + (range ? "Ticket Report" : "Daily Ticket Report") + "</h2>" +
+        '<div class="report-sub">' +
+        esc($("companyName").textContent.trim()) + " &middot; " +
+        esc($("officeName").textContent.trim()) +
+        "</div>" +
+        '<div class="report-sub">' +
+        esc(range ? fmtShortDate(from) + " to " + fmtShortDate(to) : fmtLongDate(from)) +
+        "</div>" +
+        "</div>";
+
+    if (!tickets.length) {
+
+        return head +
+            '<div class="report-empty">No tickets were issued ' +
+            (range ? "in this period." : "on this date.") + "</div>";
+
+    }
+
+    const waits = nonNull(tickets.map(waitOf));
+
+    const serviceTimes = nonNull(tickets.map(serviceTimeOf));
+
+    const served = tickets.filter(isServed).length;
+
+    const noshow = tickets.filter((t) => t.status === "noshow").length;
+
+    const waiting = tickets.filter((t) => t.status === "waiting").length;
+
+    let html = head;
+
+    // ---- totals
+    html +=
+        '<div class="report-kpis">' +
+        '<div class="report-kpi"><b>' + tickets.length + "</b><span>Tickets issued</span></div>" +
+        '<div class="report-kpi"><b>' + served + "</b><span>Served</span></div>" +
+        '<div class="report-kpi"><b>' + noshow + "</b><span>No-shows</span></div>" +
+        '<div class="report-kpi"><b>' + waiting + "</b><span>" +
+        (range ? "Waiting / not served" : "Still waiting") + "</span></div>" +
+        "</div>";
+
+    const created = nonNull(tickets.map((t) => t.createdAt));
+
+    html +=
+        '<div class="report-sub" style="margin-top:12px">' +
+        (!range && created.length
+            ? "First ticket " + fmtTime(Math.min(...created)) +
+              " &middot; Last ticket " + fmtTime(Math.max(...created)) + " &middot; "
+            : "") +
+        "Average wait " + fmtDuration(average(waits)) +
+        " &middot; Longest wait " + fmtDuration(longest(waits)) +
+        " &middot; Average service time " + fmtDuration(average(serviceTimes)) +
+        "</div>";
+
+    const row = (cells) =>
+        "<tr>" + cells.map((c) => "<td>" + c + "</td>").join("") + "</tr>";
+
+    // ---- by day (ranges only)
+    if (range) {
+
+        const days = {};
+
+        tickets.forEach((t) => {
+
+            (days[t.day] = days[t.day] || []).push(t);
+
+        });
+
+        html += "<h3>By day</h3><table><thead><tr>" +
+            "<th>Date</th><th>Issued</th><th>Served</th><th>No-show</th>" +
+            "<th>Avg wait</th><th>Avg service</th></tr></thead><tbody>";
+
+        Object.keys(days).sort().forEach((d) => {
+
+            const list = days[d];
+
+            html += row([
+                esc(fmtShortDate(d)),
+                list.length,
+                list.filter(isServed).length,
+                list.filter((t) => t.status === "noshow").length,
+                fmtDuration(average(nonNull(list.map(waitOf)))),
+                fmtDuration(average(nonNull(list.map(serviceTimeOf))))
+            ]);
+
+        });
+
+        html += "</tbody></table>";
+
+    }
+
+    // ---- by service
+    const services = {};
+
+    tickets.forEach((t) => {
+
+        const key = t.service || "other";
+
+        (services[key] = services[key] || { label: t.serviceLabel || key, list: [] })
+            .list.push(t);
+
+    });
+
+    const calc = (list) => ({
+        issued: list.length,
+        served: list.filter(isServed).length,
+        noshow: list.filter((t) => t.status === "noshow").length,
+        waiting: list.filter((t) => t.status === "waiting").length,
+        waits: nonNull(list.map(waitOf)),
+        times: nonNull(list.map(serviceTimeOf))
+    });
+
+    const serviceCells = (label, list) => {
+
+        const c = calc(list);
+
+        return row([
+            esc(label), c.issued, c.served, c.noshow, c.waiting,
+            fmtDuration(average(c.waits)), fmtDuration(longest(c.waits)),
+            fmtDuration(average(c.times))
+        ]);
+
+    };
+
+    html += "<h3>By service</h3><table><thead><tr>" +
+        "<th>Service</th><th>Issued</th><th>Served</th><th>No-show</th>" +
+        "<th>Waiting</th><th>Avg wait</th><th>Longest</th><th>Avg service</th></tr></thead><tbody>";
+
+    Object.values(services)
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .forEach((s) => { html += serviceCells(s.label, s.list); });
+
+    html += "</tbody><tfoot>" + serviceCells("Total", tickets) + "</tfoot></table>";
+
+    // ---- by window
+    const byWindow = {};
+
+    tickets.filter((t) => t.windowId).forEach((t) => {
+
+        (byWindow[t.windowId] = byWindow[t.windowId] || []).push(t);
+
+    });
+
+    const winIds = Object.keys(byWindow).sort((a, b) => {
+
+        const wa = windowData[a] ? Number(windowData[a].order) || 0 : 999;
+
+        const wb = windowData[b] ? Number(windowData[b].order) || 0 : 999;
+
+        return wa - wb;
+
+    });
+
+    if (winIds.length) {
+
+        html += "<h3>By window</h3><table><thead><tr>" +
+            "<th>Window</th><th>Customers served</th><th>No-shows</th><th>Avg service</th></tr></thead><tbody>";
+
+        winIds.forEach((id) => {
+
+            const w = windowData[id];
+
+            const name = w
+                ? windowTitle(w) + " (" + (w.label || "") + ")"
+                : id;
+
+            const list = byWindow[id];
+
+            html += row([
+                esc(name),
+                list.filter(isServed).length,
+                list.filter((t) => t.status === "noshow").length,
+                fmtDuration(average(nonNull(list.map(serviceTimeOf))))
+            ]);
+
+        });
+
+        html += "</tbody></table>";
+
+    }
+
+    // ---- by employee (the name recorded when the customer was called)
+    const byPerson = {};
+
+    tickets.filter((t) => t.windowId).forEach((t) => {
+
+        const name = t.calledByName || "(not recorded)";
+
+        (byPerson[name] = byPerson[name] || []).push(t);
+
+    });
+
+    const people = Object.keys(byPerson).sort((a, b) => a.localeCompare(b));
+
+    if (people.length) {
+
+        html += "<h3>By employee</h3><table><thead><tr>" +
+            "<th>Employee</th><th>Customers called</th><th>No-shows</th>" +
+            "<th>Avg wait of their customers</th><th>Avg service</th></tr></thead><tbody>";
+
+        people.forEach((name) => {
+
+            const list = byPerson[name];
+
+            html += row([
+                esc(name),
+                list.length,
+                list.filter((t) => t.status === "noshow").length,
+                fmtDuration(average(nonNull(list.map(waitOf)))),
+                fmtDuration(average(nonNull(list.map(serviceTimeOf))))
+            ]);
+
+        });
+
+        html += "</tbody></table>";
+
+    }
+
+    // ---- per hour
+    const hours = {};
+
+    created.forEach((ms) => {
+
+        const h = hourOf(ms);
+
+        hours[h] = (hours[h] || 0) + 1;
+
+    });
+
+    const hourKeys = Object.keys(hours).map(Number).sort((a, b) => a - b);
+
+    if (hourKeys.length) {
+
+        const maxHour = Math.max(...hourKeys.map((h) => hours[h]));
+
+        html += "<h3>Tickets issued by hour" + (range ? " (all days together)" : "") +
+            "</h3><table><thead><tr>" +
+            "<th>Hour</th><th>Tickets</th><th class=\"report-bar-cell\"></th></tr></thead><tbody>";
+
+        for (let h = hourKeys[0]; h <= hourKeys[hourKeys.length - 1]; h++) {
+
+            const n = hours[h] || 0;
+
+            html += "<tr><td>" + hourLabel(h) + "</td><td>" + n +
+                '</td><td class="report-bar-cell"><span class="report-hbar" style="width:' +
+                Math.round((n / maxHour) * 100) + '%"></span></td></tr>';
+
+        }
+
+        html += "</tbody></table>";
+
+    }
+
+    html += '<div class="report-note">Generated ' +
+        esc(fmtTime(nowMs())) + " on " + esc(fmtLongDate(todayKey())) +
+        ". Times are in " + esc(TIMEZONE) +
+        ". Served = customers called to a window. Wait = from taking the number until called. " +
+        "Service time = from called until the window moved on (finished customers only). " +
+        "\"Reset today\" removes that day's tickets from this report.</div>";
+
+    return html;
+
+}
+
+
+/* =========================================================
+   EXPORT CSV
+   One line per ticket for the dates shown in the report. Opens in Excel.
+========================================================= */
+
+function csvCell(value) {
+
+    let text = String(value == null ? "" : value);
+
+    // Stop spreadsheet programs from running a cell that starts like a formula
+    if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
+
+    return /[",\n\r]/.test(text)
+        ? '"' + text.replace(/"/g, '""') + '"'
+        : text;
+
+}
+
+window.exportCsv = function () {
+
+    const tickets = lastReport.tickets.slice().sort(
+        (a, b) =>
+            a.day.localeCompare(b.day) ||
+            (a.createdAt || 0) - (b.createdAt || 0) ||
+            (a.number || 0) - (b.number || 0)
+    );
+
+    if (!tickets.length) {
+
+        toast("There are no tickets to export for these dates.");
+
+        return;
+
+    }
+
+    const statusText = {
+        waiting: "Waiting",
+        serving: "Serving",
+        done: "Done",
+        noshow: "No-show"
+    };
+
+    const seconds = (ms) => ms == null ? "" : Math.round(ms / 1000);
+
+    const lines = [[
+        "Date", "Number", "Service", "Status", "Issued at", "Called at",
+        "Finished at", "Wait (sec)", "Service time (sec)", "Window",
+        "Called by", "Finished by"
+    ]];
+
+    tickets.forEach((t) => {
+
+        const w = t.windowId ? windowData[t.windowId] : null;
+
+        lines.push([
+            t.day,
+            t.number,
+            t.serviceLabel || t.service,
+            statusText[t.status] || t.status,
+            fmtStamp(t.createdAt),
+            fmtStamp(t.calledAt),
+            fmtStamp(t.doneAt),
+            seconds(waitOf(t)),
+            seconds(serviceTimeOf(t)),
+            w ? windowTitle(w) : (t.windowId || ""),
+            t.calledByName || "",
+            t.closedByName || ""
+        ]);
+
+    });
+
+    // The BOM at the start makes Excel read accents and other letters correctly
+    const text = "\uFEFF" + lines.map(
+        (line) => line.map(csvCell).join(",")
+    ).join("\r\n");
+
+    const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+
+    const link = document.createElement("a");
+
+    link.href = URL.createObjectURL(blob);
+
+    link.download =
+        "tickets-" + company + "-" + office + "-" + lastReport.from +
+        (lastReport.to !== lastReport.from ? "_to_" + lastReport.to : "") +
+        ".csv";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+
+};
+
+
+/* =========================================================
+   OPEN OTHER SCREENS
+========================================================= */
+
+window.goToDisplay = function () {
+
+    window.open(
+        `display.html?company=${company}&office=${office}`,
+        "_blank"
+    );
+
+};
+
+window.goToKiosk = function () {
+
+    window.open(
+        "customer.html",
+        "_blank"
+    );
+
+};
+
+</script>
+
+</body>
+
+</html>

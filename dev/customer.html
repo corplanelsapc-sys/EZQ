@@ -1,0 +1,2164 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Take a Number</title>
+
+<!-- "Add to Home screen" opens this page full screen, with no address bar -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0B0F13">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Take a Number">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&display=swap"
+    rel="stylesheet"
+>
+
+<style>
+
+/* =========================================================
+   CUSTOMER KIOSK
+   Same look as display.html and employee.html.
+
+   How this page is opened: log in as the branch account
+   (e.g. mainoffice@panelcoi.com), then open customer.html
+   (or press "Open kiosk" in employee.html).
+========================================================= */
+
+:root {
+
+    --bg: #0B0F13;
+    --bg-lift: #131A21;
+    --surface: #161E26;
+    --line: #26323C;
+    --text: #EAF0F4;
+    --muted: #7D8C99;
+    --go: #35D57F;
+    --go-deep: #0E3D28;
+    --danger: #E0533D;
+
+}
+
+* {
+
+    box-sizing: border-box;
+
+}
+
+html,
+body {
+
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+
+    background: var(--bg);
+    color: var(--text);
+
+    font-family: "Barlow", system-ui, sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+
+    /* Kiosk screens: no text selection, no double-tap zoom */
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+
+}
+
+body::before {
+
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    background:
+        radial-gradient(
+            120% 90% at 50% 0%,
+            #1A242E 0%,
+            var(--bg) 62%
+        );
+
+    z-index: -1;
+
+}
+
+
+/* =========================================================
+   LAYOUT
+========================================================= */
+
+.kiosk {
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: clamp(14px, 2.2vw, 40px);
+
+    gap: clamp(14px, 2vw, 32px);
+
+}
+
+
+/* ---------- Header ---------- */
+
+.header {
+
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 16px;
+
+}
+
+.brand {
+
+    display: flex;
+    align-items: center;
+
+    gap: clamp(8px, 1.2vw, 20px);
+
+    min-width: 0;
+
+}
+
+.brand-img {
+
+    flex: 0 0 auto;
+
+    height: clamp(36px, 4.2vw, 80px);
+    width: auto;
+
+    max-width: 22vw;
+
+    object-fit: contain;
+
+}
+
+.brand-img[hidden] {
+
+    display: none;
+
+}
+
+.company {
+
+    font-size: clamp(16px, 2.1vw, 40px);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.05;
+
+}
+
+.office {
+
+    margin-top: 4px;
+
+    font-size: clamp(12px, 1.2vw, 22px);
+
+    color: var(--muted);
+
+}
+
+.clockbox {
+
+    text-align: right;
+
+}
+
+.clock {
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(24px, 3vw, 56px);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+
+}
+
+.date {
+
+    margin-top: 2px;
+
+    font-size: clamp(12px, 1.1vw, 20px);
+
+    color: var(--muted);
+
+}
+
+
+/* ---------- Welcome ---------- */
+
+.welcome {
+
+    flex: 0 0 auto;
+
+    text-align: center;
+
+}
+
+.welcome h1 {
+
+    margin: 0;
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(44px, 7.5vw, 120px);
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    line-height: 0.95;
+
+}
+
+.welcome p {
+
+    margin: 10px 0 0;
+
+    font-size: clamp(16px, 2vw, 32px);
+
+    color: var(--muted);
+
+}
+
+
+/* ---------- Service buttons ---------- */
+
+.services {
+
+    flex: 1 1 auto;
+    min-height: 0;
+
+    overflow-y: auto;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(min(100%, 300px), 1fr)
+        );
+
+    grid-auto-rows: minmax(150px, 240px);
+
+    gap: clamp(12px, 1.6vw, 28px);
+
+    align-content: center;
+
+}
+
+.service {
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    font: inherit;
+    color: inherit;
+    text-align: left;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: clamp(16px, 2vw, 34px);
+
+    background: var(--surface);
+
+    border: 2px solid var(--line);
+    border-radius: 22px;
+
+    cursor: pointer;
+
+    transition:
+        border-color .15s ease,
+        background-color .15s ease,
+        transform .1s ease;
+
+}
+
+.service:hover {
+
+    border-color: var(--muted);
+
+}
+
+.service:active {
+
+    transform: scale(0.985);
+
+    border-color: var(--go);
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--go-deep) 0%,
+            var(--surface) 90%
+        );
+
+}
+
+.service:focus-visible {
+
+    outline: 3px solid var(--go);
+    outline-offset: 3px;
+
+}
+
+.service:disabled {
+
+    opacity: .55;
+    cursor: not-allowed;
+
+}
+
+.service-name {
+
+    font-size: clamp(24px, 3.3vw, 52px);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: 0.005em;
+
+    overflow-wrap: anywhere;
+
+}
+
+.service-foot {
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 12px;
+
+}
+
+.service-info {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 2px;
+
+    min-width: 0;
+
+    font-size: clamp(13px, 1.4vw, 22px);
+
+    color: var(--muted);
+
+}
+
+.service-info strong {
+
+    color: var(--text);
+    font-weight: 600;
+
+}
+
+.service-cta {
+
+    flex: 0 0 auto;
+
+    padding: 0.5em 1.1em;
+
+    border-radius: 999px;
+
+    background: var(--go);
+    color: #06170E;
+
+    font-size: clamp(14px, 1.5vw, 24px);
+    font-weight: 600;
+
+    white-space: nowrap;
+
+}
+
+
+/* ---------- Empty / status messages ---------- */
+
+.empty {
+
+    grid-column: 1 / -1;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 2em;
+
+    border: 2px dashed var(--line);
+    border-radius: 22px;
+
+    color: var(--muted);
+    text-align: center;
+
+    font-size: clamp(14px, 1.6vw, 26px);
+
+}
+
+.empty strong {
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(28px, 4vw, 64px);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+
+    color: var(--text);
+
+}
+
+
+/* ---------- Footer ---------- */
+
+.footer {
+
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    color: var(--muted);
+
+    font-size: clamp(11px, 1.05vw, 18px);
+
+}
+
+.connection {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: 0.5em;
+
+}
+
+.connection::before {
+
+    content: "";
+
+    width: 0.62em;
+    height: 0.62em;
+
+    border-radius: 50%;
+
+    background: var(--muted);
+
+}
+
+.connection.is-live::before {
+
+    background: var(--go);
+
+}
+
+.connection.is-down::before {
+
+    background: var(--danger);
+
+}
+
+
+/* ---------- Notice bar (errors) ---------- */
+
+.notice {
+
+    position: fixed;
+
+    left: 50%;
+    bottom: clamp(60px, 8vh, 110px);
+
+    transform: translate(-50%, 12px);
+
+    max-width: min(92vw, 760px);
+
+    padding: 14px 22px;
+
+    background: var(--surface);
+
+    border: 2px solid var(--danger);
+    border-radius: 14px;
+
+    font-size: clamp(14px, 1.5vw, 22px);
+    font-weight: 500;
+    text-align: center;
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition: opacity .2s ease, transform .2s ease;
+
+    z-index: 50;
+
+}
+
+.notice.show {
+
+    opacity: 1;
+
+    transform: translate(-50%, 0);
+
+}
+
+
+/* =========================================================
+   TICKET POPUP (after a customer taps a service)
+========================================================= */
+
+.overlay {
+
+    position: fixed;
+    inset: 0;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(5, 8, 11, .86);
+
+    z-index: 100;
+
+}
+
+.overlay.show {
+
+    display: flex;
+
+}
+
+.popup {
+
+    width: min(94vw, 760px);
+
+    padding: clamp(22px, 3.4vw, 54px);
+
+    text-align: center;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--go-deep) 0%,
+            var(--surface) 62%
+        );
+
+    border: 2px solid var(--go);
+    border-radius: 28px;
+
+    box-shadow: 0 0 80px -10px rgba(53, 213, 127, .45);
+
+}
+
+.popup-label {
+
+    font-size: clamp(14px, 1.7vw, 26px);
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+
+    color: var(--muted);
+
+}
+
+.popup-number {
+
+    margin: 4px 0;
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(120px, 24vw, 300px);
+    line-height: 1;
+    color: var(--go);
+
+}
+
+.popup-service {
+
+    font-size: clamp(22px, 3vw, 46px);
+    font-weight: 600;
+
+}
+
+.popup-ahead {
+
+    margin-top: 10px;
+
+    font-size: clamp(16px, 1.9vw, 30px);
+
+    color: var(--muted);
+
+}
+
+.popup-note {
+
+    margin-top: clamp(14px, 2vw, 30px);
+
+    font-size: clamp(14px, 1.6vw, 24px);
+
+}
+
+.popup-bar {
+
+    height: 6px;
+
+    margin: clamp(16px, 2.4vw, 34px) auto 0;
+
+    border-radius: 999px;
+
+    background: var(--line);
+
+    overflow: hidden;
+
+}
+
+.popup-bar span {
+
+    display: block;
+
+    height: 100%;
+    width: 100%;
+
+    background: var(--go);
+
+    transform-origin: left;
+
+}
+
+.popup-bar span.run {
+
+    animation: drain linear forwards;
+
+}
+
+@keyframes drain {
+
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+
+}
+
+.popup-buttons {
+
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+
+    margin-top: clamp(14px, 2vw, 28px);
+
+}
+
+.popup-done,
+.popup-reprint {
+
+    font: inherit;
+    font-weight: 600;
+    font-size: clamp(16px, 1.8vw, 28px);
+
+    padding: 0.7em 2.2em;
+
+    color: var(--text);
+    background: var(--bg-lift);
+
+    border: 1px solid var(--line);
+    border-radius: 999px;
+
+    cursor: pointer;
+
+}
+
+.popup-done:hover,
+.popup-reprint:hover {
+
+    border-color: var(--muted);
+
+}
+
+
+/* =========================================================
+   FULL SCREEN GATE
+   Shown until the kiosk is in full screen (no address bar). If staff
+   or a customer leaves full screen, it comes back and covers the kiosk.
+========================================================= */
+
+.fs-gate {
+
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 18px;
+
+    padding: 24px;
+
+    text-align: center;
+
+    background: var(--bg);
+
+    z-index: 300;
+
+}
+
+.fs-gate[hidden] {
+
+    display: none;
+
+}
+
+.fs-gate .fs-title {
+
+    font-size: clamp(18px, 2.4vw, 40px);
+    font-weight: 600;
+
+}
+
+.fs-gate .fs-note {
+
+    color: var(--muted);
+
+    font-size: clamp(13px, 1.4vw, 24px);
+
+}
+
+.fs-gate button {
+
+    font: inherit;
+    font-weight: 600;
+    font-size: clamp(20px, 2.6vw, 44px);
+
+    padding: 0.7em 1.8em;
+
+    color: #06170E;
+    background: var(--go);
+
+    border: 0;
+    border-radius: 999px;
+
+    cursor: pointer;
+
+}
+
+
+/* =========================================================
+   PRINTED TICKET
+   Hidden on screen. Only this is printed.
+
+   Paper size: 80mm wide receipt paper. If your roll is
+   different (for example 58mm), change the two numbers in
+   the @page line below.
+========================================================= */
+
+#ticket {
+
+    display: none;
+
+}
+
+@media print {
+
+    @page {
+
+        size: 80mm 110mm;
+        margin: 0;
+
+    }
+
+    html,
+    body {
+
+        width: auto;
+        height: auto;
+
+        overflow: visible;
+
+        background: #fff;
+        color: #000;
+
+    }
+
+    body::before,
+    .kiosk,
+    .overlay,
+    .notice {
+
+        display: none !important;
+
+    }
+
+    #ticket {
+
+        display: block;
+
+        width: 72mm;
+
+        margin: 0 auto;
+        padding: 6mm 0 4mm;
+
+        text-align: center;
+
+        font-family: "Barlow", Arial, sans-serif;
+
+        color: #000;
+
+    }
+
+    .t-company {
+
+        font-size: 18pt;
+        font-weight: 700;
+        line-height: 1.1;
+
+    }
+
+    .t-office {
+
+        margin-top: 1mm;
+
+        font-size: 11pt;
+
+    }
+
+    .t-sep {
+
+        margin: 3mm 0;
+
+        border-top: 0.4mm dashed #000;
+
+    }
+
+    .t-label {
+
+        font-size: 10pt;
+        letter-spacing: 0.15em;
+
+    }
+
+    .t-number {
+
+        font-family: "Bebas Neue", Impact, Arial, sans-serif;
+        font-size: 96pt;
+        line-height: 1;
+
+    }
+
+    .t-service {
+
+        font-size: 16pt;
+        font-weight: 700;
+
+    }
+
+    .t-ahead,
+    .t-time {
+
+        font-size: 10pt;
+
+    }
+
+    .t-foot {
+
+        margin-top: 3mm;
+
+        font-size: 9pt;
+
+    }
+
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+    * {
+
+        transition: none !important;
+        animation: none !important;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="kiosk">
+
+
+<header class="header">
+
+    <div class="brand">
+
+        <!-- <company>_logo.png and <company>_iso.png, next to this page;
+             each hides itself if the file does not exist -->
+        <img class="brand-img" id="logoImg" alt="" hidden>
+
+        <img class="brand-img" id="isoImg" alt="" hidden>
+
+        <div>
+
+            <div class="company" id="companyName">
+                WELCOME
+            </div>
+
+            <div class="office" id="officeName">
+                ---
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="clockbox">
+
+        <div class="clock" id="clock">--:--</div>
+
+        <div class="date" id="date"></div>
+
+    </div>
+
+</header>
+
+
+<section class="welcome">
+
+    <h1>Take a Number</h1>
+
+    <p>Tap the service you need. Your ticket will print right away.</p>
+
+</section>
+
+
+<main class="services" id="services">
+
+    <div class="empty">
+
+        <strong>Getting ready</strong>
+
+        <span>Please wait a moment.</span>
+
+    </div>
+
+</main>
+
+
+<footer class="footer">
+
+    <span class="connection" id="connection">Connecting</span>
+
+    <span>Tickets are valid for today only.</span>
+
+</footer>
+
+
+</div>
+
+
+<div class="notice" id="notice" role="alert"></div>
+
+
+<!-- Covers the kiosk until it is in full screen -->
+<div class="fs-gate" id="fsGate" hidden>
+
+    <div class="fs-title" id="fsTitle">Take a Number</div>
+
+    <button id="fsStart" type="button">Tap to start</button>
+
+    <div class="fs-note">The screen will switch to full screen.</div>
+
+</div>
+
+
+
+<!-- Popup shown after a customer taps a service -->
+<div class="overlay" id="overlay">
+
+    <div class="popup">
+
+        <div class="popup-label">Your queue number</div>
+
+        <div class="popup-number" id="popNumber">0</div>
+
+        <div class="popup-service" id="popService"></div>
+
+        <div class="popup-ahead" id="popAhead"></div>
+
+        <div class="popup-note">
+            Please take your ticket and wait for your number to be called.
+        </div>
+
+        <div class="popup-bar"><span id="popBar"></span></div>
+
+        <div class="popup-buttons">
+
+            <button class="popup-reprint" id="popReprint" type="button">
+                Reprint
+            </button>
+
+            <button class="popup-done" id="popDone" type="button">
+                Done
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Printed ticket (only visible when printing) -->
+<div id="ticket" aria-hidden="true">
+
+    <div class="t-company" id="tCompany"></div>
+
+    <div class="t-office" id="tOffice"></div>
+
+    <div class="t-sep"></div>
+
+    <div class="t-label">YOUR QUEUE NUMBER</div>
+
+    <div class="t-number" id="tNumber"></div>
+
+    <div class="t-service" id="tService"></div>
+
+    <div class="t-sep"></div>
+
+    <div class="t-ahead" id="tAhead"></div>
+
+    <div class="t-time" id="tTime"></div>
+
+    <div class="t-foot">Please wait for your number to be called.</div>
+
+</div>
+
+
+<script type="module">
+
+import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+    getAuth,
+    onAuthStateChanged,
+    signOut
+}
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
+    getDatabase,
+    ref,
+    onValue,
+    push,
+    get,
+    update,
+    serverTimestamp
+}
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+
+/* =========================================================
+   SETTINGS YOU MAY WANT TO CHANGE
+========================================================= */
+
+// Print the ticket automatically after a customer taps a service.
+// Set to false to show the number on screen only.
+const AUTO_PRINT = true;
+
+// How long the number stays on screen before returning to the menu.
+const POPUP_SECONDS = 10;
+
+// Day changes at midnight in this time zone (queue numbers start again at 1).
+// Replaced by the company's own time zone setting once it is loaded.
+let TIMEZONE = "Asia/Manila";
+
+
+/* =========================================================
+   FIREBASE
+========================================================= */
+
+const firebaseConfig = {
+
+    apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+
+    authDomain: "panelco-i-queue-system.firebaseapp.com",
+
+    databaseURL:
+        "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+    projectId: "panelco-i-queue-system",
+
+    storageBucket: "panelco-i-queue-system.firebasestorage.app",
+
+    messagingSenderId: "1075037996413",
+
+    appId: "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+const auth = getAuth(app);
+
+
+/* =========================================================
+   WHICH COMPANY / BRANCH IS THIS KIOSK FOR?
+   Taken from the signed-in email (same rule as employee.html):
+   mainoffice@panelcoi.com -> company "panelcoi", office "mainoffice".
+   Filled in once the user is known (see SIGN IN at the bottom).
+========================================================= */
+
+let company = "";
+
+let office = "";
+
+const idPattern = /^[a-z0-9_-]+$/;
+
+let base = "";
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+const $ = (id) => document.getElementById(id);
+
+// Same rule the staff page uses: a service is identified by its label,
+// so every window with the same label shares one queue.
+// The queue a window belongs to (windows saved before "serviceKey" existed
+// fall back to the label).
+function serviceKeyOf(win) {
+
+    return win.serviceKey || getRoleKey(win.label);
+
+}
+
+function getRoleKey(label) {
+
+    return String(label || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[.#$[\]/]/g, "")
+        .replace(/\s+/g, "_");
+
+}
+
+function prettyOffice(slug) {
+
+    return slug
+        .replace(/[-_]+/g, " ")
+        .replace(/office/gi, " Office")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
+}
+
+// Difference between this computer's clock and Firebase's clock.
+let serverOffset = 0;
+
+function nowMs() {
+
+    return Date.now() + serverOffset;
+
+}
+
+// "2026-10-11": the day folder that tickets and counters are stored in.
+function todayKey() {
+
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).formatToParts(new Date(nowMs()));
+
+    const p = {};
+
+    parts.forEach((x) => { p[x.type] = x.value; });
+
+    return `${p.year}-${p.month}-${p.day}`;
+
+}
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let windowData = {};
+
+let ticketsToday = {};
+
+let connected = false;
+
+let authReady = false;
+
+let windowsLoaded = false;
+
+let busy = false;
+
+let dayKey = null;
+
+let unsubTickets = null;
+
+let companyLabel = "";
+
+let officeLabel = "";
+
+
+/* =========================================================
+   NOTICE (error messages)
+========================================================= */
+
+let noticeTimer = null;
+
+function showNotice(message, ms) {
+
+    const el = $("notice");
+
+    el.textContent = message;
+
+    el.classList.add("show");
+
+    clearTimeout(noticeTimer);
+
+    if (ms) {
+
+        noticeTimer = setTimeout(
+            () => el.classList.remove("show"),
+            ms
+        );
+
+    }
+
+}
+
+function hideNotice() {
+
+    clearTimeout(noticeTimer);
+
+    $("notice").classList.remove("show");
+
+}
+
+
+/* =========================================================
+   CLOCK
+========================================================= */
+
+function updateClock() {
+
+    const now = new Date(nowMs());
+
+    $("clock").textContent =
+        now.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: TIMEZONE
+        });
+
+    $("date").textContent =
+        now.toLocaleDateString([], {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            timeZone: TIMEZONE
+        });
+
+}
+
+updateClock();
+
+setInterval(updateClock, 10000);
+
+
+/* =========================================================
+   SERVICES
+
+   One button per service. A service is a window label, so
+   windows that share a label share one button and one queue.
+========================================================= */
+
+function buildServices() {
+
+    const map = new Map();
+
+    Object.entries(windowData)
+        .sort(
+            (a, b) =>
+                (Number(a[1].order) || 0) -
+                (Number(b[1].order) || 0)
+        )
+        .forEach(([id, win]) => {
+
+            const key = serviceKeyOf(win);
+
+            if (!key) return;
+
+            if (!map.has(key)) {
+
+                map.set(key, {
+                    key,
+                    label: String(win.label).trim(),
+                    windows: []
+                });
+
+            }
+
+            const order = Number(win.order);
+
+            if (order > 0) map.get(key).windows.push(order);
+
+        });
+
+    return [...map.values()];
+
+}
+
+function waitingTickets(serviceKey) {
+
+    return Object.values(ticketsToday).filter(
+        (t) =>
+            t &&
+            t.service === serviceKey &&
+            t.status === "waiting"
+    );
+
+}
+
+function windowsText(list) {
+
+    if (!list.length) return "";
+
+    return (list.length === 1 ? "Window " : "Windows ") + list.join(", ");
+
+}
+
+function canIssue() {
+
+    return authReady && connected && !busy;
+
+}
+
+const serviceButtons = new Map();
+
+function renderServices() {
+
+    const box = $("services");
+
+    // Keep the "Getting ready" message until the services have arrived
+    if (!windowsLoaded) return;
+
+    const services = buildServices();
+
+    if (!services.length) {
+
+        serviceButtons.clear();
+
+        box.innerHTML = "";
+
+        const empty = document.createElement("div");
+
+        empty.className = "empty";
+
+        const title = document.createElement("strong");
+
+        title.textContent = "No services available";
+
+        const note = document.createElement("span");
+
+        note.textContent =
+            "Please ask a staff member for assistance.";
+
+        empty.append(title, note);
+
+        box.appendChild(empty);
+
+        return;
+
+    }
+
+    // Remove the placeholder / stale buttons
+    box.querySelectorAll(".empty").forEach((n) => n.remove());
+
+    const keep = new Set(services.map((s) => s.key));
+
+    [...serviceButtons.entries()].forEach(([key, el]) => {
+
+        if (!keep.has(key)) {
+
+            el.remove();
+
+            serviceButtons.delete(key);
+
+        }
+
+    });
+
+    services.forEach((service) => {
+
+        let btn = serviceButtons.get(service.key);
+
+        if (!btn) {
+
+            btn = document.createElement("button");
+
+            btn.type = "button";
+
+            btn.className = "service";
+
+            btn.innerHTML = `
+                <div class="service-name"></div>
+                <div class="service-foot">
+                    <div class="service-info">
+                        <span class="svc-waiting"></span>
+                        <span class="svc-windows"></span>
+                    </div>
+                    <span class="service-cta">Get number</span>
+                </div>
+            `;
+
+            btn.addEventListener(
+                "click",
+                () => takeNumber(service.key)
+            );
+
+            serviceButtons.set(service.key, btn);
+
+        }
+
+        // Always keep the buttons in window order
+        box.appendChild(btn);
+
+        btn.querySelector(".service-name").textContent =
+            service.label;
+
+        const waiting = waitingTickets(service.key).length;
+
+        btn.querySelector(".svc-waiting").innerHTML =
+            waiting === 0
+                ? "<strong>No one</strong> waiting"
+                : `<strong>${waiting}</strong> waiting`;
+
+        btn.querySelector(".svc-windows").textContent =
+            windowsText(service.windows);
+
+        btn.disabled = !canIssue();
+
+    });
+
+}
+
+
+/* =========================================================
+   TAKE A NUMBER
+
+   1. Add 1 to today's counter for this service. This is done
+      as a "transaction", so two customers tapping at the same
+      moment can never receive the same number.
+   2. Save the ticket as "waiting". The staff page shows it.
+   3. Show the number and print the ticket.
+========================================================= */
+
+function withTimeout(promise, ms) {
+
+    return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+            setTimeout(
+                () => reject(new Error("timeout")),
+                ms
+            )
+        )
+    ]);
+
+}
+
+async function takeNumber(serviceKey) {
+
+    if (!canIssue()) {
+
+        if (!connected) {
+
+            showNotice(
+                "No connection right now. Please try again in a moment.",
+                5000
+            );
+
+        }
+
+        return;
+
+    }
+
+    const service = buildServices().find((s) => s.key === serviceKey);
+
+    if (!service) return;
+
+    busy = true;
+
+    renderServices();
+
+    hideNotice();
+
+    try {
+
+        const day = todayKey();
+
+        const counterRef =
+            ref(db, `${base}/counters/${day}/${service.key}`);
+
+        // The new number and its ticket are saved in ONE write, so a number
+        // can never be used up without a ticket. If another kiosk takes the
+        // same number at the same moment, the database refuses this write
+        // (the counter must go up by exactly 1) and we simply try again.
+        let number = 0;
+
+        let saved = false;
+
+        for (let attempt = 1; attempt <= 5 && !saved; attempt++) {
+
+            const current = await withTimeout(get(counterRef), 12000);
+
+            number = (current.val() || 0) + 1;
+
+            const ticketId = push(ref(db, `${base}/tickets/${day}`)).key;
+
+            try {
+
+                await withTimeout(
+                    update(ref(db, base), {
+                        [`counters/${day}/${service.key}`]: number,
+                        [`tickets/${day}/${ticketId}`]: {
+                            service: service.key,
+                            serviceLabel: service.label,
+                            number: number,
+                            status: "waiting",
+                            createdAt: serverTimestamp()
+                        }
+                    }),
+                    12000
+                );
+
+                saved = true;
+
+            }
+            catch (writeError) {
+
+                // a timeout means we do not know the result: do not retry
+                if (writeError.message === "timeout" || attempt === 5) {
+
+                    throw writeError;
+
+                }
+
+                await new Promise((r) => setTimeout(r, 150 * attempt));
+
+            }
+
+        }
+
+        const ahead = waitingTickets(service.key).filter(
+            (t) => t.number < number
+        ).length;
+
+        showTicket(service, number, ahead);
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        showNotice(
+            "Sorry, we could not issue your number. Please try again, or ask a staff member.",
+            7000
+        );
+
+    }
+    finally {
+
+        busy = false;
+
+        renderServices();
+
+    }
+
+}
+
+
+/* =========================================================
+   TICKET POPUP + PRINT
+========================================================= */
+
+let popupTimer = null;
+
+function aheadText(ahead) {
+
+    if (ahead === 0) return "You are next in line.";
+
+    return ahead === 1
+        ? "1 customer ahead of you."
+        : `${ahead} customers ahead of you.`;
+
+}
+
+function showTicket(service, number, ahead) {
+
+    // On screen
+    $("popNumber").textContent = number;
+
+    $("popService").textContent = service.label;
+
+    $("popAhead").textContent = aheadText(ahead);
+
+    // On paper
+    $("tCompany").textContent = companyLabel || company.toUpperCase();
+
+    $("tOffice").textContent = officeLabel;
+
+    $("tNumber").textContent = number;
+
+    $("tService").textContent = service.label;
+
+    $("tAhead").textContent = aheadText(ahead);
+
+    $("tTime").textContent =
+        new Date(nowMs()).toLocaleString([], {
+            dateStyle: "medium",
+            timeStyle: "short",
+            timeZone: TIMEZONE
+        });
+
+    $("overlay").classList.add("show");
+
+    const bar = $("popBar");
+
+    bar.classList.remove("run");
+
+    void bar.offsetWidth;
+
+    bar.style.animationDuration = POPUP_SECONDS + "s";
+
+    bar.classList.add("run");
+
+    clearTimeout(popupTimer);
+
+    popupTimer = setTimeout(closePopup, POPUP_SECONDS * 1000);
+
+    lastTicket = {
+        company: companyLabel || company.toUpperCase(),
+        office: officeLabel,
+        number: String(number),
+        service: service.label,
+        ahead: aheadText(ahead),
+        time: $("tTime").textContent
+    };
+
+    if (AUTO_PRINT) {
+
+        setTimeout(() => printTicket(), 300);
+
+    }
+
+}
+
+function closePopup() {
+
+    clearTimeout(popupTimer);
+
+    $("overlay").classList.remove("show");
+
+}
+
+$("popDone").addEventListener("click", closePopup);
+
+// Hidden staff sign-out (the kiosk has no visible logout, customers use it).
+// Press and hold the company name for 3 seconds, or press Ctrl+Shift+L.
+function kioskSignOut() {
+    if (!confirm("Sign out of this kiosk?")) return;
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+    signOut(auth).then(() => { window.location.href = "index.html?logout"; });
+}
+
+/* ---------- Full screen ----------
+   Hides the address bar so customers cannot see or change the address.
+   Browsers only allow full screen after a tap, so a "Tap to start" screen
+   covers the kiosk until then (and again if full screen is ever left).
+   Not shown when the page was added to the Home screen / is already
+   full screen, or when the device has no full screen support
+   (iPhone Safari): use "Add to Home Screen" there. */
+const fsGate = $("fsGate");
+const fsRoot = document.documentElement;
+const fsRequest = fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen;
+let fsDenied = false;
+
+function isFullscreenNow() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement) ||
+        (window.matchMedia && (
+            matchMedia("(display-mode: fullscreen)").matches ||
+            matchMedia("(display-mode: standalone)").matches)) ||
+        window.navigator.standalone === true ||
+        (Math.abs(window.innerHeight - screen.height) < 2 &&
+         Math.abs(window.innerWidth - screen.width) < 2);
+}
+
+let fsWasFull = false;   // the start screen is only for the very first entry
+function updateFsGate() {
+    if (isFullscreenNow()) fsWasFull = true;
+    fsGate.hidden = fsWasFull || !fsRequest || fsDenied || isFullscreenNow() ||
+        !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+}
+
+$("fsStart").addEventListener("click", () => {
+    let result;
+    try {
+        result = fsRequest.call(fsRoot, { navigationUI: "hide" });
+    } catch (e) { fsDenied = true; }
+    if (result && result.catch) {
+        // If the browser refuses, do not leave the kiosk locked behind the gate
+        result.catch(() => { fsDenied = true; updateFsGate(); });
+    }
+    setTimeout(updateFsGate, 250);
+});
+
+// After the print dialog (or Esc) drops full screen, the next tap on the
+// page quietly goes back to full screen. No start screen, no extra tap.
+document.addEventListener("pointerdown", () => {
+    if (fsWasFull && !fsDenied && fsRequest && !isFullscreenNow()) {
+        try {
+            const r = fsRequest.call(fsRoot, { navigationUI: "hide" });
+            if (r && r.catch) r.catch(() => {});
+        } catch (e) {}
+    }
+}, true);
+
+["fullscreenchange", "webkitfullscreenchange", "resize"].forEach((e) =>
+    document.addEventListener(e, updateFsGate));
+window.addEventListener("resize", updateFsGate);
+updateFsGate();
+{
+    let holdTimer = null;
+    const start = () => { clearTimeout(holdTimer); holdTimer = setTimeout(kioskSignOut, 3000); };
+    const stop = () => clearTimeout(holdTimer);
+    // Hold the company name (or the title on the start screen)
+    [$("companyName"), $("fsTitle")].forEach((name) => {
+        ["pointerdown"].forEach(e => name.addEventListener(e, start));
+        ["pointerup", "pointerleave", "pointercancel"].forEach(e => name.addEventListener(e, stop));
+        // no text-selection bubble or context menu while holding on a touch screen
+        name.addEventListener("contextmenu", (e) => e.preventDefault());
+        name.style.webkitTouchCallout = "none";
+        name.style.touchAction = "none";
+    });
+}
+document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "l") kioskSignOut();
+});
+
+
+/* =========================================================
+   APP PRINTING (Capacitor Android app) with browser fallback
+   In the app: silent ESC/POS print to a saved Bluetooth printer.
+   In a browser, or if the app print fails: normal window.print().
+   ========================================================= */
+let lastTicket = null;
+const IN_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const PRINTER_KEY = "ezq.printerAddress";
+const TP = IN_APP && window.Capacitor.Plugins ? window.Capacitor.Plugins.CapacitorThermalPrinter : null;
+
+function wrapText(t, w) {
+    const words = String(t).split(/\s+/), lines = []; let cur = "";
+    words.forEach(x => {
+        if ((cur + " " + x).trim().length > w) { if (cur) lines.push(cur); cur = x; }
+        else cur = (cur + " " + x).trim();
+    });
+    if (cur) lines.push(cur);
+    return lines;
+}
+
+async function appPrint(t) {
+    let addr = ""; try { addr = localStorage.getItem(PRINTER_KEY) || ""; } catch (e) {}
+    if (!TP || !addr) throw new Error("no printer set");
+    const st = await TP.isConnected();
+    const connected = st && typeof st === "object" ? st.state : st;
+    if (!connected) await TP.connect({ address: addr });
+    // The raw plugin takes one call per command (no chaining outside a bundler).
+    const step = [];
+    const add = (m, a) => step.push([m, a || {}]);
+    const line = (x) => add("text", { text: x + "\n" });
+    add("begin");
+    add("align", { alignment: "center" });
+    add("bold", { enabled: true }); line(t.company); add("bold", { enabled: false });
+    if (t.office) wrapText(t.office, 32).forEach(line);
+    line("--------------------------------");
+    line("YOUR NUMBER");
+    add("doubleWidth", { enabled: true }); add("doubleHeight", { enabled: true }); add("bold", { enabled: true });
+    line(t.number);
+    add("doubleWidth", { enabled: false }); add("doubleHeight", { enabled: false }); add("bold", { enabled: false });
+    wrapText(t.service, 32).forEach(line);
+    line(""); line(t.ahead); line(t.time);
+    line("--------------------------------");
+    line("Please wait for your number");
+    for (let i = 0; i < 7; i++) line("");   // blank lines after the ticket (raise or lower 5 to taste)
+    add("cutPaper", {});
+    add("write");
+    for (const [m, a] of step) await TP[m](a);
+}
+
+async function printTicket() {
+    if (IN_APP && lastTicket) {
+        try { await appPrint(lastTicket); return; }
+        catch (e) { console.warn("App print failed, using browser print:", e); }
+    }
+    window.print();
+}
+
+// Printer picker (app only): small button bottom-left
+if (IN_APP && TP) {
+    const btn = document.createElement("button");
+    btn.textContent = "Printer";
+    btn.style.cssText = "position:fixed;left:6px;bottom:6px;z-index:50;opacity:.35;font-size:12px;padding:4px 8px;border:0;border-radius:6px;background:#334;color:#fff";
+    const box = document.createElement("div");
+    box.style.cssText = "position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center";
+    box.innerHTML = '<div style="background:#fff;color:#111;border-radius:12px;padding:18px;width:min(420px,92vw);max-height:80vh;overflow:auto"><h3 style="margin:0 0 8px">Choose printer</h3><div id="prMsg" style="font-size:13px;margin-bottom:8px">Pair the printer in Android Bluetooth settings first, then tap Search.</div><div id="prList"></div><div style="margin-top:12px;display:flex;gap:8px"><button id="prSearch">Search</button><button id="prTest">Test print</button><button id="prClose">Close</button></div></div>';
+    document.body.append(btn, box);
+    const msg = box.querySelector("#prMsg"), list = box.querySelector("#prList");
+    const seen = {};
+    const show = (d) => {
+        if (seen[d.address]) return; seen[d.address] = 1;
+        const b = document.createElement("button");
+        b.style.cssText = "display:block;width:100%;text-align:left;padding:10px;margin:4px 0";
+        b.textContent = (d.name || "Unnamed") + "  (" + d.address + ")";
+        b.onclick = async () => {
+            try { await TP.stopScan(); } catch (e) {}
+            msg.textContent = "Connecting...";
+            try {
+                await TP.connect({ address: d.address });
+                localStorage.setItem(PRINTER_KEY, d.address);
+                msg.textContent = "Saved: " + (d.name || d.address) + ". Tap Test print.";
+            } catch (e) { msg.textContent = "Could not connect: " + (e.message || e); }
+        };
+        list.append(b);
+    };
+    TP.addListener("discoverDevices", (r) => (r.devices || []).forEach(show));
+    TP.addListener("discoveryFinish", () => { if (!list.children.length) msg.textContent = "No printers found. Pair it in Android settings and try again."; });
+    btn.onclick = () => { box.style.display = "flex"; };
+    box.querySelector("#prClose").onclick = () => { box.style.display = "none"; };
+    box.querySelector("#prSearch").onclick = async () => {
+        list.innerHTML = ""; Object.keys(seen).forEach(k => delete seen[k]);
+        msg.textContent = "Searching...";
+        try { await TP.startScan(); } catch (e) { msg.textContent = "Search failed: " + (e.message || e); }
+    };
+    box.querySelector("#prTest").onclick = async () => {
+        try {
+            await appPrint({ company: "TEST PRINT", office: "Printer OK", number: "A001", service: "Sample service", ahead: "0 ahead", time: new Date().toLocaleString() });
+            msg.textContent = "Test sent.";
+        } catch (e) { msg.textContent = "Test failed: " + (e.message || e); }
+    };
+}
+
+// Prints the same ticket again (paper jam, ticket lost). Keeps the popup
+// open a little longer.
+$("popReprint").addEventListener("click", () => {
+
+    printTicket();
+
+    clearTimeout(popupTimer);
+
+    popupTimer = setTimeout(closePopup, POPUP_SECONDS * 1000);
+
+});
+
+
+/* =========================================================
+   LIVE DATA
+========================================================= */
+
+function watchDay() {
+
+    const day = todayKey();
+
+    if (day === dayKey) return;
+
+    dayKey = day;
+
+    ticketsToday = {};
+
+    if (unsubTickets) unsubTickets();
+
+    unsubTickets = onValue(
+
+        ref(db, `${base}/tickets/${day}`),
+
+        (snap) => {
+
+            ticketsToday = snap.val() || {};
+
+            renderServices();
+
+        },
+
+        (error) => {
+
+            console.error(error);
+
+            showNotice(
+                "Setup problem: this kiosk is not allowed to read the queue (" +
+                error.message +
+                ").",
+                0
+            );
+
+        }
+
+    );
+
+}
+
+function startApp() {
+
+    onValue(
+        ref(db, `companies/${company}/name`),
+        (snap) => {
+
+            companyLabel = snap.val() || "";
+
+            $("companyName").textContent =
+                companyLabel || company.toUpperCase();
+
+        }
+    );
+
+    onValue(
+        ref(db, `${base}/name`),
+        (snap) => {
+
+            officeLabel = snap.val() || prettyOffice(office);
+
+            $("officeName").textContent = officeLabel;
+
+        }
+    );
+
+    onValue(
+        ref(db, ".info/serverTimeOffset"),
+        (snap) => {
+
+            serverOffset = snap.val() || 0;
+
+        }
+    );
+
+    onValue(
+        ref(db, ".info/connected"),
+        (snap) => {
+
+            connected = snap.val() === true;
+
+            const el = $("connection");
+
+            el.classList.toggle("is-live", connected);
+
+            el.classList.toggle("is-down", !connected);
+
+            el.textContent = connected ? "Ready" : "Reconnecting";
+
+            renderServices();
+
+        }
+    );
+
+    onValue(
+        ref(db, `${base}/windows`),
+        (snap) => {
+
+            windowData = snap.val() || {};
+
+            windowsLoaded = true;
+
+            renderServices();
+
+        },
+        (error) => {
+
+            console.error(error);
+
+            showNotice(
+                "Setup problem: cannot read this branch's services (" +
+                error.message +
+                ").",
+                0
+            );
+
+        }
+    );
+
+    watchDay();
+
+    setInterval(watchDay, 30000);
+
+}
+
+
+/* =========================================================
+   SIGN IN
+   Like the other pages: no signed-in user -> back to index.html.
+   The branch account (e.g. mainoffice@panelcoi.com) decides
+   which company/office this kiosk belongs to.
+========================================================= */
+
+let started = false;
+
+let starting = false;
+
+onAuthStateChanged(auth, async (user) => {
+
+    if (!user || !user.email) {
+
+        window.location.href = "index.html";
+
+        return;
+
+    }
+
+    if (started || starting) return;
+
+    starting = true;
+
+    const parts = user.email.toLowerCase().split("@");
+
+    const local = parts[0] || "";
+
+    const domain = (parts[1] || "").split(".")[0];
+
+    let officeId = local;
+
+    if (idPattern.test(domain)) {
+
+        try {
+
+            // Staff record made in window.html: companies/<company>/users/<uid>.
+            // Old shared branch logins (mainoffice@company.com) have none.
+            const snap = await get(
+                ref(db, `companies/${domain}/users/${user.uid}`)
+            );
+
+            const record = snap.val();
+
+            if (record) {
+
+                if (record.active === false) {
+
+                    starting = false;
+
+                    $("services").innerHTML =
+                        '<div class="empty"><strong>This account has been deactivated</strong>' +
+                        "<span>Please ask your administrator.</span></div>";
+
+                    return;
+
+                }
+
+                officeId = record.officeId;
+
+            }
+
+            const tzSnap = await get(ref(db, `companies/${domain}/timezone`));
+
+            if (tzSnap.val()) {
+
+                new Intl.DateTimeFormat("en-US", { timeZone: tzSnap.val() });
+
+                TIMEZONE = tzSnap.val();
+
+            }
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+        }
+
+    }
+
+    if (!idPattern.test(String(officeId)) || !idPattern.test(domain)) {
+
+        starting = false;
+
+        $("services").innerHTML =
+            '<div class="empty"><strong>This account cannot use the kiosk</strong>' +
+            "<span>Log in with a kiosk or staff account made by your administrator.</span></div>";
+
+        return;
+
+    }
+
+    company = domain;
+
+    // Company logos, e.g. panelcoi_logo.png and panelcoi_iso.png
+    ["logo", "iso"].forEach((kind) => {
+
+        const img = $(kind + "Img");
+
+        img.onload = () => { img.hidden = false; };
+
+        img.onerror = () => { img.hidden = true; };
+
+        img.src = encodeURIComponent(company) + "_" + kind + ".png";
+
+    });
+
+    office = officeId;
+
+    base = `companies/${company}/offices/${office}`;
+
+    officeLabel = prettyOffice(office);
+
+    started = true;
+
+    authReady = true;
+
+    startApp();
+
+    renderServices();
+
+});
+
+</script>
+
+</body>
+
+</html>

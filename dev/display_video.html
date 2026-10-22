@@ -1,0 +1,3811 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<!-- Makes the page scale correctly on phones and tablets -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>QUEUE DISPLAY</title>
+
+<!-- Speeds up loading of Google Fonts by opening the connections early -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- Bebas Neue = big queue numbers and clock. Barlow = all other text. -->
+<link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&display=swap"
+    rel="stylesheet"
+>
+
+<style>
+
+/* Color palette and spacing. Change colors here and they update everywhere. */
+:root {
+
+    --bg: #0B0F13;          /* page background */
+    --bg-lift: #131A21;     /* slightly lighter strips (window name bar, buttons) */
+    --surface: #161E26;     /* card background */
+    --line: #26323C;        /* borders */
+    --text: #EAF0F4;        /* main text */
+    --muted: #7D8C99;       /* secondary text */
+    --go: #35D57F;          /* green accent when a number is called */
+    --glow: #FFD43B;        /* yellow rotating border on a called card */
+    --go-deep: #0E3D28;     /* dark green used in the called-card gradient */
+    --danger: #E0533D;      /* red dot when disconnected */
+    --gap: clamp(8px, 1.1vw, 20px);   /* space between cards, scales with screen width */
+
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+/* Padding and borders count inside an element's width/height */
+* {
+
+    box-sizing: border-box;
+
+}
+
+
+/* Fill the whole screen, never scroll (this is a display board) */
+html,
+body {
+
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+
+    background: var(--bg);
+    color: var(--text);
+
+    font-family:
+        "Barlow",
+        system-ui,
+        sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+
+}
+
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+/* Soft spotlight glow at the top of the screen, sits behind everything */
+body::before {
+
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    background:
+        radial-gradient(
+            120% 90% at 50% 0%,
+            #1A242E 0%,
+            var(--bg) 62%
+        );
+
+    z-index: -1;
+
+}
+
+
+/* =========================================================
+   MAIN SCREEN
+========================================================= */
+
+/* Vertical stack: header on top, board in the middle, footer at the bottom */
+.screen {
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    padding:
+        clamp(12px, 1.6vw, 28px);
+
+    gap: var(--gap);
+
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+/* Company/office on the left, connection + date + clock on the right */
+.header {
+
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    text-align: left;
+
+    padding: 0;
+
+    background: transparent;
+    border: 0;
+
+}
+
+
+.header-left {
+
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: clamp(8px, 1vw, 18px);
+
+}
+
+/* Company logo and iso-logo, left of the company name */
+.brand-img {
+
+    flex: 0 0 auto;
+
+    height: clamp(34px, 3.6vw, 72px);
+    width: auto;
+
+    max-width: 22vw;
+
+    object-fit: contain;
+
+}
+
+.brand-img[hidden] {
+
+    display: none;
+
+}
+
+.brand-text {
+
+    min-width: 0;
+
+}
+
+
+/* Company name, e.g. "PANELCO I" */
+.title {
+
+    margin: 0;
+
+    font-size:
+        clamp(16px, 2.1vw, 40px);
+
+    font-weight: 600;
+
+    letter-spacing: 0.01em;
+
+    line-height: 1.05;
+
+}
+
+
+/* Office name under the title, e.g. "Main Office" */
+.office {
+
+    margin-top: 3px;
+
+    font-size:
+        clamp(11px, 1vw, 18px);
+
+    color: var(--muted);
+
+    font-weight: 400;
+
+}
+
+
+.header-right {
+
+    flex: 0 0 auto;
+
+    display: flex;
+
+    align-items: baseline;
+
+    gap:
+        clamp(10px, 1.2vw, 22px);
+
+}
+
+
+/* =========================================================
+   CONNECTION
+========================================================= */
+
+/* "Live" / "Reconnecting" label with a small colored dot (the ::before) */
+.connection {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 0.5em;
+
+    font-size:
+        clamp(11px, 1vw, 18px);
+
+    color: var(--muted);
+
+    white-space: nowrap;
+
+}
+
+
+/* The dot. Gray by default (still connecting) */
+.connection::before {
+
+    content: "";
+
+    width: 0.62em;
+    height: 0.62em;
+
+    flex: 0 0 auto;
+
+    border-radius: 50%;
+
+    background: var(--muted);
+
+}
+
+
+/* Added by JavaScript when Firebase is connected: green dot */
+.connection.is-live::before {
+
+    background: var(--go);
+
+}
+
+
+/* Added by JavaScript when Firebase is disconnected: red dot */
+.connection.is-down::before {
+
+    background: var(--danger);
+
+}
+
+
+/* =========================================================
+   DATE / CLOCK
+========================================================= */
+
+.date {
+
+    font-size:
+        clamp(11px, 1vw, 18px);
+
+    color: var(--muted);
+
+    white-space: nowrap;
+
+}
+
+
+/* tabular-nums keeps digits the same width so the clock doesn't jiggle */
+.clock {
+
+    font-family:
+        "Bebas Neue",
+        Impact,
+        sans-serif;
+
+    font-size:
+        clamp(20px, 2.6vw, 48px);
+
+    line-height: 1;
+
+    letter-spacing: 0.02em;
+
+    font-variant-numeric: tabular-nums;
+
+    white-space: nowrap;
+
+}
+
+
+/* =========================================================
+   BOARD
+========================================================= */
+
+/* The grid that holds all window cards.
+   --cols and --rows are set by JavaScript (layoutBoard) based on
+   how many windows there are, so the cards fill the space evenly. */
+#board {
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    width: 100%;
+
+    display: grid;
+
+    gap: var(--gap);
+
+    align-content: stretch;
+
+    justify-content: stretch;
+
+    overflow: hidden;
+
+    --cols: 1;
+    --rows: 1;
+
+    grid-template-columns:
+        repeat(
+            var(--cols),
+            minmax(0, 1fr)
+        );
+
+    grid-template-rows:
+        repeat(
+            var(--rows),
+            minmax(0, 1fr)
+        );
+
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+/* One card per service window: name bar, service label, big number */
+.card {
+
+    position: relative;
+
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    border:
+        2px solid var(--line);
+
+    border-radius: 14px;
+
+    background: var(--surface);
+
+    overflow: hidden;
+
+    text-align: center;
+
+    /* Smooth change when the card turns green (".called") and back */
+    transition:
+        border-color .25s ease,
+        background-color .25s ease,
+        box-shadow .25s ease,
+        transform .25s ease;
+
+}
+
+
+/* =========================================================
+   WINDOW NAME
+========================================================= */
+
+/* Top bar of the card: "Window 1", "Window 2", ... */
+.window-name {
+
+    flex: 0 0 auto;
+
+    width: 100%;
+
+    padding:
+        0.45em
+        0.7em;
+
+    background: var(--bg-lift);
+
+    border-bottom:
+        2px solid var(--line);
+
+    color: var(--muted);
+
+    font-size:
+        clamp(12px, 1.35vw, 26px);
+
+    font-weight: 600;
+
+    letter-spacing: 0.02em;
+
+    line-height: 1.15;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    transition:
+        color .25s ease,
+        background-color .25s ease,
+        border-color .25s ease;
+
+}
+
+
+/* =========================================================
+   SERVICE NAME
+========================================================= */
+
+/* Small label under the window name (the window's "label" from Firebase) */
+.service-name {
+
+    flex: 0 0 auto;
+
+    width: 100%;
+
+    padding:
+        2px
+        10px
+        0;
+
+    color: var(--muted);
+
+    font-size:
+        clamp(11px, 1.1vw, 20px);
+
+    font-weight: 500;
+
+    line-height: 1;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+}
+
+
+/* =========================================================
+   QUEUE NUMBER
+========================================================= */
+
+/* The big number. font-size here (240px) is only a starting value;
+   JavaScript (fitAll) overwrites it to fit each card exactly. */
+.queue-number {
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding:
+        0
+        8px
+        4px;
+
+    font-family:
+        "Bebas Neue",
+        Impact,
+        sans-serif;
+
+    font-size: 240px;
+
+    font-weight: 400;
+
+    line-height: 1;
+
+    letter-spacing: 0.01em;
+
+    color: var(--text);
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    /* Slight "pop" when the number is highlighted */
+    transition:
+        transform .3s cubic-bezier(.2, .9, .3, 1.3),
+        color .25s ease;
+
+}
+
+
+/* =========================================================
+   EMPTY QUEUE
+========================================================= */
+
+/* Dim "—" shown when a window has no number yet (queue is 0) */
+.queue-number.empty {
+
+    color: var(--muted);
+
+    opacity: .45;
+
+}
+
+
+/* =========================================================
+   CALLED / HIGHLIGHT
+========================================================= */
+
+/* Added by JavaScript for 15 seconds whenever a window's number changes.
+   Green border, green glow, green window bar, green number. */
+.card.called {
+
+    border-color: var(--go);
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--go-deep) 0%,
+            var(--surface) 70%
+        );
+
+    box-shadow:
+        0 0 0 1px var(--go),
+        0 0 44px -6px
+        rgba(53, 213, 127, .55);
+
+    transform: scale(1.005);
+
+}
+
+
+.card.called .window-name {
+
+    background: var(--go);
+
+    border-bottom-color: var(--go);
+
+    color: #06170E;
+
+}
+
+
+.card.called .queue-number {
+
+    color: var(--go);
+
+    transform: scale(1.06);
+
+}
+
+
+/* ---- Rotating yellow glow border (only while a card is ".called") ----
+   A ring (a conic gradient with a bright "comet" and fading tail) is
+   drawn over the card's edge, and its angle is animated 0 -> 360deg.
+   "@property" lets the browser animate the angle smoothly. */
+@property --glow-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.card.called {
+
+    /* yellow edge + yellow outer glow (still visible if the
+       browser cannot animate the ring) */
+    border-color: var(--glow);
+
+    box-shadow:
+        0 0 0 1px var(--glow),
+        0 0 36px -4px rgba(255, 212, 59, .55),
+        0 0 70px -10px rgba(255, 212, 59, .35);
+
+}
+
+.card.called::before {
+
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    border-radius: 12px;      /* card radius minus its border */
+
+    padding: 5px;             /* thickness of the glowing ring */
+
+    background:
+        conic-gradient(
+            from var(--glow-angle),
+            rgba(255, 212, 59, 0)    0deg,
+            rgba(255, 212, 59, .15)  180deg,
+            rgba(255, 212, 59, .9)   300deg,
+            #FFF3A8                  345deg,
+            rgba(255, 212, 59, 0)    360deg
+        );
+
+    /* cut out the middle so only the ring shows */
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#000 0 0) content-box exclude,
+        linear-gradient(#000 0 0);
+
+    pointer-events: none;
+
+    z-index: 5;
+
+    filter: drop-shadow(0 0 6px rgba(255, 212, 59, .9));
+
+    animation:
+        glow-spin 2.4s linear infinite;
+
+}
+
+@keyframes glow-spin {
+    to { --glow-angle: 360deg; }
+}
+
+/* Respect "reduce motion" settings: keep the ring still */
+@media (prefers-reduced-motion: reduce) {
+    .card.called::before { animation: none; }
+}
+
+
+/* =========================================================
+   EMPTY BOARD
+========================================================= */
+
+/* Message shown while loading or when the office has no windows.
+   Spans the whole grid (all columns and rows). */
+.board-empty {
+
+    grid-column: 1 / -1;
+
+    grid-row: 1 / -1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 0.4em;
+
+    border:
+        2px dashed var(--line);
+
+    border-radius: 14px;
+
+    color: var(--muted);
+
+    text-align: center;
+
+    padding: 2em;
+
+}
+
+
+.board-empty strong {
+
+    font-family:
+        "Bebas Neue",
+        Impact,
+        sans-serif;
+
+    font-weight: 400;
+
+    font-size:
+        clamp(24px, 4vw, 72px);
+
+    color: var(--text);
+
+    letter-spacing: 0.02em;
+
+}
+
+
+.board-empty span {
+
+    font-size:
+        clamp(12px, 1.2vw, 22px);
+
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+/* Company tagline on the left, sound/full screen buttons on the right */
+.footer {
+
+    flex: 0 0 auto;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    color: var(--muted);
+
+    font-size:
+        clamp(11px, 1.05vw, 20px);
+
+}
+
+
+.footer-brand strong {
+
+    color: var(--text);
+
+    font-weight: 600;
+
+}
+
+
+.controls {
+
+    display: flex;
+
+    gap: 8px;
+
+}
+
+
+/* Pill-shaped buttons */
+.btn {
+
+    font: inherit;
+
+    font-weight: 600;
+
+    color: var(--text);
+
+    background: var(--bg-lift);
+
+    border:
+        1px solid var(--line);
+
+    border-radius: 999px;
+
+    padding:
+        0.45em
+        1.1em;
+
+    cursor: pointer;
+
+}
+
+
+.btn:hover {
+
+    border-color: var(--muted);
+
+}
+
+
+/* Visible outline when navigating with the keyboard */
+.btn:focus-visible {
+
+    outline:
+        2px solid var(--go);
+
+    outline-offset: 2px;
+
+}
+
+
+/* Green button style, used for the sound button */
+.btn--go {
+
+    background: var(--go);
+
+    border-color: var(--go);
+
+    color: #06170E;
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+/* Phones and narrow screens: tighter spacing, date hidden to save room */
+@media (max-width: 700px) {
+
+    .screen {
+
+        padding: 8px;
+
+        gap: 8px;
+
+    }
+
+    .header {
+
+        align-items: center;
+
+    }
+
+    .header-right {
+
+        gap: 8px;
+
+    }
+
+    .date {
+
+        display: none;
+
+    }
+
+    .connection {
+
+        font-size: 11px;
+
+    }
+
+    .clock {
+
+        font-size: 24px;
+
+    }
+
+    #board {
+
+        gap: 8px;
+
+    }
+
+    .window-name {
+
+        font-size:
+            clamp(12px, 4vw, 24px);
+
+    }
+
+    .service-name {
+
+        font-size:
+            clamp(11px, 3.5vw, 20px);
+
+    }
+
+    .footer {
+
+        font-size: 11px;
+
+    }
+
+    .controls {
+
+        gap: 4px;
+
+    }
+
+    .btn {
+
+        padding:
+            0.4em
+            .8em;
+
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+/* Respects the device setting for people who prefer no animations */
+@media (prefers-reduced-motion: reduce) {
+
+    * {
+
+        transition: none !important;
+
+        animation: none !important;
+
+    }
+
+}
+
+
+/* =========================================================
+   LAYOUT 2: VIDEO + NEWS ("body.v2")
+   Chosen from the employee page (settings/displayVersion = 2),
+   or for a quick look add ?v=2 to the address.
+   Top-left: a 16:9 video. Top-right: news. Bottom: the windows.
+========================================================= */
+
+.stage {
+
+    display: none;
+
+}
+
+body.v2 .stage {
+
+    flex: 0 0 auto;
+
+    display: flex;
+
+    gap: var(--gap);
+
+    /* Height of the top row. The video is exactly 16:9 at this height.
+       Never taller than ~46% of the screen so the windows keep room. */
+    height: min(46vh, 28vw);
+
+    min-height: 0;
+
+}
+
+.video-box {
+
+    position: relative;
+
+    flex: 0 0 auto;
+
+    height: 100%;
+
+    aspect-ratio: 16 / 9;
+
+    border: 2px solid var(--line);
+
+    border-radius: 14px;
+
+    background: #000;
+
+    overflow: hidden;
+
+}
+
+.video-box video,
+.video-box iframe {
+
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    border: 0;
+
+    object-fit: contain;
+
+    background: #000;
+
+}
+
+.video-empty {
+
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    text-align: center;
+
+    padding: 16px;
+
+    color: var(--muted);
+
+    font-size: clamp(12px, 1.3vw, 24px);
+
+    background:
+        radial-gradient(
+            90% 90% at 50% 0%,
+            #1A242E 0%,
+            var(--bg-lift) 100%
+        );
+
+}
+
+.video-empty[hidden],
+.news-empty[hidden] {
+
+    display: none;
+
+}
+
+.video-empty strong {
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+
+    font-size: clamp(22px, 3vw, 56px);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+
+    color: var(--text);
+
+}
+
+
+/* ---------- News panel ---------- */
+
+.news-box {
+
+    position: relative;
+
+    flex: 1 1 auto;
+
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    border: 2px solid var(--line);
+
+    border-radius: 14px;
+
+    background: var(--surface);
+
+    overflow: hidden;
+
+}
+
+.news-head {
+
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 0.5em 0.9em;
+
+    background: var(--bg-lift);
+
+    border-bottom: 2px solid var(--line);
+
+    color: var(--muted);
+
+    font-size: clamp(12px, 1.3vw, 24px);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+
+}
+
+.news-head .news-dot {
+
+    display: inline-block;
+
+    width: 0.6em;
+    height: 0.6em;
+
+    margin-right: 0.6em;
+
+    border-radius: 50%;
+
+    background: var(--glow);
+
+}
+
+.news-updated {
+
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    text-transform: none;
+
+    font-size: 0.8em;
+
+}
+
+.news-body {
+
+    position: relative;
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow: hidden;
+
+}
+
+/* --- page mode: one story at a time --- */
+
+.news-page {
+
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    gap: 0.5em;
+
+    padding: clamp(12px, 1.8vw, 34px);
+
+    opacity: 0;
+
+    transition: opacity .6s ease;
+
+}
+
+.news-page.is-on {
+
+    opacity: 1;
+
+}
+
+.news-meta {
+
+    font-size: clamp(11px, 1.1vw, 20px);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    color: var(--glow);
+
+}
+
+.news-title {
+
+    font-size: clamp(20px, 2.7vw, 52px);
+    font-weight: 600;
+    line-height: 1.12;
+
+    overflow-wrap: anywhere;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+
+}
+
+.news-text {
+
+    font-size: clamp(13px, 1.5vw, 28px);
+    line-height: 1.3;
+
+    color: var(--muted);
+
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+
+}
+
+.news-dots {
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 10px;
+
+    display: flex;
+    justify-content: center;
+
+    gap: 8px;
+
+}
+
+.news-dots i {
+
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: var(--line);
+
+}
+
+.news-dots i.is-on {
+
+    background: var(--glow);
+
+}
+
+/* --- roll mode: many stories scroll upward like a ticker --- */
+
+.news-roll {
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    top: 0;
+
+    animation: news-roll linear infinite;
+
+}
+
+.news-roll:hover {
+
+    animation-play-state: paused;
+
+}
+
+.news-item {
+
+    padding: 0.7em clamp(12px, 1.6vw, 30px);
+
+    border-bottom: 1px solid var(--line);
+
+}
+
+.news-item .news-title {
+
+    font-size: clamp(16px, 2vw, 38px);
+
+    -webkit-line-clamp: 3;
+
+}
+
+@keyframes news-roll {
+
+    from { transform: translateY(0); }
+    to   { transform: translateY(-50%); }
+
+}
+
+.news-empty {
+
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    text-align: center;
+
+    padding: 16px;
+
+    color: var(--muted);
+
+    font-size: clamp(12px, 1.3vw, 24px);
+
+}
+
+.news-empty strong {
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+
+    font-size: clamp(22px, 3vw, 56px);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+
+    color: var(--text);
+
+}
+
+/* Phones / portrait screens: stack the video above the news */
+@media (max-aspect-ratio: 1/1) {
+
+    body.v2 .stage {
+
+        flex-direction: column;
+
+        height: auto;
+
+    }
+
+    body.v2 .video-box {
+
+        width: 100%;
+
+        height: auto;
+
+    }
+
+    body.v2 .news-box {
+
+        min-height: 22vh;
+
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .news-roll {
+
+        animation: none;
+
+    }
+
+}
+
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="screen">
+
+
+<!-- =====================================================
+     HEADER
+     The title text is replaced by JavaScript with the
+     company name from Firebase.
+====================================================== -->
+
+<header class="header">
+
+    <div class="header-left">
+
+        <!-- Company logos: <company>_logo.png and <company>_iso.png in this
+             folder. Each one hides itself if the file does not exist. -->
+        <img class="brand-img" id="logoImg" alt="" hidden>
+
+        <img class="brand-img" id="isoImg" alt="" hidden>
+
+        <div class="brand-text">
+
+            <div
+                class="title"
+                id="companyTitle"
+            >
+                &nbsp;
+            </div>
+
+            <!-- Filled in by JavaScript from the ?office= value in the URL -->
+            <div
+                class="office"
+                id="officeName"
+            >
+                ---
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="header-right">
+
+        <!-- "Live" / "Reconnecting" indicator -->
+        <span
+            class="connection"
+            id="connection"
+        >
+            Connecting
+        </span>
+
+        <span
+            class="date"
+            id="date"
+        >
+        </span>
+
+        <span
+            class="clock"
+            id="clock"
+        >
+            --:--
+        </span>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     STAGE (layout 2 only): video on the left, news on the right.
+     Hidden in layout 1.
+====================================================== -->
+
+<section class="stage" id="stage">
+
+    <div class="video-box" id="videoBox">
+
+        <div class="video-empty" id="videoEmpty">
+
+            <strong>Video</strong>
+
+            <span>No video has been set for this branch.</span>
+
+        </div>
+
+    </div>
+
+    <div class="news-box" id="newsBox">
+
+        <div class="news-head">
+
+            <span><i class="news-dot"></i>News</span>
+
+            <span class="news-updated" id="newsUpdated"></span>
+
+        </div>
+
+        <div class="news-body" id="newsBody">
+
+            <div class="news-empty" id="newsEmpty">
+
+                <strong>Welcome</strong>
+
+                <span>No news has been set up for this branch.</span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     BOARD
+     JavaScript fills this with one card per window.
+     The message below shows only until the first data arrives.
+====================================================== -->
+
+<main id="board">
+
+    <div class="board-empty">
+
+        <strong>
+            Getting today's numbers
+        </strong>
+
+        <span>
+            This screen updates on its own.
+        </span>
+
+    </div>
+
+</main>
+
+
+<!-- =====================================================
+     FOOTER
+====================================================== -->
+
+<footer class="footer">
+
+    <div class="footer-brand">
+
+        <!-- Company name here is replaced by JavaScript from Firebase -->
+        <strong id="footerCompany">
+            PANELCO I
+        </strong>
+
+        <!-- Tagline comes from companies/<company>/tagline (set in system-admin).
+             Hidden when the company has none. -->
+        <span id="footerTagline" hidden>
+            &nbsp;&middot;&nbsp;<span id="footerTaglineText"></span>
+        </span>
+
+    </div>
+
+
+    <div class="controls">
+
+        <!-- Browsers block sound until the user interacts with the page,
+             so this button (or any click/tap) unlocks the beep. -->
+        <button
+            class="btn btn--go"
+            id="enableAudioBtn"
+            type="button"
+        >
+            Turn on sound
+        </button>
+
+        <button
+            class="btn"
+            id="fullscreenBtn"
+            type="button"
+        >
+            Full screen
+        </button>
+
+    </div>
+
+</footer>
+
+
+</div>
+
+
+<script type="module">
+
+
+/* =========================================================
+   FIREBASE
+   Loads the Firebase tools straight from Google's servers
+   and connects to the project's Realtime Database.
+========================================================= */
+
+import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+    getDatabase,
+    ref,
+    onValue
+}
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+
+// Project connection details. These identify which Firebase project to use;
+// they are not passwords (access is controlled by the database rules).
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
+
+    authDomain:
+        "panelco-i-queue-system.firebaseapp.com",
+
+    databaseURL:
+        "https://panelco-i-queue-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+    projectId:
+        "panelco-i-queue-system",
+
+    storageBucket:
+        "panelco-i-queue-system.firebasestorage.app",
+
+    messagingSenderId:
+        "1075037996413",
+
+    appId:
+        "1:1075037996413:web:98dc8a28777d5c7b1a7814"
+
+};
+
+
+const app =
+    initializeApp(firebaseConfig);
+
+
+// "db" is the handle used for all database reads below
+const db =
+    getDatabase(app);
+
+
+/* =========================================================
+   COMPANY / OFFICE
+   Read from the page address, e.g.
+   display.html?company=panelcoi&office=mainoffice
+   If missing, defaults to panelcoi / mainoffice.
+========================================================= */
+
+const params =
+    new URLSearchParams(
+        window.location.search
+    );
+
+
+const company =
+    (
+        params.get("company") ||
+        "panelcoi"
+    ).toLowerCase();
+
+
+const office =
+    (
+        params.get("office") ||
+        "mainoffice"
+    ).toLowerCase();
+
+
+// Turns a URL value like "main-office" or "mainoffice" into a nice
+// label like "Main Office" for the header.
+function prettyOffice(slug) {
+
+    return slug
+
+        // dashes/underscores -> spaces
+        .replace(/[-_]+/g, " ")
+
+        // make sure "office" is its own word: "mainoffice" -> "main Office"
+        .replace(/office/gi, " Office")
+
+        // collapse double spaces
+        .replace(/\s+/g, " ")
+
+        .trim()
+
+        // capitalize the first letter of each word
+        .replace(
+            /\b\w/g,
+            c => c.toUpperCase()
+        );
+
+}
+
+
+/* =========================================================
+   COMPANY DISPLAY
+   Grab the page elements that show company/office names.
+========================================================= */
+
+const companyTitleEl =
+    document.getElementById(
+        "companyTitle"
+    );
+
+
+const footerCompanyEl =
+    document.getElementById(
+        "footerCompany"
+    );
+
+
+const footerTaglineEl =
+    document.getElementById(
+        "footerTagline"
+    );
+
+
+const footerTaglineTextEl =
+    document.getElementById(
+        "footerTaglineText"
+    );
+
+
+const officeNameEl =
+    document.getElementById(
+        "officeName"
+    );
+
+
+officeNameEl.innerText =
+    prettyOffice(office);
+
+
+// Company logos: <company>_logo.png and <company>_iso.png, stored next to
+// this page. Whichever file is missing is simply not shown.
+["logo", "iso"].forEach(kind => {
+
+    const img =
+        document.getElementById(kind + "Img");
+
+    img.addEventListener("load", () => { img.hidden = false; });
+
+    img.addEventListener("error", () => { img.hidden = true; });
+
+    img.src =
+        encodeURIComponent(company) + "_" + kind + ".png";
+
+});
+
+
+/* =========================================================
+   FIREBASE REFERENCES
+   Database locations this page listens to.
+========================================================= */
+
+// companies/<company>/name  -> the company's display name
+// (only the name is read; the rest of the company holds every ticket)
+const companyRef =
+    ref(
+        db,
+        `companies/${company}/name`
+    );
+
+
+// companies/<company>/tagline  -> short slogan shown in the footer (optional)
+const taglineRef =
+    ref(
+        db,
+        `companies/${company}/tagline`
+    );
+
+
+// companies/<company>/offices/<office>/windows  -> all windows and their queue numbers
+const windowsRef =
+    ref(
+        db,
+        `companies/${company}/offices/${office}/windows`
+    );
+
+
+// companies/<company>/offices/<office>/settings/voiceEnabled  -> true/false,
+// switched on the employee page (one setting per branch)
+const voiceRef =
+    ref(
+        db,
+        `companies/${company}/offices/${office}/settings/voiceEnabled`
+    );
+
+
+// Special Firebase path that is true when this screen is connected
+const connectionRef =
+    ref(
+        db,
+        ".info/connected"
+    );
+
+
+/* =========================================================
+   COMPANY NAME
+   Updates the header title and footer whenever the company
+   name changes in Firebase. Falls back to the URL value.
+========================================================= */
+
+onValue(
+
+    companyRef,
+
+    snap => {
+
+        const companyName =
+            snap.val() ||
+            company.toUpperCase();
+
+
+        companyTitleEl.textContent =
+            companyName;
+
+
+        footerCompanyEl.textContent =
+            companyName;
+
+    }
+
+);
+
+
+/* =========================================================
+   COMPANY TAGLINE
+   Shown in the footer after the company name. Each company
+   sets its own in system-admin.html; hidden if empty.
+========================================================= */
+
+onValue(
+
+    taglineRef,
+
+    snap => {
+
+        const tagline =
+            (snap.val() || "").toString().trim();
+
+        footerTaglineTextEl.textContent =
+            tagline;
+
+        footerTaglineEl.hidden =
+            !tagline;
+
+    }
+
+);
+
+
+/* =========================================================
+   CLOCK
+========================================================= */
+
+const clockEl =
+    document.getElementById(
+        "clock"
+    );
+
+
+const dateEl =
+    document.getElementById(
+        "date"
+    );
+
+
+// Writes the current time and date into the header
+function updateClock() {
+
+    const now =
+        new Date();
+
+
+    clockEl.textContent =
+        now.toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+
+    dateEl.textContent =
+        now.toLocaleDateString(
+            [],
+            {
+                weekday: "short",
+                month: "short",
+                day: "numeric"
+            }
+        );
+
+}
+
+
+// Show it right away, then refresh every 10 seconds
+updateClock();
+
+
+setInterval(
+    updateClock,
+    10000
+);
+
+
+/* =========================================================
+   VARIABLES
+   State kept while the page is open.
+========================================================= */
+
+const board =
+    document.getElementById(
+        "board"
+    );
+
+
+const connection =
+    document.getElementById(
+        "connection"
+    );
+
+
+// Latest windows data from Firebase, keyed by window ID
+let windowData = {};
+
+
+// Mirrors settings/voiceEnabled
+let voiceEnabled =
+    false;
+
+
+// True until the first render is done, so existing numbers
+// on page load don't trigger a beep/highlight
+let firstLoad =
+    true;
+
+
+// Last number shown per window, used to detect changes
+const lastNumbers = {};
+
+
+// Timers that remove the green highlight, per window
+const calledTimers = {};
+
+
+// When each window's highlight should end (timestamp), so it
+// survives a re-render while still active
+const calledUntil = {};
+
+
+// How long a card stays green after its number changes (15 seconds)
+const HIGHLIGHT_MS =
+    15000;
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+// Browsers only allow sound after the user clicks/taps once
+let audioUnlocked =
+    false;
+
+
+// beep.mp3 must be in the same folder as this page
+const beep =
+    new Audio("beep.mp3");
+
+
+beep.preload =
+    "auto";
+
+
+const audioBtn =
+    document.getElementById(
+        "enableAudioBtn"
+    );
+
+
+// Plays the beep silently once (play then pause) to get the
+// browser's permission, then marks sound as ready.
+async function unlockAudio() {
+
+    if (audioUnlocked) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await beep.play();
+
+        beep.pause();
+
+        beep.currentTime = 0;
+
+
+        audioUnlocked =
+            true;
+
+
+        audioBtn.textContent =
+            "Sound on";
+
+
+        audioBtn.classList.add(
+            "btn--go"
+        );
+
+    }
+
+    catch (error) {
+
+        // Browser refused; keep the button as is so it can be tried again
+        audioBtn.textContent =
+            "Turn on sound";
+
+    }
+
+}
+
+
+// Any of these interactions will unlock sound
+audioBtn.addEventListener(
+    "click",
+    unlockAudio
+);
+
+
+document.addEventListener(
+    "click",
+    unlockAudio
+);
+
+
+document.addEventListener(
+    "touchstart",
+    unlockAudio
+);
+
+
+/* =========================================================
+   FULL SCREEN
+========================================================= */
+
+const fullscreenBtn =
+    document.getElementById(
+        "fullscreenBtn"
+    );
+
+
+// Toggle: enter full screen, or exit if already in it
+fullscreenBtn.addEventListener(
+
+    "click",
+
+    () => {
+
+        if (document.fullscreenElement) {
+
+            document.exitFullscreen();
+
+        }
+
+        else {
+
+            document.documentElement
+
+                .requestFullscreen()
+
+                .catch(() => {});
+
+        }
+
+    }
+
+);
+
+
+// Keep the button text in sync (also when the user presses Esc)
+document.addEventListener(
+
+    "fullscreenchange",
+
+    () => {
+
+        fullscreenBtn.textContent =
+
+            document.fullscreenElement
+
+                ? "Exit full screen"
+
+                : "Full screen";
+
+    }
+
+);
+
+
+/* =========================================================
+   VOICE SETTING
+   Turns spoken announcements on/off live from Firebase.
+========================================================= */
+
+onValue(
+
+    voiceRef,
+
+    snap => {
+
+        voiceEnabled =
+            snap.val() === true;
+
+    }
+
+);
+
+
+/* =========================================================
+   CONNECTION
+   Shows "Live" (green dot) or "Reconnecting" (red dot).
+========================================================= */
+
+onValue(
+
+    connectionRef,
+
+    snap => {
+
+        const connected =
+            snap.val() === true;
+
+
+        connection.classList.toggle(
+            "is-live",
+            connected
+        );
+
+
+        connection.classList.toggle(
+            "is-down",
+            !connected
+        );
+
+
+        connection.textContent =
+
+            connected
+
+                ? "Live"
+
+                : "Reconnecting";
+
+    }
+
+);
+
+
+/* =========================================================
+   WINDOW NAME
+
+   CURRENT SYSTEM BEHAVIOR:
+   win.order determines Window number.
+   order 1 -> Window 1
+   order 2 -> Window 2
+========================================================= */
+
+function getWindowName(win) {
+
+    const order =
+        Number(win.order);
+
+
+    // Use "Window <order>" when order is a positive number
+    if (
+
+        Number.isFinite(order) &&
+
+        order > 0
+
+    ) {
+
+        return "Window " + order;
+
+    }
+
+
+    // Otherwise show a plain "Window"
+    return "Window";
+
+}
+
+
+/* =========================================================
+   FIT QUEUE NUMBERS
+
+   IMPORTANT:
+   We measure the ACTUAL rendered text.
+
+   How it works: for each card, create a hidden copy of the number,
+   start with a big font size, and shrink it 2px at a time until
+   it fits inside the card. Then apply that size to the real number.
+========================================================= */
+
+function fitAll() {
+
+    const cells = [
+
+        ...document.querySelectorAll(
+            ".queue-number"
+        )
+
+    ];
+
+
+    if (!cells.length) {
+
+        return;
+
+    }
+
+
+    cells.forEach(cell => {
+
+        const parent =
+            cell.parentElement;
+
+
+        if (!parent) {
+
+            return;
+
+        }
+
+
+        // Available space for the number itself (the number area, not the
+        // whole card, so the window bar and service label are not counted)
+        const maxW =
+            cell.clientWidth - 16;
+
+
+        const maxH =
+            cell.clientHeight - 8;
+
+
+        // Card not visible/sized yet; skip it
+        if (
+
+            maxW <= 0 ||
+
+            maxH <= 0
+
+        ) {
+
+            return;
+
+        }
+
+
+        // Hidden, off-screen copy used only for measuring text size
+        const measure =
+            document.createElement(
+                "span"
+            );
+
+
+        measure.textContent =
+            cell.textContent;
+
+
+        measure.style.position =
+            "fixed";
+
+
+        measure.style.left =
+            "-10000px";
+
+
+        measure.style.top =
+            "0";
+
+
+        measure.style.visibility =
+            "hidden";
+
+
+        measure.style.whiteSpace =
+            "nowrap";
+
+
+        // Must match the real number's font settings (see .queue-number CSS)
+        measure.style.fontFamily =
+            '"Bebas Neue", Impact, sans-serif';
+
+
+        measure.style.fontWeight =
+            "400";
+
+
+        measure.style.lineHeight =
+            "1";
+
+
+        measure.style.letterSpacing =
+            "0.01em";
+
+
+        document.body.appendChild(
+            measure
+        );
+
+
+        // Starting size: up to 500px, or based on card height if smaller
+        let size =
+            Math.min(
+                500,
+                maxH * 1.8
+            );
+
+
+        // Shrink until the text fits both width and height (minimum 40px)
+        while (size > 40) {
+
+            measure.style.fontSize =
+                size + "px";
+
+
+            const rect =
+                measure.getBoundingClientRect();
+
+
+            if (
+
+                rect.width <= maxW &&
+
+                rect.height <= maxH
+
+            ) {
+
+                break;
+
+            }
+
+
+            size -= 2;
+
+        }
+
+
+        cell.style.fontSize =
+            size + "px";
+
+
+        // Clean up the hidden measuring element
+        document.body.removeChild(
+            measure
+        );
+
+    });
+
+}
+
+
+/* =========================================================
+   RESIZE
+   Re-fit the numbers when the window size changes.
+========================================================= */
+
+window.addEventListener(
+
+    "resize",
+
+    () => {
+
+        requestAnimationFrame(
+            fitAll
+        );
+
+    }
+
+);
+
+
+/* =========================================================
+   WAIT FOR FONT
+   Numbers are measured with Bebas Neue, so re-fit once the
+   font has finished loading.
+========================================================= */
+
+if (
+
+    document.fonts &&
+
+    document.fonts.ready
+
+) {
+
+    document.fonts.ready.then(
+        fitAll
+    );
+
+}
+
+
+/* =========================================================
+   LAYOUT
+
+   Choose a grid according to the available
+   board dimensions.
+
+   How it works: try every possible number of columns, work out
+   the card shape (width / height) for each option, and pick the
+   one closest to a 1.35 : 1 landscape shape.
+========================================================= */
+
+function layoutBoard(
+    board,
+    count
+) {
+
+    if (!count) {
+
+        return;
+
+    }
+
+
+    // Starting guess: one row with all cards side by side
+    let best = {
+
+        cols: count,
+
+        rows: 1,
+
+        score: Infinity
+
+    };
+
+
+    for (
+
+        let cols = 1;
+
+        cols <= count;
+
+        cols++
+
+    ) {
+
+        const rows =
+            Math.ceil(
+                count / cols
+            );
+
+
+        // Size each card would be with this many columns/rows
+        const width =
+            board.clientWidth /
+            cols;
+
+
+        const height =
+            board.clientHeight /
+            rows;
+
+
+        if (
+
+            width <= 0 ||
+
+            height <= 0
+
+        ) {
+
+            continue;
+
+        }
+
+
+        const ratio =
+            width / height;
+
+
+        // Lower score = closer to the 1.35 target shape
+        const score =
+            Math.abs(
+
+                Math.log(
+                    ratio / 1.35
+                )
+
+            );
+
+
+        if (
+
+            score < best.score
+
+        ) {
+
+            best = {
+
+                cols,
+
+                rows,
+
+                score
+
+            };
+
+        }
+
+    }
+
+
+    // Hand the chosen grid to the CSS (#board uses these two values)
+    board.style.setProperty(
+        "--cols",
+        best.cols
+    );
+
+
+    board.style.setProperty(
+        "--rows",
+        best.rows
+    );
+
+}
+
+
+/* =========================================================
+   HIGHLIGHT
+   Turns a card green for HIGHLIGHT_MS (15 seconds).
+========================================================= */
+
+function highlightCard(id) {
+
+    const card =
+        document.getElementById(
+            "card-" + id
+        );
+
+
+    if (!card) {
+
+        return;
+
+    }
+
+
+    card.classList.add(
+        "called"
+    );
+
+
+    // Remember when it should end, so a re-render can restore it
+    calledUntil[id] =
+        Date.now() +
+        HIGHLIGHT_MS;
+
+
+    // Restart the countdown if this window is called again
+    clearTimeout(
+        calledTimers[id]
+    );
+
+
+    calledTimers[id] =
+        setTimeout(
+
+            () => {
+
+                // Look the card up again; it may have been re-created
+                const current =
+                    document.getElementById(
+                        "card-" + id
+                    );
+
+
+                if (current) {
+
+                    current.classList.remove(
+                        "called"
+                    );
+
+                }
+
+
+                delete calledUntil[id];
+
+            },
+
+            HIGHLIGHT_MS
+
+        );
+
+}
+
+
+/* =========================================================
+   BEEP
+   Plays the beep sound, only if sound has been unlocked.
+========================================================= */
+
+// Returns a Promise that finishes when the beep has ended, so the voice
+// can start AFTER it. (The browser only allows sound after one click on
+// the page, which is why "Sound on" exists.)
+function playBeep() {
+
+    return new Promise((resolve) => {
+
+        if (!audioUnlocked) {
+
+            resolve();
+
+            return;
+
+        }
+
+
+        let finished = false;
+
+        const done = () => {
+
+            if (finished) return;
+
+            finished = true;
+
+            resolve();
+
+        };
+
+
+        try {
+
+            // Rewind so it plays fully even if triggered twice quickly
+            beep.currentTime =
+                0;
+
+
+            if (beep.addEventListener) {
+
+                beep.addEventListener(
+                    "ended",
+                    done,
+                    { once: true }
+                );
+
+            }
+
+
+            beep.play()
+                .catch(done);
+
+
+            // Safety: never wait more than ~2.5 seconds for the beep
+            setTimeout(
+                done,
+                Math.min(
+                    2500,
+                    ((beep.duration || 1) * 1000) + 200
+                )
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                error
+            );
+
+            done();
+
+        }
+
+    });
+
+}
+
+
+/* =========================================================
+   VOICE
+   Speaks e.g. "Cashier now serving number 12" using the
+   browser's built-in text-to-speech.
+========================================================= */
+
+function speakNumber(
+    serviceName,
+    windowName,
+    value
+) {
+
+    // Admin switch (settings/voiceEnabled) must be on
+    if (!voiceEnabled) {
+
+        return;
+
+    }
+
+
+    // Some browsers don't support speech
+    if (
+
+        !(
+            "speechSynthesis"
+            in window
+        )
+
+    ) {
+
+        return;
+
+    }
+
+
+    // Stop any announcement still being spoken
+    window.speechSynthesis.cancel();
+
+
+    // e.g. "Customer Services, Window 2, now serving number 7"
+    const text =
+        serviceName +
+        ", " +
+        windowName +
+        ", now serving number " +
+        value;
+
+
+    const utterance =
+        new SpeechSynthesisUtterance(
+            text
+        );
+
+
+    utterance.rate =
+        0.9;
+
+
+    utterance.pitch =
+        1;
+
+
+    utterance.volume =
+        1;
+
+
+    window.speechSynthesis.speak(
+        utterance
+    );
+
+}
+
+
+/* =========================================================
+   RENDER BOARD
+   Rebuilds all cards from windowData. Runs every time
+   Firebase sends new window data.
+========================================================= */
+
+function renderBoard() {
+
+    // Sort windows by their "order" value (Window 1, 2, 3...)
+    const windows =
+        Object.entries(
+            windowData
+        )
+
+        .sort(
+
+            (a, b) =>
+
+                (
+                    Number(a[1].order) || 0
+                )
+
+                -
+
+                (
+                    Number(b[1].order) || 0
+                )
+
+        );
+
+
+    // No windows: show the "No active windows" message and stop
+    if (!windows.length) {
+
+        board.innerHTML = `
+
+            <div class="board-empty">
+
+                <strong>
+                    No active windows
+                </strong>
+
+                <span>
+                    This screen updates on its own.
+                </span>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    // Clear old cards, then build fresh ones
+    board.innerHTML =
+        "";
+
+
+    windows.forEach(
+        ([id, win]) => {
+
+            // Current number being served at this window (0 = none yet)
+            const value =
+                Number(
+                    win.queue || 0
+                );
+
+
+            // The number plus the time it was called. If the employee
+            // presses RECALL, calledAt changes, so the beep and voice
+            // play again even though the number is the same.
+            const signature =
+                value + "|" + (win.calledAt || 0);
+
+
+            // ---- Card container ----
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "card";
+
+
+            card.id =
+                "card-" + id;
+
+
+            // ---- Top bar: "Window 1" ----
+            const windowName =
+                getWindowName(
+                    win
+                );
+
+
+            const windowEl =
+                document.createElement(
+                    "div"
+                );
+
+
+            windowEl.className =
+                "window-name";
+
+
+            windowEl.textContent =
+                windowName;
+
+
+            // ---- Service label (also spoken in the voice announcement) ----
+            const serviceName =
+                win.label || "";
+
+
+            const serviceEl =
+                document.createElement(
+                    "div"
+                );
+
+
+            serviceEl.className =
+                "service-name";
+
+
+            serviceEl.textContent =
+                serviceName;
+
+
+            // ---- Big queue number ----
+            const numberEl =
+                document.createElement(
+                    "div"
+                );
+
+
+            numberEl.className =
+                "queue-number";
+
+
+            if (value > 0) {
+
+                numberEl.textContent =
+                    value;
+
+            }
+
+            else {
+
+                // Dim dash when nothing has been called yet
+                numberEl.textContent =
+                    "—";
+
+                numberEl.classList.add(
+                    "empty"
+                );
+
+            }
+
+
+            // Put the three parts into the card, and the card into the board
+            card.appendChild(
+                windowEl
+            );
+
+
+            card.appendChild(
+                serviceEl
+            );
+
+
+            card.appendChild(
+                numberEl
+            );
+
+
+            board.appendChild(
+                card
+            );
+
+
+            // If this window was called recently, keep it green after
+            // the rebuild (the old card was thrown away above)
+            if (
+
+                calledUntil[id] &&
+
+                calledUntil[id] > Date.now()
+
+            ) {
+
+                card.classList.add(
+                    "called"
+                );
+
+            }
+
+
+            // Detect a changed number. Skipped on the first load and
+            // for windows seen for the first time.
+            if (
+
+                !firstLoad &&
+
+                lastNumbers[id] !== undefined &&
+
+                lastNumbers[id] !== signature
+
+            ) {
+
+                highlightCard(
+                    id
+                );
+
+
+                // Only beep/speak for a real number, not when reset to 0
+                // The beep ALWAYS plays (even if the voice switch is off);
+                // the voice, when on, starts after the beep has finished.
+                if (value > 0) {
+
+                    playBeep().then(
+
+                        () => speakNumber(
+                            serviceName,
+                            windowName,
+                            value
+                        )
+
+                    );
+
+                }
+
+            }
+
+
+            // Remember this number (and call time) for the next comparison
+            lastNumbers[id] =
+                signature;
+
+        }
+
+    );
+
+
+    // Choose the best grid shape for this number of cards
+    layoutBoard(
+        board,
+        windows.length
+    );
+
+
+    // Wait for the browser to apply the new grid, then fit the numbers
+    requestAnimationFrame(
+
+        () => {
+
+            requestAnimationFrame(
+                fitAll
+            );
+
+        }
+
+    );
+
+
+    // After the first render, further changes count as real calls
+    firstLoad =
+        false;
+
+}
+
+
+/* =========================================================
+   FIREBASE WINDOW LISTENER
+
+   Reads:
+   companies/{company}/offices/{office}/windows/{windowId}
+
+   Each individual window queue is displayed.
+
+   Runs once on load and again every time anything under
+   "windows" changes, so the display updates live.
+========================================================= */
+
+onValue(
+
+    windowsRef,
+
+    snap => {
+
+        windowData =
+            snap.val() || {};
+
+
+        renderBoard();
+
+    }
+
+);
+
+
+
+/* =========================================================
+   LAYOUT 2: SETTINGS, VIDEO AND NEWS
+
+   Everything below only does work while layout 2 is showing.
+   Settings (per branch, under .../settings/):
+     displayVersion   1 = classic, 2 = video + news
+     videoUrls        one link per line (mp4 / webm file, or YouTube)
+     newsUrl          address of the news API (returns a list)
+     newsManual       own announcements, one per line (shown first)
+     newsRefreshMin   how often to reload the news (default 10)
+========================================================= */
+
+// More stories than this scroll like a ticker; this many or fewer
+// are shown one page at a time.
+const NEWS_PAGE_MAX = 4;
+
+// Seconds each page stays on screen in page mode
+const NEWS_PAGE_SECONDS = 12;
+
+// Seconds each story takes to scroll past in ticker mode
+const NEWS_ROLL_SECONDS_PER_ITEM = 7;
+
+const settingsRef =
+    ref(
+        db,
+        `companies/${company}/offices/${office}/settings`
+    );
+
+let displayVersion = 1;
+
+const versionOverride =
+    params.get("v") === "2" ? 2
+    : params.get("v") === "1" ? 1
+    : 0;
+
+let settings = {};
+
+function isWebUrl(text) {
+
+    try {
+
+        const u = new URL(text);
+
+        return u.protocol === "https:" || u.protocol === "http:";
+
+    }
+    catch (e) {
+
+        return false;
+
+    }
+
+}
+
+// Removes any HTML tags from text that comes from outside
+function plain(text) {
+
+    if (text === null || text === undefined) {
+
+        return "";
+
+    }
+
+    const doc =
+        new DOMParser().parseFromString(
+            String(text),
+            "text/html"
+        );
+
+    return (doc.body.textContent || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+}
+
+
+/* ---------- Video ---------- */
+
+const videoBoxEl = document.getElementById("videoBox");
+
+const videoEmptyEl = document.getElementById("videoEmpty");
+
+let videoKey = "";
+
+let videoEl = null;
+
+function youtubeId(url) {
+
+    try {
+
+        const u = new URL(url);
+
+        const host = u.hostname.replace(/^www\./, "");
+
+        if (host === "youtu.be") {
+
+            return u.pathname.slice(1).split("/")[0] || "";
+
+        }
+
+        if (host.endsWith("youtube.com")) {
+
+            if (u.searchParams.get("v")) {
+
+                return u.searchParams.get("v");
+
+            }
+
+            const m = u.pathname.match(/^\/(embed|shorts|live)\/([\w-]+)/);
+
+            if (m) {
+
+                return m[2];
+
+            }
+
+        }
+
+    }
+    catch (e) {}
+
+    return "";
+
+}
+
+function stopVideo() {
+
+    if (videoEl) {
+
+        try {
+
+            if (videoEl.pause) {
+
+                videoEl.pause();
+
+            }
+
+            videoEl.removeAttribute("src");
+
+            if (videoEl.load) {
+
+                videoEl.load();
+
+            }
+
+        }
+        catch (e) {}
+
+        videoEl.remove();
+
+        videoEl = null;
+
+    }
+
+    videoEmptyEl.hidden = false;
+
+}
+
+function startVideo() {
+
+    const raw = (settings.videoUrls || "").toString();
+
+    const key = displayVersion === 2 ? raw.trim() : "";
+
+    if (key === videoKey && (videoEl || !key)) {
+
+        return;
+
+    }
+
+    videoKey = key;
+
+    stopVideo();
+
+    if (!key) {
+
+        return;
+
+    }
+
+    const urls =
+        key.split(/\s*[\r\n]+\s*/)
+            .map(x => x.trim())
+            .filter(isWebUrl);
+
+    if (!urls.length) {
+
+        return;
+
+    }
+
+    const yt = urls.map(youtubeId).filter(Boolean);
+
+    videoEmptyEl.hidden = true;
+
+    if (yt.length) {
+
+        const frame = document.createElement("iframe");
+
+        frame.src =
+            "https://www.youtube-nocookie.com/embed/" + yt[0] +
+            "?autoplay=1&mute=1&controls=0&loop=1&rel=0&playsinline=1" +
+            "&modestbranding=1&playlist=" + yt.join(",");
+
+        frame.allow = "autoplay; encrypted-media; picture-in-picture";
+
+        frame.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+
+        frame.title = "Video";
+
+        videoBoxEl.appendChild(frame);
+
+        videoEl = frame;
+
+        return;
+
+    }
+
+    // Direct video files, played one after another, forever.
+    const files = urls.filter(u => !youtubeId(u));
+
+    const video = document.createElement("video");
+
+    video.muted = true;
+
+    video.autoplay = true;
+
+    video.playsInline = true;
+
+    video.controls = false;
+
+    video.setAttribute("muted", "");
+
+    let index = 0;
+
+    const play = () => {
+
+        video.src = files[index % files.length];
+
+        video.play().catch(() => {});
+
+    };
+
+    video.addEventListener("ended", () => {
+
+        index++;
+
+        play();
+
+    });
+
+    video.addEventListener("error", () => {
+
+        // Skip a broken file after a short pause
+        setTimeout(() => {
+
+            index++;
+
+            if (videoEl === video) {
+
+                play();
+
+            }
+
+        }, 3000);
+
+    });
+
+    videoBoxEl.appendChild(video);
+
+    videoEl = video;
+
+    play();
+
+}
+
+
+/* ---------- News ---------- */
+
+const newsBodyEl = document.getElementById("newsBody");
+
+const newsEmptyEl = document.getElementById("newsEmpty");
+
+const newsUpdatedEl = document.getElementById("newsUpdated");
+
+let newsItems = [];
+
+let newsKey = "";
+
+let newsFetchTimer = null;
+
+let newsPageTimer = null;
+
+let newsSource = "";
+
+// Turns whatever the news API sends into a simple list:
+// [{ title, text, source, time }]
+function normalizeNews(data) {
+
+    let list = [];
+
+    if (Array.isArray(data)) {
+
+        list = data;
+
+    }
+    else if (data && typeof data === "object") {
+
+        const keys = [
+            "articles", "items", "news", "data",
+            "results", "entries", "posts", "stories"
+        ];
+
+        for (const k of keys) {
+
+            if (Array.isArray(data[k])) {
+
+                list = data[k];
+
+                break;
+
+            }
+
+        }
+
+        if (!list.length) {
+
+            const any = Object.values(data).find(Array.isArray);
+
+            if (any) {
+
+                list = any;
+
+            }
+
+        }
+
+    }
+
+    return list.map(x => {
+
+        if (typeof x === "string") {
+
+            return { title: plain(x), text: "", source: "", time: "" };
+
+        }
+
+        if (!x || typeof x !== "object") {
+
+            return null;
+
+        }
+
+        const src = x.source;
+
+        return {
+
+            title: plain(
+                x.title || x.headline || x.name || x.heading || ""
+            ),
+
+            text: plain(
+                x.description || x.summary || x.content ||
+                x.body || x.text || x.excerpt || ""
+            ),
+
+            source: plain(
+                (src && typeof src === "object" ? src.name : src) ||
+                x.author || x.publisher || ""
+            ),
+
+            time: x.publishedAt || x.pubDate || x.published ||
+                x.date || x.created_at || ""
+
+        };
+
+    }).filter(x => x && (x.title || x.text));
+
+}
+
+function newsTimeText(value) {
+
+    if (!value) {
+
+        return "";
+
+    }
+
+    const d = new Date(value);
+
+    if (isNaN(d.getTime())) {
+
+        return "";
+
+    }
+
+    return d.toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+}
+
+function stopNews() {
+
+    clearInterval(newsPageTimer);
+
+    newsPageTimer = null;
+
+    newsBodyEl.querySelectorAll(
+        ".news-page, .news-dots, .news-roll"
+    ).forEach(n => n.remove());
+
+}
+
+function renderNews() {
+
+    stopNews();
+
+    if (displayVersion !== 2) {
+
+        return;
+
+    }
+
+    const items = newsItems;
+
+    newsEmptyEl.hidden = items.length > 0;
+
+    if (!items.length) {
+
+        return;
+
+    }
+
+    // Few stories: show one page at a time
+    if (items.length <= NEWS_PAGE_MAX) {
+
+        const pages = items.map(item => {
+
+            const page = document.createElement("div");
+
+            page.className = "news-page";
+
+            const meta = document.createElement("div");
+
+            meta.className = "news-meta";
+
+            meta.textContent =
+                [item.source, newsTimeText(item.time)]
+                    .filter(Boolean).join("  ·  ");
+
+            meta.hidden = !meta.textContent;
+
+            const title = document.createElement("div");
+
+            title.className = "news-title";
+
+            title.textContent = item.title || item.text;
+
+            page.append(meta, title);
+
+            if (item.title && item.text) {
+
+                const text = document.createElement("div");
+
+                text.className = "news-text";
+
+                text.textContent = item.text;
+
+                page.appendChild(text);
+
+            }
+
+            newsBodyEl.appendChild(page);
+
+            return page;
+
+        });
+
+        const dots = document.createElement("div");
+
+        dots.className = "news-dots";
+
+        const dotEls = pages.map(() => {
+
+            const d = document.createElement("i");
+
+            dots.appendChild(d);
+
+            return d;
+
+        });
+
+        dots.hidden = pages.length < 2;
+
+        newsBodyEl.appendChild(dots);
+
+        let current = 0;
+
+        const show = () => {
+
+            pages.forEach((p, i) => p.classList.toggle("is-on", i === current));
+
+            dotEls.forEach((d, i) => d.classList.toggle("is-on", i === current));
+
+        };
+
+        show();
+
+        if (pages.length > 1) {
+
+            newsPageTimer = setInterval(() => {
+
+                current = (current + 1) % pages.length;
+
+                show();
+
+            }, NEWS_PAGE_SECONDS * 1000);
+
+        }
+
+        return;
+
+    }
+
+    // Many stories: scroll them upward, over and over
+    const roll = document.createElement("div");
+
+    roll.className = "news-roll";
+
+    // The list is placed twice so the loop has no gap
+    for (let copy = 0; copy < 2; copy++) {
+
+        items.forEach(item => {
+
+            const row = document.createElement("div");
+
+            row.className = "news-item";
+
+            const meta = document.createElement("div");
+
+            meta.className = "news-meta";
+
+            meta.textContent =
+                [item.source, newsTimeText(item.time)]
+                    .filter(Boolean).join("  ·  ");
+
+            meta.hidden = !meta.textContent;
+
+            const title = document.createElement("div");
+
+            title.className = "news-title";
+
+            title.textContent = item.title || item.text;
+
+            row.append(meta, title);
+
+            if (copy === 1) {
+
+                row.setAttribute("aria-hidden", "true");
+
+            }
+
+            roll.appendChild(row);
+
+        });
+
+    }
+
+    roll.style.animationDuration =
+        (items.length * NEWS_ROLL_SECONDS_PER_ITEM) + "s";
+
+    newsBodyEl.appendChild(roll);
+
+}
+
+async function loadNews() {
+
+    const manual =
+        (settings.newsManual || "").toString()
+            .split(/[\r\n]+/)
+            .map(x => plain(x))
+            .filter(Boolean)
+            .map(t => ({ title: t, text: "", source: "Announcement", time: "" }));
+
+    let fetched = [];
+
+    const url = (settings.newsUrl || "").toString().trim();
+
+    if (url && isWebUrl(url)) {
+
+        try {
+
+            const response =
+                await fetch(url, { cache: "no-store" });
+
+            if (!response.ok) {
+
+                throw new Error("HTTP " + response.status);
+
+            }
+
+            fetched = normalizeNews(await response.json());
+
+            newsUpdatedEl.textContent =
+                "Updated " +
+                new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                });
+
+        }
+        catch (error) {
+
+            // Keep showing the last good news if the API is unreachable
+            console.warn("News could not be loaded:", error);
+
+            newsUpdatedEl.textContent = "Offline";
+
+            fetched = newsItems.filter(x => x.source !== "Announcement");
+
+        }
+
+    }
+    else {
+
+        newsUpdatedEl.textContent = "";
+
+    }
+
+    const all = manual.concat(fetched);
+
+    // Rebuild the screen only when the stories really changed, so the
+    // pages do not jump back to the first story every refresh.
+    const key = JSON.stringify(all);
+
+    if (key !== newsKey) {
+
+        newsKey = key;
+
+        newsItems = all;
+
+        renderNews();
+
+    }
+
+}
+
+function startNews() {
+
+    clearInterval(newsFetchTimer);
+
+    newsFetchTimer = null;
+
+    if (displayVersion !== 2) {
+
+        stopNews();
+
+        return;
+
+    }
+
+    // force a fresh draw (the old pages were removed above)
+    newsKey = "";
+
+    loadNews();
+
+    const minutes =
+        Math.max(1, Number(settings.newsRefreshMin) || 10);
+
+    newsFetchTimer =
+        setInterval(loadNews, minutes * 60 * 1000);
+
+}
+
+
+/* ---------- Switching between layout 1 and 2 ---------- */
+
+let appliedKey = "";
+
+function relayout() {
+
+    // The windows area changes size when the stage appears or goes away
+    const cards = document.querySelectorAll("#board .card").length;
+
+    if (cards) {
+
+        layoutBoard(document.getElementById("board"), cards);
+
+    }
+
+    requestAnimationFrame(() => requestAnimationFrame(fitAll));
+
+}
+
+function applySettings() {
+
+    const wanted =
+        versionOverride ||
+        (Number(settings.displayVersion) === 2 ? 2 : 1);
+
+    const changed = wanted !== displayVersion;
+
+    displayVersion = wanted;
+
+    document.body.classList.toggle("v2", displayVersion === 2);
+
+    // Re-run only what the new settings affect
+    const key =
+        displayVersion + "|" +
+        (settings.videoUrls || "") + "|" +
+        (settings.newsUrl || "") + "|" +
+        (settings.newsManual || "") + "|" +
+        (settings.newsRefreshMin || "");
+
+    if (key !== appliedKey) {
+
+        appliedKey = key;
+
+        startVideo();
+
+        startNews();
+
+    }
+
+    if (changed) {
+
+        relayout();
+
+    }
+
+}
+
+onValue(
+
+    settingsRef,
+
+    snap => {
+
+        settings = snap.val() || {};
+
+        applySettings();
+
+    }
+
+);
+
+// Keep the windows fitted whenever their area changes size
+if (window.ResizeObserver) {
+
+    let pending = false;
+
+    new ResizeObserver(() => {
+
+        if (pending) {
+
+            return;
+
+        }
+
+        pending = true;
+
+        requestAnimationFrame(() => {
+
+            pending = false;
+
+            relayout();
+
+        });
+
+    }).observe(document.getElementById("board"));
+
+}
+
+
+</script>
+
+</body>
+
+</html>

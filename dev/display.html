@@ -34,6 +34,7 @@
     --text: #EAF0F4;        /* main text */
     --muted: #7D8C99;       /* secondary text */
     --go: #35D57F;          /* green accent when a number is called */
+    --glow: #FFD43B;        /* yellow rotating border on a called card */
     --go-deep: #0E3D28;     /* dark green used in the called-card gradient */
     --danger: #E0533D;      /* red dot when disconnected */
     --gap: clamp(8px, 1.1vw, 20px);   /* space between cards, scales with screen width */
@@ -130,7 +131,7 @@ body::before {
     flex: 0 0 auto;
 
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
 
     gap: 16px;
@@ -149,10 +150,41 @@ body::before {
 
     min-width: 0;
 
+    display: flex;
+    align-items: center;
+
+    gap: clamp(8px, 1vw, 18px);
+
+}
+
+/* Company logo and iso-logo, left of the company name */
+.brand-img {
+
+    flex: 0 0 auto;
+
+    height: clamp(34px, 3.6vw, 72px);
+    width: auto;
+
+    max-width: 22vw;
+
+    object-fit: contain;
+
+}
+
+.brand-img[hidden] {
+
+    display: none;
+
+}
+
+.brand-text {
+
+    min-width: 0;
+
 }
 
 
-/* "PANELCO I QUEUE MANAGEMENT SYSTEM" */
+/* Company name, e.g. "PANELCO I" */
 .title {
 
     margin: 0;
@@ -563,6 +595,80 @@ body::before {
 }
 
 
+/* ---- Rotating yellow glow border (only while a card is ".called") ----
+   A ring (a conic gradient with a bright "comet" and fading tail) is
+   drawn over the card's edge, and its angle is animated 0 -> 360deg.
+   "@property" lets the browser animate the angle smoothly. */
+@property --glow-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.card.called {
+
+    /* yellow edge + yellow outer glow (still visible if the
+       browser cannot animate the ring) */
+    border-color: var(--glow);
+
+    box-shadow:
+        0 0 0 1px var(--glow),
+        0 0 36px -4px rgba(255, 212, 59, .55),
+        0 0 70px -10px rgba(255, 212, 59, .35);
+
+}
+
+.card.called::before {
+
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    border-radius: 12px;      /* card radius minus its border */
+
+    padding: 5px;             /* thickness of the glowing ring */
+
+    background:
+        conic-gradient(
+            from var(--glow-angle),
+            rgba(255, 212, 59, 0)    0deg,
+            rgba(255, 212, 59, .15)  180deg,
+            rgba(255, 212, 59, .9)   300deg,
+            #FFF3A8                  345deg,
+            rgba(255, 212, 59, 0)    360deg
+        );
+
+    /* cut out the middle so only the ring shows */
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#000 0 0) content-box exclude,
+        linear-gradient(#000 0 0);
+
+    pointer-events: none;
+
+    z-index: 5;
+
+    filter: drop-shadow(0 0 6px rgba(255, 212, 59, .9));
+
+    animation:
+        glow-spin 2.4s linear infinite;
+
+}
+
+@keyframes glow-spin {
+    to { --glow-angle: 360deg; }
+}
+
+/* Respect "reduce motion" settings: keep the ring still */
+@media (prefers-reduced-motion: reduce) {
+    .card.called::before { animation: none; }
+}
+
+
 /* =========================================================
    EMPTY BOARD
 ========================================================= */
@@ -829,6 +935,434 @@ body::before {
 
 }
 
+
+/* =========================================================
+   LAYOUT 2: VIDEO + NEWS ("body.v2")
+   Chosen from the employee page (settings/displayVersion = 2),
+   or for a quick look add ?v=2 to the address.
+   Top-left: a 16:9 video. Top-right: news. Bottom: the windows.
+========================================================= */
+
+.stage {
+
+    display: none;
+
+}
+
+body.v2 .stage {
+
+    flex: 0 0 auto;
+
+    display: flex;
+
+    gap: var(--gap);
+
+    /* Height of the top row. The video is exactly 16:9 at this height.
+       Never taller than ~46% of the screen so the windows keep room. */
+    height: min(46vh, 28vw);
+
+    min-height: 0;
+
+}
+
+.video-box {
+
+    position: relative;
+
+    flex: 0 0 auto;
+
+    height: 100%;
+
+    aspect-ratio: 16 / 9;
+
+    border: 2px solid var(--line);
+
+    border-radius: 14px;
+
+    background: #000;
+
+    overflow: hidden;
+
+}
+
+.video-box video,
+.video-box iframe {
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100%;
+    height: 100%;
+
+    border: 0;
+
+    object-fit: contain;
+
+    background: #000;
+
+}
+
+.video-empty {
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    text-align: center;
+
+    padding: 16px;
+
+    color: var(--muted);
+
+    font-size: clamp(12px, 1.3vw, 24px);
+
+    background:
+        radial-gradient(
+            90% 90% at 50% 0%,
+            #1A242E 0%,
+            var(--bg-lift) 100%
+        );
+
+}
+
+.video-empty[hidden],
+.news-empty[hidden] {
+
+    display: none;
+
+}
+
+.video-empty strong {
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+
+    font-size: clamp(22px, 3vw, 56px);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+
+    color: var(--text);
+
+}
+
+
+/* ---------- News panel ---------- */
+
+.news-box {
+
+    position: relative;
+
+    flex: 1 1 auto;
+
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    border: 2px solid var(--line);
+
+    border-radius: 14px;
+
+    background: var(--surface);
+
+    overflow: hidden;
+
+}
+
+.news-head {
+
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 0.5em 0.9em;
+
+    background: var(--bg-lift);
+
+    border-bottom: 2px solid var(--line);
+
+    color: var(--muted);
+
+    font-size: clamp(12px, 1.3vw, 24px);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+
+}
+
+.news-head .news-dot {
+
+    display: inline-block;
+
+    width: 0.6em;
+    height: 0.6em;
+
+    margin-right: 0.6em;
+
+    border-radius: 50%;
+
+    background: var(--glow);
+
+}
+
+.news-updated {
+
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    text-transform: none;
+
+    font-size: 0.8em;
+
+}
+
+.news-body {
+
+    position: relative;
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow: hidden;
+
+}
+
+/* --- page mode: one story at a time --- */
+
+.news-page {
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    gap: 0.5em;
+
+    padding: clamp(12px, 1.8vw, 34px);
+
+    opacity: 0;
+
+    transition: opacity .6s ease;
+
+}
+
+.news-page.is-on {
+
+    opacity: 1;
+
+}
+
+.news-meta {
+
+    font-size: clamp(11px, 1.1vw, 20px);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    color: var(--glow);
+
+}
+
+.news-title {
+
+    font-size: clamp(20px, 2.7vw, 52px);
+    font-weight: 600;
+    line-height: 1.12;
+
+    overflow-wrap: anywhere;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+
+}
+
+.news-text {
+
+    font-size: clamp(13px, 1.5vw, 28px);
+    line-height: 1.3;
+
+    color: var(--muted);
+
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+
+}
+
+.news-dots {
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 10px;
+
+    display: flex;
+    justify-content: center;
+
+    gap: 8px;
+
+}
+
+.news-dots i {
+
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: var(--line);
+
+}
+
+.news-dots i.is-on {
+
+    background: var(--glow);
+
+}
+
+/* --- roll mode: many stories scroll upward like a ticker --- */
+
+.news-roll {
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    top: 0;
+
+    animation: news-roll linear infinite;
+
+}
+
+.news-roll:hover {
+
+    animation-play-state: paused;
+
+}
+
+.news-item {
+
+    padding: 0.7em clamp(12px, 1.6vw, 30px);
+
+    border-bottom: 1px solid var(--line);
+
+}
+
+.news-item .news-title {
+
+    font-size: clamp(16px, 2vw, 38px);
+
+    -webkit-line-clamp: 3;
+
+}
+
+@keyframes news-roll {
+
+    from { transform: translateY(0); }
+    to   { transform: translateY(-50%); }
+
+}
+
+.news-empty {
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    text-align: center;
+
+    padding: 16px;
+
+    color: var(--muted);
+
+    font-size: clamp(12px, 1.3vw, 24px);
+
+}
+
+.news-empty strong {
+
+    font-family: "Bebas Neue", Impact, sans-serif;
+
+    font-size: clamp(22px, 3vw, 56px);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+
+    color: var(--text);
+
+}
+
+/* Phones / portrait screens: stack the video above the news */
+@media (max-aspect-ratio: 1/1) {
+
+    body.v2 .stage {
+
+        flex-direction: column;
+
+        height: auto;
+
+    }
+
+    body.v2 .video-box {
+
+        width: 100%;
+
+        height: auto;
+
+    }
+
+    body.v2 .news-box {
+
+        min-height: 22vh;
+
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .news-roll {
+
+        animation: none;
+
+    }
+
+}
+
+
 </style>
 
 </head>
@@ -849,19 +1383,29 @@ body::before {
 
     <div class="header-left">
 
-        <div
-            class="title"
-            id="companyTitle"
-        >
-            QUEUE MANAGEMENT SYSTEM
-        </div>
+        <!-- Company logos: <company>_logo.png and <company>_iso.png in this
+             folder. Each one hides itself if the file does not exist. -->
+        <img class="brand-img" id="logoImg" alt="" hidden>
 
-        <!-- Filled in by JavaScript from the ?office= value in the URL -->
-        <div
-            class="office"
-            id="officeName"
-        >
-            ---
+        <img class="brand-img" id="isoImg" alt="" hidden>
+
+        <div class="brand-text">
+
+            <div
+                class="title"
+                id="companyTitle"
+            >
+                &nbsp;
+            </div>
+
+            <!-- Filled in by JavaScript from the ?office= value in the URL -->
+            <div
+                class="office"
+                id="officeName"
+            >
+                ---
+            </div>
+
         </div>
 
     </div>
@@ -893,6 +1437,52 @@ body::before {
     </div>
 
 </header>
+
+
+<!-- =====================================================
+     STAGE (layout 2 only): video on the left, news on the right.
+     Hidden in layout 1.
+====================================================== -->
+
+<section class="stage" id="stage">
+
+    <div class="video-box" id="videoBox">
+
+        <div class="video-empty" id="videoEmpty">
+
+            <strong>Video</strong>
+
+            <span>No video has been set for this branch.</span>
+
+        </div>
+
+    </div>
+
+    <div class="news-box" id="newsBox">
+
+        <div class="news-head">
+
+            <span><i class="news-dot"></i>News</span>
+
+            <span class="news-updated" id="newsUpdated"></span>
+
+        </div>
+
+        <div class="news-body" id="newsBody">
+
+            <div class="news-empty" id="newsEmpty">
+
+                <strong>Welcome</strong>
+
+                <span>No news has been set up for this branch.</span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
 
 
 <!-- =====================================================
@@ -931,9 +1521,11 @@ body::before {
             PANELCO I
         </strong>
 
-        &nbsp;&middot;&nbsp;
-
-        Making Lives Better
+        <!-- Tagline comes from companies/<company>/tagline (set in system-admin).
+             Hidden when the company has none. -->
+        <span id="footerTagline" hidden>
+            &nbsp;&middot;&nbsp;<span id="footerTaglineText"></span>
+        </span>
 
     </div>
 
@@ -1093,6 +1685,18 @@ const footerCompanyEl =
     );
 
 
+const footerTaglineEl =
+    document.getElementById(
+        "footerTagline"
+    );
+
+
+const footerTaglineTextEl =
+    document.getElementById(
+        "footerTaglineText"
+    );
+
+
 const officeNameEl =
     document.getElementById(
         "officeName"
@@ -1103,16 +1707,42 @@ officeNameEl.innerText =
     prettyOffice(office);
 
 
+// Company logos: <company>_logo.png and <company>_iso.png, stored next to
+// this page. Whichever file is missing is simply not shown.
+["logo", "iso"].forEach(kind => {
+
+    const img =
+        document.getElementById(kind + "Img");
+
+    img.addEventListener("load", () => { img.hidden = false; });
+
+    img.addEventListener("error", () => { img.hidden = true; });
+
+    img.src =
+        encodeURIComponent(company) + "_" + kind + ".png";
+
+});
+
+
 /* =========================================================
    FIREBASE REFERENCES
    Database locations this page listens to.
 ========================================================= */
 
-// companies/<company>  -> company info (e.g. its display name)
+// companies/<company>/name  -> the company's display name
+// (only the name is read; the rest of the company holds every ticket)
 const companyRef =
     ref(
         db,
-        `companies/${company}`
+        `companies/${company}/name`
+    );
+
+
+// companies/<company>/tagline  -> short slogan shown in the footer (optional)
+const taglineRef =
+    ref(
+        db,
+        `companies/${company}/tagline`
     );
 
 
@@ -1124,11 +1754,12 @@ const windowsRef =
     );
 
 
-// settings/voiceEnabled  -> true/false, set from the admin page
+// companies/<company>/offices/<office>/settings/voiceEnabled  -> true/false,
+// switched on the employee page (one setting per branch)
 const voiceRef =
     ref(
         db,
-        "settings/voiceEnabled"
+        `companies/${company}/offices/${office}/settings/voiceEnabled`
     );
 
 
@@ -1152,21 +1783,43 @@ onValue(
 
     snap => {
 
-        const data =
-            snap.val() || {};
-
         const companyName =
-            data.name ||
+            snap.val() ||
             company.toUpperCase();
 
 
         companyTitleEl.textContent =
-            companyName +
-            " QUEUE MANAGEMENT SYSTEM";
+            companyName;
 
 
         footerCompanyEl.textContent =
             companyName;
+
+    }
+
+);
+
+
+/* =========================================================
+   COMPANY TAGLINE
+   Shown in the footer after the company name. Each company
+   sets its own in system-admin.html; hidden if empty.
+========================================================= */
+
+onValue(
+
+    taglineRef,
+
+    snap => {
+
+        const tagline =
+            (snap.val() || "").toString().trim();
+
+        footerTaglineTextEl.textContent =
+            tagline;
+
+        footerTaglineEl.hidden =
+            !tagline;
 
     }
 
@@ -1700,6 +2353,12 @@ window.addEventListener(
 
     () => {
 
+        if (typeof sizeStage === "function") {
+
+            sizeStage();
+
+        }
+
         requestAnimationFrame(
             fitAll
         );
@@ -1930,34 +2589,79 @@ function highlightCard(id) {
    Plays the beep sound, only if sound has been unlocked.
 ========================================================= */
 
+// Returns a Promise that finishes when the beep has ended, so the voice
+// can start AFTER it. (The browser only allows sound after one click on
+// the page, which is why "Sound on" exists.)
 function playBeep() {
 
-    if (!audioUnlocked) {
+    return new Promise((resolve) => {
 
-        return;
+        if (!audioUnlocked) {
 
-    }
+            resolve();
 
+            return;
 
-    try {
-
-        // Rewind so it plays fully even if triggered twice quickly
-        beep.currentTime =
-            0;
+        }
 
 
-        beep.play()
-            .catch(() => {});
+        let finished = false;
 
-    }
+        const done = () => {
 
-    catch (error) {
+            if (finished) return;
 
-        console.error(
-            error
-        );
+            finished = true;
 
-    }
+            resolve();
+
+        };
+
+
+        try {
+
+            // Rewind so it plays fully even if triggered twice quickly
+            beep.currentTime =
+                0;
+
+
+            if (beep.addEventListener) {
+
+                beep.addEventListener(
+                    "ended",
+                    done,
+                    { once: true }
+                );
+
+            }
+
+
+            beep.play()
+                .catch(done);
+
+
+            // Safety: never wait more than ~2.5 seconds for the beep
+            setTimeout(
+                done,
+                Math.min(
+                    2500,
+                    ((beep.duration || 1) * 1000) + 200
+                )
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                error
+            );
+
+            done();
+
+        }
+
+    });
 
 }
 
@@ -1970,6 +2674,7 @@ function playBeep() {
 
 function speakNumber(
     serviceName,
+    windowName,
     value
 ) {
 
@@ -2000,9 +2705,12 @@ function speakNumber(
     window.speechSynthesis.cancel();
 
 
+    // e.g. "Customer Services, Window 2, now serving number 7"
     const text =
         serviceName +
-        " now serving number " +
+        ", " +
+        windowName +
+        ", now serving number " +
         value;
 
 
@@ -2099,6 +2807,13 @@ function renderBoard() {
                 Number(
                     win.queue || 0
                 );
+
+
+            // The number plus the time it was called. If the employee
+            // presses RECALL, calledAt changes, so the beep and voice
+            // play again even though the number is the same.
+            const signature =
+                value + "|" + (win.calledAt || 0);
 
 
             // ---- Card container ----
@@ -2233,7 +2948,7 @@ function renderBoard() {
 
                 lastNumbers[id] !== undefined &&
 
-                lastNumbers[id] !== value
+                lastNumbers[id] !== signature
 
             ) {
 
@@ -2243,14 +2958,18 @@ function renderBoard() {
 
 
                 // Only beep/speak for a real number, not when reset to 0
+                // The beep ALWAYS plays (even if the voice switch is off);
+                // the voice, when on, starts after the beep has finished.
                 if (value > 0) {
 
-                    playBeep();
+                    playBeep().then(
 
+                        () => speakNumber(
+                            serviceName,
+                            windowName,
+                            value
+                        )
 
-                    speakNumber(
-                        serviceName,
-                        value
                     );
 
                 }
@@ -2258,9 +2977,9 @@ function renderBoard() {
             }
 
 
-            // Remember this number for the next comparison
+            // Remember this number (and call time) for the next comparison
             lastNumbers[id] =
-                value;
+                signature;
 
         }
 
@@ -2322,6 +3041,847 @@ onValue(
     }
 
 );
+
+
+
+/* =========================================================
+   LAYOUT 2: SETTINGS, VIDEO AND NEWS
+
+   Everything below only does work while layout 2 is showing.
+   Settings (per branch, under .../settings/):
+     displayVersion   1 = classic, 2 = video + news
+     videoUrls        one link per line (mp4 / webm file, or YouTube)
+     newsUrl          address of the news API (returns a list)
+     newsManual       own announcements, one per line (shown first)
+     newsRefreshMin   how often to reload the news (default 10)
+========================================================= */
+
+// More stories than this scroll like a ticker; this many or fewer
+// are shown one page at a time.
+const NEWS_PAGE_MAX = 4;
+
+// Seconds each page stays on screen in page mode
+const NEWS_PAGE_SECONDS = 12;
+
+// Seconds each story takes to scroll past in ticker mode
+const NEWS_ROLL_SECONDS_PER_ITEM = 7;
+
+const settingsRef =
+    ref(
+        db,
+        `companies/${company}/offices/${office}/settings`
+    );
+
+let displayVersion = 1;
+
+const versionOverride =
+    params.get("v") === "2" ? 2
+    : params.get("v") === "1" ? 1
+    : 0;
+
+let settings = {};
+
+function isWebUrl(text) {
+
+    try {
+
+        const u = new URL(text);
+
+        return u.protocol === "https:" || u.protocol === "http:";
+
+    }
+    catch (e) {
+
+        return false;
+
+    }
+
+}
+
+// Removes any HTML tags from text that comes from outside
+function plain(text) {
+
+    if (text === null || text === undefined) {
+
+        return "";
+
+    }
+
+    const doc =
+        new DOMParser().parseFromString(
+            String(text),
+            "text/html"
+        );
+
+    return (doc.body.textContent || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+}
+
+
+/* ---------- Video ---------- */
+
+const videoBoxEl = document.getElementById("videoBox");
+
+const videoEmptyEl = document.getElementById("videoEmpty");
+
+let videoKey = "";
+
+let videoEl = null;
+
+function youtubeId(url) {
+
+    try {
+
+        const u = new URL(url);
+
+        const host = u.hostname.replace(/^www\./, "");
+
+        if (host === "youtu.be") {
+
+            return u.pathname.slice(1).split("/")[0] || "";
+
+        }
+
+        if (host.endsWith("youtube.com")) {
+
+            if (u.searchParams.get("v")) {
+
+                return u.searchParams.get("v");
+
+            }
+
+            const m = u.pathname.match(/^\/(embed|shorts|live)\/([\w-]+)/);
+
+            if (m) {
+
+                return m[2];
+
+            }
+
+        }
+
+    }
+    catch (e) {}
+
+    return "";
+
+}
+
+function stopVideo() {
+
+    if (videoEl) {
+
+        try {
+
+            if (videoEl.pause) {
+
+                videoEl.pause();
+
+            }
+
+            videoEl.removeAttribute("src");
+
+            if (videoEl.load) {
+
+                videoEl.load();
+
+            }
+
+        }
+        catch (e) {}
+
+        videoEl.remove();
+
+        videoEl = null;
+
+    }
+
+    videoEmptyEl.hidden = false;
+
+}
+
+function startVideo() {
+
+    const raw = (settings.videoUrls || "").toString();
+
+    const key = displayVersion === 2 ? raw.trim() : "";
+
+    if (key === videoKey && (videoEl || !key)) {
+
+        return;
+
+    }
+
+    videoKey = key;
+
+    stopVideo();
+
+    if (!key) {
+
+        return;
+
+    }
+
+    const urls =
+        key.split(/\s*[\r\n]+\s*/)
+            .map(x => x.trim())
+            .filter(isWebUrl);
+
+    if (!urls.length) {
+
+        return;
+
+    }
+
+    const yt = urls.map(youtubeId).filter(Boolean);
+
+    videoEmptyEl.hidden = true;
+
+    if (yt.length) {
+
+        const frame = document.createElement("iframe");
+
+        frame.src =
+            "https://www.youtube.com/embed/" + yt[0] +
+            "?autoplay=1&mute=1&controls=0&loop=1&rel=0&playsinline=1" +
+            "&modestbranding=1&playlist=" + yt.join(",");
+
+        frame.allow = "autoplay; encrypted-media; picture-in-picture";
+
+        frame.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+
+        frame.title = "Video";
+
+        videoBoxEl.appendChild(frame);
+
+        videoEl = frame;
+
+        return;
+
+    }
+
+    // Direct video files, played one after another, forever.
+    const files = urls.filter(u => !youtubeId(u));
+
+    const video = document.createElement("video");
+
+    video.muted = true;
+
+    video.autoplay = true;
+
+    video.playsInline = true;
+
+    video.controls = false;
+
+    video.setAttribute("muted", "");
+
+    let index = 0;
+
+    const play = () => {
+
+        video.src = files[index % files.length];
+
+        video.play().catch(() => {});
+
+    };
+
+    video.addEventListener("ended", () => {
+
+        index++;
+
+        play();
+
+    });
+
+    video.addEventListener("error", () => {
+
+        // Skip a broken file after a short pause
+        setTimeout(() => {
+
+            index++;
+
+            if (videoEl === video) {
+
+                play();
+
+            }
+
+        }, 3000);
+
+    });
+
+    videoBoxEl.appendChild(video);
+
+    videoEl = video;
+
+    play();
+
+}
+
+
+/* ---------- News ---------- */
+
+const newsBodyEl = document.getElementById("newsBody");
+
+const newsEmptyEl = document.getElementById("newsEmpty");
+
+const newsUpdatedEl = document.getElementById("newsUpdated");
+
+let newsItems = [];
+
+let newsKey = "";
+
+let newsFetchTimer = null;
+
+let newsPageTimer = null;
+
+let newsSource = "";
+
+// Turns whatever the news API sends into a simple list:
+// [{ title, text, source, time }]
+function normalizeNews(data) {
+
+    let list = [];
+
+    if (Array.isArray(data)) {
+
+        list = data;
+
+    }
+    else if (data && typeof data === "object") {
+
+        const keys = [
+            "articles", "items", "news", "data",
+            "results", "entries", "posts", "stories"
+        ];
+
+        for (const k of keys) {
+
+            if (Array.isArray(data[k])) {
+
+                list = data[k];
+
+                break;
+
+            }
+
+        }
+
+        if (!list.length) {
+
+            const any = Object.values(data).find(Array.isArray);
+
+            if (any) {
+
+                list = any;
+
+            }
+
+        }
+
+    }
+
+    return list.map(x => {
+
+        if (typeof x === "string") {
+
+            return { title: plain(x), text: "", source: "", time: "" };
+
+        }
+
+        if (!x || typeof x !== "object") {
+
+            return null;
+
+        }
+
+        const src = x.source;
+
+        return {
+
+            title: plain(
+                x.title || x.headline || x.name || x.heading || ""
+            ),
+
+            text: plain(
+                x.description || x.summary || x.content ||
+                x.body || x.text || x.excerpt || ""
+            ),
+
+            source: plain(
+                (src && typeof src === "object" ? src.name : src) ||
+                x.author || x.publisher || ""
+            ),
+
+            time: x.publishedAt || x.pubDate || x.published ||
+                x.date || x.created_at || ""
+
+        };
+
+    }).filter(x => x && (x.title || x.text));
+
+}
+
+function newsTimeText(value) {
+
+    if (!value) {
+
+        return "";
+
+    }
+
+    const d = new Date(value);
+
+    if (isNaN(d.getTime())) {
+
+        return "";
+
+    }
+
+    return d.toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+}
+
+function stopNews() {
+
+    clearInterval(newsPageTimer);
+
+    newsPageTimer = null;
+
+    newsBodyEl.querySelectorAll(
+        ".news-page, .news-dots, .news-roll"
+    ).forEach(n => n.remove());
+
+}
+
+function renderNews() {
+
+    stopNews();
+
+    if (displayVersion !== 2) {
+
+        return;
+
+    }
+
+    const items = newsItems;
+
+    newsEmptyEl.hidden = items.length > 0;
+
+    if (!items.length) {
+
+        return;
+
+    }
+
+    // Few stories: show one page at a time
+    if (items.length <= NEWS_PAGE_MAX) {
+
+        const pages = items.map(item => {
+
+            const page = document.createElement("div");
+
+            page.className = "news-page";
+
+            const meta = document.createElement("div");
+
+            meta.className = "news-meta";
+
+            meta.textContent =
+                [item.source, newsTimeText(item.time)]
+                    .filter(Boolean).join("  ·  ");
+
+            meta.hidden = !meta.textContent;
+
+            const title = document.createElement("div");
+
+            title.className = "news-title";
+
+            title.textContent = item.title || item.text;
+
+            page.append(meta, title);
+
+            if (item.title && item.text) {
+
+                const text = document.createElement("div");
+
+                text.className = "news-text";
+
+                text.textContent = item.text;
+
+                page.appendChild(text);
+
+            }
+
+            newsBodyEl.appendChild(page);
+
+            return page;
+
+        });
+
+        const dots = document.createElement("div");
+
+        dots.className = "news-dots";
+
+        const dotEls = pages.map(() => {
+
+            const d = document.createElement("i");
+
+            dots.appendChild(d);
+
+            return d;
+
+        });
+
+        dots.hidden = pages.length < 2;
+
+        newsBodyEl.appendChild(dots);
+
+        let current = 0;
+
+        const show = () => {
+
+            pages.forEach((p, i) => p.classList.toggle("is-on", i === current));
+
+            dotEls.forEach((d, i) => d.classList.toggle("is-on", i === current));
+
+        };
+
+        show();
+
+        if (pages.length > 1) {
+
+            newsPageTimer = setInterval(() => {
+
+                current = (current + 1) % pages.length;
+
+                show();
+
+            }, NEWS_PAGE_SECONDS * 1000);
+
+        }
+
+        return;
+
+    }
+
+    // Many stories: scroll them upward, over and over
+    const roll = document.createElement("div");
+
+    roll.className = "news-roll";
+
+    // The list is placed twice so the loop has no gap
+    for (let copy = 0; copy < 2; copy++) {
+
+        items.forEach(item => {
+
+            const row = document.createElement("div");
+
+            row.className = "news-item";
+
+            const meta = document.createElement("div");
+
+            meta.className = "news-meta";
+
+            meta.textContent =
+                [item.source, newsTimeText(item.time)]
+                    .filter(Boolean).join("  ·  ");
+
+            meta.hidden = !meta.textContent;
+
+            const title = document.createElement("div");
+
+            title.className = "news-title";
+
+            title.textContent = item.title || item.text;
+
+            row.append(meta, title);
+
+            if (copy === 1) {
+
+                row.setAttribute("aria-hidden", "true");
+
+            }
+
+            roll.appendChild(row);
+
+        });
+
+    }
+
+    roll.style.animationDuration =
+        (items.length * NEWS_ROLL_SECONDS_PER_ITEM) + "s";
+
+    newsBodyEl.appendChild(roll);
+
+}
+
+async function loadNews() {
+
+    const manual =
+        (settings.newsManual || "").toString()
+            .split(/[\r\n]+/)
+            .map(x => plain(x))
+            .filter(Boolean)
+            .map(t => ({ title: t, text: "", source: "Announcement", time: "" }));
+
+    let fetched = [];
+
+    const url = (settings.newsUrl || "").toString().trim();
+
+    if (url && isWebUrl(url)) {
+
+        try {
+
+            const response =
+                await fetch(url, { cache: "no-store" });
+
+            if (!response.ok) {
+
+                throw new Error("HTTP " + response.status);
+
+            }
+
+            fetched = normalizeNews(await response.json());
+
+            newsUpdatedEl.textContent =
+                "Updated " +
+                new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                });
+
+        }
+        catch (error) {
+
+            // Keep showing the last good news if the API is unreachable
+            console.warn("News could not be loaded:", error);
+
+            newsUpdatedEl.textContent = "Offline";
+
+            fetched = newsItems.filter(x => x.source !== "Announcement");
+
+        }
+
+    }
+    else {
+
+        newsUpdatedEl.textContent = "";
+
+    }
+
+    const all = manual.concat(fetched);
+
+    // Rebuild the screen only when the stories really changed, so the
+    // pages do not jump back to the first story every refresh.
+    const key = JSON.stringify(all);
+
+    if (key !== newsKey) {
+
+        newsKey = key;
+
+        newsItems = all;
+
+        renderNews();
+
+    }
+
+}
+
+function startNews() {
+
+    clearInterval(newsFetchTimer);
+
+    newsFetchTimer = null;
+
+    if (displayVersion !== 2) {
+
+        stopNews();
+
+        return;
+
+    }
+
+    // force a fresh draw (the old pages were removed above)
+    newsKey = "";
+
+    loadNews();
+
+    const minutes =
+        Math.max(1, Number(settings.newsRefreshMin) || 10);
+
+    newsFetchTimer =
+        setInterval(loadNews, minutes * 60 * 1000);
+
+}
+
+
+/* ---------- Switching between layout 1 and 2 ---------- */
+
+let appliedKey = "";
+
+// Sizes the video/news row with plain numbers, so it also works on older
+// smart-TV browsers that do not understand "aspect-ratio" or "min()".
+function sizeStage() {
+
+    const stage = document.getElementById("stage");
+
+    const box = videoBoxEl;
+
+    if (displayVersion !== 2) {
+
+        stage.style.height = "";
+
+        box.style.width = "";
+
+        box.style.height = "";
+
+        return;
+
+    }
+
+    const W = stage.clientWidth || window.innerWidth;
+
+    const portrait = window.innerHeight >= window.innerWidth;
+
+    if (portrait) {
+
+        box.style.width = W + "px";
+
+        box.style.height = Math.round(W * 9 / 16) + "px";
+
+        stage.style.height = "";
+
+        return;
+
+    }
+
+    let h = Math.min(window.innerHeight * 0.46, window.innerWidth * 0.28);
+
+    let w = h * 16 / 9;
+
+    // always leave room for the news
+    if (w > W * 0.62) {
+
+        w = W * 0.62;
+
+        h = w * 9 / 16;
+
+    }
+
+    stage.style.height = Math.round(h) + "px";
+
+    box.style.height = Math.round(h) + "px";
+
+    box.style.width = Math.round(w) + "px";
+
+}
+
+function relayout() {
+
+    sizeStage();
+
+
+    // The windows area changes size when the stage appears or goes away
+    const cards = document.querySelectorAll("#board .card").length;
+
+    if (cards) {
+
+        layoutBoard(document.getElementById("board"), cards);
+
+    }
+
+    requestAnimationFrame(() => requestAnimationFrame(fitAll));
+
+}
+
+function applySettings() {
+
+    const wanted =
+        versionOverride ||
+        (Number(settings.displayVersion) === 2 ? 2 : 1);
+
+    const changed = wanted !== displayVersion;
+
+    displayVersion = wanted;
+
+    document.body.classList.toggle("v2", displayVersion === 2);
+
+    sizeStage();
+
+    // Re-run only what the new settings affect
+    const key =
+        displayVersion + "|" +
+        (settings.videoUrls || "") + "|" +
+        (settings.newsUrl || "") + "|" +
+        (settings.newsManual || "") + "|" +
+        (settings.newsRefreshMin || "");
+
+    if (key !== appliedKey) {
+
+        appliedKey = key;
+
+        startVideo();
+
+        startNews();
+
+    }
+
+    if (changed) {
+
+        relayout();
+
+    }
+
+}
+
+onValue(
+
+    settingsRef,
+
+    snap => {
+
+        settings = snap.val() || {};
+
+        applySettings();
+
+    }
+
+);
+
+// Keep the windows fitted whenever their area changes size
+if (window.ResizeObserver) {
+
+    let pending = false;
+
+    new ResizeObserver(() => {
+
+        if (pending) {
+
+            return;
+
+        }
+
+        pending = true;
+
+        requestAnimationFrame(() => {
+
+            pending = false;
+
+            relayout();
+
+        });
+
+    }).observe(document.getElementById("board"));
+
+}
 
 
 </script>

@@ -1,0 +1,14 @@
+{
+  "name": "ezq-kiosk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EZQ kiosk Android app (Capacitor wrapper of customer.html)",
+  "dependencies": {
+    "@capacitor/android": "^7.4.0",
+    "@capacitor/core": "^7.4.0",
+    "capacitor-thermal-printer": "^0.2.5"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.0"
+  }
+}

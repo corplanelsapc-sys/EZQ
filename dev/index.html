@@ -76,8 +76,15 @@ from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
     getAuth,
     signInWithEmailAndPassword,
-    onAuthStateChanged
+    onAuthStateChanged,
+    signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
+    getDatabase,
+    ref,
+    get
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBwV2E3x88_DGPu8JV4Za6aZMZrWIOt23o",
@@ -91,31 +98,88 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getDatabase(app);
 
 // =========================
-// AUTO REDIRECT IF LOGGED IN
+// WHERE DOES EACH ACCOUNT GO?
+//
+// The login name is  name@company.com
+//
+//   operator@panelcoi.com  -> system-admin.html  (companies and branches)
+//   admin@<any company>    -> window.html        (windows of that company)
+//   a staff account whose role is "kiosk" (made in window.html)
+//                          -> customer.html      (the ticket kiosk)
+//   anything else          -> employee.html      (named employees made in
+//                             window.html, or old branch logins such as
+//                             mainoffice@panelcoi.com)
 // =========================
-onAuthStateChanged(auth, (user) => {
+const SYSTEM_OPERATOR = "operator@panelcoi.com";
 
-    if (!user) return;
+async function pageFor(user) {
 
     const email = user.email.toLowerCase();
 
-    if (email === "admin@panelcoi.com") {
+    const name = email.split("@")[0];
 
-        window.location.href = "window.html";
-        
-    } else if (email === "operator@panelcoi.com") {
-        
-        window.location.href = "system-admin.html";        
-    }else {
+    const company = (email.split("@")[1] || "").split(".")[0];
 
-        const office = email.split("@")[0];
-        
-        localStorage.setItem("office", office);
+    if (email === SYSTEM_OPERATOR) return "system-admin.html";
 
-        window.location.href = "staff2.html";
+    if (name === "admin") return "window.html";
+
+    try {
+
+        // companies/<company>/users/<uid> = the person's own record
+        const snap = await get(
+            ref(db, `companies/${company}/users/${user.uid}`)
+        );
+
+        const record = snap.val();
+
+        if (record && record.role === "kiosk" && record.active !== false) {
+
+            return "customer.html";
+
+        }
+
     }
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+    return "employee.html";
+}
+
+// =========================
+// REDIRECT ONCE SIGNED IN
+// (also runs right after a successful login)
+// =========================
+// index.html?logout signs out whoever is still logged in on this browser
+// (used by the kiosk's hidden sign-out) instead of forwarding them.
+const wantsLogout = new URLSearchParams(location.search).has("logout");
+
+onAuthStateChanged(auth, async (user) => {
+
+    if (wantsLogout) {
+        if (user) await signOut(auth);
+        return;
+    }
+
+    if (!user || !user.email) return;
+
+    const email = user.email.toLowerCase();
+
+    const office = email.split("@")[0];
+
+    const company = (email.split("@")[1] || "").split(".")[0];
+
+    localStorage.setItem("office", office);
+
+    localStorage.setItem("company", company);
+
+    window.location.href = await pageFor(user);
 
 });
 
@@ -124,68 +188,22 @@ onAuthStateChanged(auth, (user) => {
 // =========================
 window.login = function() {
 
-    const email = document.getElementById("email").value;
+    const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
 
+    document.getElementById("msg").innerText = "";
+
     signInWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-
-        const user = userCredential.user;
-
-        // extract office from email
-        const office = user.email.split("@")[0].toLowerCase();
-
-        // VALID OFFICES
-        const validOffices = [
-            "mainoffice",
-            "bani",
-            "bolinao",
-            "dasol",
-            "alaminos",
-            "operator"            
-        ];
-
-        const isAdmin =
-            user.email.toLowerCase() === "admin@panelcoi.com";
-            user.email.toLowerCase() === "operator@panelcoi.com";
-
-        if (!validOffices.includes(office) && !isAdmin) {
-
-            document.getElementById("msg").innerText =
-                "Invalid office account.";
-
-            return;
-        }
-
-        if (!validOffices.includes(office)) {
-            document.getElementById("msg").innerText =
-                "Invalid office account.";
-            return;
-        }
-
-        // store office
-        localStorage.setItem("office", office);
-
-        // redirect
-        if (user.email.toLowerCase() === "admin@panelcoi.com") {
-
-         window.location.href = "window.html";
-
-        } else if (email === "operator@panelcoi.com") {
-        
-        window.location.href = "system-admin.html";  
-
-        } else {
-
-        window.location.href = "staff2.html";
-
-    }
-    })
     .catch((error) => {
         document.getElementById("msg").innerText =
             "Login failed: " + error.message;
     });
 };
+
+// Pressing Enter in the password box also logs in
+document.getElementById("password").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") window.login();
+});
 
 </script>
 

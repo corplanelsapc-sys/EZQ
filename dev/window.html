@@ -20,6 +20,12 @@ h2{
     text-align:center;
 }
 
+h3{
+    margin:36px 0 10px;
+    border-top:1px solid #333;
+    padding-top:24px;
+}
+
 .controls{
     margin-bottom:20px;
 }
@@ -72,6 +78,61 @@ button{
     color:white;
 }
 
+.grayBtn{
+    background:#444;
+    color:white;
+}
+
+.muted{
+    color:#999;
+    font-size:13px;
+}
+
+.formGrid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+    gap:10px;
+    align-items:end;
+    margin-bottom:10px;
+}
+
+.formGrid label{
+    display:block;
+    font-size:13px;
+    color:#bbb;
+    margin-bottom:4px;
+}
+
+.formGrid input,
+.formGrid select{
+    width:100%;
+    box-sizing:border-box;
+}
+
+.inactive td{
+    color:#777;
+}
+
+.tag{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:10px;
+    font-size:12px;
+    background:#333;
+}
+
+.tag.on{
+    background:#14532d;
+}
+
+.tag.off{
+    background:#7f1d1d;
+}
+
+.tableWrap{
+    overflow-x:auto;
+}
+
 </style>
 </head>
 
@@ -98,13 +159,15 @@ button{
 </div>
 
 
+<div class="tableWrap">
+
 <table>
 
 <thead>
 
 <tr>
     <th>Window ID</th>
-    <th>Label</th>
+    <th>Label (service)</th>
     <th>Order</th>
     <th>Delete</th>
 </tr>
@@ -115,8 +178,12 @@ button{
 
 </table>
 
+</div>
 
-<br>
+<p class="muted">
+    Windows with the same label share one queue and one kiosk button.
+    You can rename a service here without losing the people waiting.
+</p>
 
 <button
     class="saveBtn"
@@ -127,6 +194,161 @@ button{
 <button onclick="logout()">
     SWITCH ACCOUNT
 </button>
+
+
+<!-- =====================================================
+     DISPLAY SCREEN (layout 2: video + news), per office
+====================================================== -->
+
+<h3>DISPLAY SCREEN <span class="muted">(for the office chosen above)</span></h3>
+
+<p class="muted">
+    Layout 2 shows a video (top left), news (top right) and the windows
+    (bottom). Employees can switch the layout on their own page.
+</p>
+
+<div class="formGrid">
+
+    <div>
+        <label for="dispVersion">Layout</label>
+        <select id="dispVersion">
+            <option value="1">1 - Classic (windows only)</option>
+            <option value="2">2 - Video + news</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="dispNewsUrl">News API address (https://...)</label>
+        <input id="dispNewsUrl" type="url" placeholder="https://example.com/news.json">
+    </div>
+
+    <div>
+        <label for="dispNewsMin">Reload news every (minutes)</label>
+        <input id="dispNewsMin" type="number" min="1" max="1440" placeholder="10">
+    </div>
+
+</div>
+
+<div class="formGrid">
+
+    <div>
+        <label for="dispVideos">Video links, one per line (.mp4 / .webm file, or YouTube)</label>
+        <textarea id="dispVideos" rows="4" style="width:100%;box-sizing:border-box" placeholder="https://example.com/promo.mp4"></textarea>
+    </div>
+
+    <div>
+        <label for="dispManual">Own announcements, one per line (shown before the news)</label>
+        <textarea id="dispManual" rows="4" style="width:100%;box-sizing:border-box" placeholder="Office closed on Friday"></textarea>
+    </div>
+
+</div>
+
+<button class="saveBtn" id="dispSaveBtn" onclick="saveDisplay()">SAVE DISPLAY SETTINGS</button>
+
+<span class="muted" id="dispMsg"></span>
+
+<br>
+
+
+<!-- =====================================================
+     STAFF ACCOUNTS
+====================================================== -->
+
+<h3>STAFF ACCOUNTS <span class="muted" id="whoAmI"></span></h3>
+
+<p class="muted">
+    Create a named login for each employee (and one for each kiosk).
+    The name is recorded on every call, no-show and reset, so you can see
+    who did what. Accounts are deactivated, not deleted.
+</p>
+
+<div class="formGrid">
+
+    <div>
+        <label for="newName">Full name</label>
+        <input type="text" id="newName" placeholder="e.g. Juan Dela Cruz" maxlength="60">
+    </div>
+
+    <div>
+        <label for="newUser">Login name <span id="domainHint"></span></label>
+        <input type="text" id="newUser" placeholder="e.g. juan.delacruz" maxlength="30"
+               autocomplete="off" autocapitalize="off">
+    </div>
+
+    <div>
+        <label for="newPass">Temporary password (6+ characters)</label>
+        <input type="text" id="newPass" placeholder="give it to the employee" maxlength="64"
+               autocomplete="off">
+    </div>
+
+    <div>
+        <label for="newRole">Role</label>
+        <select id="newRole">
+            <option value="employee">Employee (calls customers)</option>
+            <option value="kiosk">Kiosk (prints tickets only)</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="newOffice">Branch</label>
+        <select id="newOffice"></select>
+    </div>
+
+    <div>
+        <button class="addBtn" onclick="createUser()" id="createBtn" style="margin:0">
+            CREATE USER
+        </button>
+    </div>
+
+</div>
+
+<div class="tableWrap">
+
+<table>
+
+<thead>
+<tr>
+    <th>Name</th>
+    <th>Login</th>
+    <th>Role</th>
+    <th>Branch</th>
+    <th>Status</th>
+    <th>Actions</th>
+</tr>
+</thead>
+
+<tbody id="staffTable">
+    <tr><td colspan="6" class="muted">Loading...</td></tr>
+</tbody>
+
+</table>
+
+</div>
+
+
+<h3>RECENT ACTIVITY</h3>
+
+<div class="tableWrap">
+
+<table>
+
+<thead>
+<tr>
+    <th>When</th>
+    <th>Who</th>
+    <th>What</th>
+</tr>
+</thead>
+
+<tbody id="auditTable">
+    <tr><td colspan="3" class="muted">Loading...</td></tr>
+</tbody>
+
+</table>
+
+</div>
+
+<br>
 
 
 <script type="module">
@@ -140,7 +362,8 @@ from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
     getAuth,
     onAuthStateChanged,
-    signOut
+    signOut,
+    createUserWithEmailAndPassword
 }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -149,9 +372,14 @@ import {
     getDatabase,
     ref,
     get,
+    set,
+    push,
     onValue,
     update,
-    remove
+    remove,
+    serverTimestamp,
+    query,
+    limitToLast
 }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -182,7 +410,7 @@ const firebaseConfig = {
         "1075037996413",
 
     appId:
-        "1:1075037996413:web:98dc8a2877d5c7b1a7814"
+        "1:1075037996413:web:98dc8a28777d5c7b1a7814"
 };
 
 
@@ -210,9 +438,144 @@ let currentCompany = "";
 let currentOffice = "";
 let currentData = {};
 
+let officesData = {};
+let staffData = {};
+
+// Login of the administrator using this page, and the e-mail domain that
+// new staff logins will use (admin@acwd.com -> staff@acwd.com).
+let adminEmail = "";
+let emailDomain = "";
+
+// Time zone of the company (read from the database; default Asia/Manila)
+let TIMEZONE = "Asia/Manila";
+
+// Handles that stop the live database listeners (used on logout, and so
+// that a re-run does not stack a second listener on top of the first).
+let unsubOffices = null;
+let unsubWindows = null;
+let unsubStaff = null;
+let unsubAudit = null;
+
 const officeSelect =
     document.getElementById("officeSelect");
 
+const $ = (id) => document.getElementById(id);
+
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+// Same rule as the other pages: a service is identified by a key made
+// from its label.
+function getRoleKey(label) {
+
+    return String(label || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[.#$[\]/]/g, "")
+        .replace(/\s+/g, "_");
+
+}
+
+// The queue a window belongs to. Windows saved before this version have
+// no serviceKey yet, so the label decides (as before).
+function serviceKeyOf(win) {
+
+    return win.serviceKey || getRoleKey(win.label);
+
+}
+
+// Makes text safe to put inside HTML
+function esc(value) {
+
+    return String(value == null ? "" : value).replace(
+        /[&<>"']/g,
+        (c) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[c])
+    );
+
+}
+
+// "2026-10-12": the day folder tickets live in (company time zone)
+function todayKey() {
+
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).formatToParts(new Date());
+
+    const p = {};
+
+    parts.forEach((x) => { p[x.type] = x.value; });
+
+    return `${p.year}-${p.month}-${p.day}`;
+
+}
+
+function fmtWhen(ms) {
+
+    if (!ms) return "";
+
+    return new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONE,
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+    }).format(new Date(ms));
+
+}
+
+// Number of customers waiting today for one service
+async function waitingCount(serviceKey) {
+
+    const snap = await get(
+        ref(
+            db,
+            `companies/${currentCompany}/offices/${currentOffice}/tickets/${todayKey()}`
+        )
+    );
+
+    const tickets = snap.val() || {};
+
+    return Object.values(tickets).filter(
+        (t) => t.service === serviceKey && t.status === "waiting"
+    ).length;
+
+}
+
+// Writes one line to the company's activity log (never blocks the action)
+async function logAction(action, detail) {
+
+    try {
+
+        await set(
+            push(ref(db, `companies/${currentCompany}/auditLog`)),
+            {
+                at: serverTimestamp(),
+                byEmail: adminEmail,
+                action: action,
+                detail: String(detail || "").slice(0, 300)
+            }
+        );
+
+    }
+    catch (error) {
+
+        console.error("AUDIT LOG ERROR:", error);
+
+    }
+
+}
 
 
 /* =========================================================
@@ -220,6 +583,17 @@ const officeSelect =
    ========================================================= */
 
 window.logout = function () {
+
+    // Stop listening first. Otherwise the database refuses the
+    // still-open listeners the moment we sign out and an error pops up.
+    [unsubOffices, unsubWindows, unsubStaff, unsubAudit].forEach((u) => {
+        if (u) u();
+    });
+
+    unsubOffices = null;
+    unsubWindows = null;
+    unsubStaff = null;
+    unsubAudit = null;
 
     signOut(auth).then(() => {
 
@@ -239,7 +613,7 @@ onAuthStateChanged(auth, async (user) => {
 
     if (!user) {
 
-        window.location.href = "login.html";
+        window.location.href = "index.html";
         return;
 
     }
@@ -250,16 +624,55 @@ onAuthStateChanged(auth, async (user) => {
         user.email
     );
 
-    console.log(
-        "AUTH UID:",
-        user.uid
-    );
-
 
     try {
 
+        adminEmail =
+            (user.email || "").toLowerCase();
+
+        emailDomain =
+            adminEmail.split("@")[1] || "";
+
+        $("domainHint").textContent =
+            emailDomain ? "(@" + emailDomain + ")" : "";
+
+        $("whoAmI").textContent =
+            "signed in as " + adminEmail;
+
+
         /*
-         * Get this user's profile.
+         * admin@<company>.<domain> is the administrator of that
+         * company (same rule index.html uses to send them here).
+         * The company comes from the email, so nothing extra has
+         * to be created in the database for a new company.
+         * Example: admin@acwd.com -> company "acwd".
+         */
+
+        const emailParts =
+            adminEmail.split("@");
+
+        if (
+            emailParts[0] === "admin" &&
+            emailParts[1]
+        ) {
+
+            currentCompany =
+                emailParts[1].split(".")[0];
+
+            console.log(
+                "USER COMPANY (from email):",
+                currentCompany
+            );
+
+            await startAdmin();
+
+            return;
+
+        }
+
+
+        /*
+         * Otherwise (older accounts): get this user's profile.
          *
          * users/{Firebase UID}
          */
@@ -273,8 +686,11 @@ onAuthStateChanged(auth, async (user) => {
 
         if (!userSnap.exists()) {
 
+            $("officeSelect").innerHTML =
+                "<option value=''>No access</option>";
+
             alert(
-                "User profile not found."
+                "User profile not found.\n\nUse a login named admin@<company>.com."
             );
 
             return;
@@ -283,12 +699,6 @@ onAuthStateChanged(auth, async (user) => {
 
         const userData =
             userSnap.val();
-
-
-        console.log(
-            "USER DATA:",
-            userData
-        );
 
 
         /*
@@ -303,24 +713,14 @@ onAuthStateChanged(auth, async (user) => {
             alert("Unauthorized");
 
             window.location.href =
-                "staff2.html";
+                "employee.html";
 
             return;
         }
 
 
-        /*
-         * Get company assigned to this user.
-         */
-
         currentCompany =
             userData.companyId;
-
-
-        console.log(
-            "USER COMPANY:",
-            currentCompany
-        );
 
 
         if (!currentCompany) {
@@ -333,12 +733,7 @@ onAuthStateChanged(auth, async (user) => {
         }
 
 
-        /*
-         * Now load the offices belonging
-         * to this company.
-         */
-
-        loadOffices();
+        await startAdmin();
 
     }
     catch (error) {
@@ -356,6 +751,42 @@ onAuthStateChanged(auth, async (user) => {
     }
 
 });
+
+
+// Loads the company time zone, then starts all the live lists.
+async function startAdmin() {
+
+    try {
+
+        const tzSnap = await get(
+            ref(db, `companies/${currentCompany}/timezone`)
+        );
+
+        const tz = tzSnap.val();
+
+        if (tz) {
+
+            // throws if the name is not a real time zone
+            new Intl.DateTimeFormat("en-US", { timeZone: tz });
+
+            TIMEZONE = tz;
+
+        }
+
+    }
+    catch (error) {
+
+        console.error("TIMEZONE ERROR:", error);
+
+    }
+
+    loadOffices();
+
+    loadStaff();
+
+    loadAudit();
+
+}
 
 
 
@@ -377,17 +808,16 @@ function loadOffices() {
         `companies/${currentCompany}/offices`
     );
 
-    onValue(
+    if (unsubOffices) unsubOffices();
+
+    unsubOffices = onValue(
         officesRef,
         (snap) => {
 
             const offices =
                 snap.val() || {};
 
-            console.log(
-                "OFFICES DATA:",
-                offices
-            );
+            officesData = offices;
 
             /*
              * Remember the office that is
@@ -397,6 +827,8 @@ function loadOffices() {
                 currentOffice;
 
             officeSelect.innerHTML = "";
+
+            $("newOffice").innerHTML = "";
 
             const officeEntries =
                 Object.entries(offices);
@@ -414,31 +846,37 @@ function loadOffices() {
 
                 currentOffice = "";
 
+                renderStaff();
+
                 return;
             }
 
             /*
-             * Rebuild the office dropdown.
+             * Rebuild the office dropdowns.
              */
             officeEntries.forEach(
                 ([officeId, office]) => {
 
-                    const option =
-                        document.createElement(
-                            "option"
+                    [officeSelect, $("newOffice")].forEach((select) => {
+
+                        const option =
+                            document.createElement(
+                                "option"
+                            );
+
+                        option.value =
+                            officeId;
+
+                        option.textContent =
+                            office.name ||
+                            office.label ||
+                            officeId;
+
+                        select.appendChild(
+                            option
                         );
 
-                    option.value =
-                        officeId;
-
-                    option.textContent =
-                        office.name ||
-                        office.label ||
-                        officeId;
-
-                    officeSelect.appendChild(
-                        option
-                    );
+                    });
 
                 }
             );
@@ -469,6 +907,8 @@ function loadOffices() {
 
             loadWindows();
 
+            renderStaff();
+
         },
         (error) => {
 
@@ -477,9 +917,16 @@ function loadOffices() {
                 error
             );
 
+            // Signed out on purpose (Switch account): nothing to report
+            if (!auth.currentUser) return;
+
+            officeSelect.innerHTML =
+                "<option value=''>Could not load offices</option>";
+
             alert(
                 "Error loading offices:\n\n" +
-                error.message
+                error.message +
+                "\n\n(company: " + currentCompany + ")"
             );
 
         }
@@ -503,6 +950,150 @@ officeSelect.addEventListener(
     }
 );
 
+
+
+/* =========================================================
+   DISPLAY SCREEN SETTINGS (per office)
+   Stored in companies/<c>/offices/<o>/settings/
+   ========================================================= */
+
+function isWebUrl(text) {
+
+    try {
+
+        const u = new URL(text);
+
+        return u.protocol === "https:" || u.protocol === "http:";
+
+    }
+    catch (e) {
+
+        return false;
+
+    }
+
+}
+
+async function loadDisplaySettings() {
+
+    if (!currentCompany || !currentOffice) return;
+
+    const office = currentOffice;
+
+    try {
+
+        const snap = await get(
+            ref(db, `companies/${currentCompany}/offices/${office}/settings`)
+        );
+
+        // The person may have picked another office while this loaded
+        if (office !== currentOffice) return;
+
+        const st = snap.val() || {};
+
+        $("dispVersion").value = Number(st.displayVersion) === 2 ? "2" : "1";
+
+        $("dispNewsUrl").value = st.newsUrl || "";
+
+        $("dispNewsMin").value = st.newsRefreshMin || "";
+
+        $("dispVideos").value = st.videoUrls || "";
+
+        $("dispManual").value = st.newsManual || "";
+
+        $("dispMsg").textContent = "";
+
+    }
+    catch (error) {
+
+        if (!auth.currentUser) return;
+
+        console.error(error);
+
+        $("dispMsg").textContent = "Could not load: " + error.message;
+
+    }
+
+}
+
+window.saveDisplay = async function () {
+
+    if (!currentCompany || !currentOffice) {
+
+        alert("Choose an office first.");
+
+        return;
+
+    }
+
+    const newsUrl = $("dispNewsUrl").value.trim();
+
+    const videos = $("dispVideos").value
+        .split(/[\r\n]+/).map((x) => x.trim()).filter(Boolean);
+
+    const manual = $("dispManual").value
+        .split(/[\r\n]+/).map((x) => x.trim()).filter(Boolean);
+
+    if (newsUrl && !isWebUrl(newsUrl)) {
+
+        alert("The news address must start with https:// (or http://).");
+
+        return;
+
+    }
+
+    const bad = videos.find((v) => !isWebUrl(v));
+
+    if (bad) {
+
+        alert("This video link is not a web address:\n\n" + bad);
+
+        return;
+
+    }
+
+    const minutes = Number($("dispNewsMin").value);
+
+    const values = {
+
+        displayVersion: Number($("dispVersion").value) === 2 ? 2 : 1,
+
+        newsUrl: newsUrl || null,
+
+        newsRefreshMin: minutes > 0 ? Math.min(1440, Math.round(minutes)) : null,
+
+        videoUrls: videos.join("\n") || null,
+
+        newsManual: manual.join("\n") || null
+
+    };
+
+    $("dispSaveBtn").disabled = true;
+
+    try {
+
+        await update(
+            ref(db, `companies/${currentCompany}/offices/${currentOffice}/settings`),
+            values
+        );
+
+        $("dispMsg").textContent = " Saved.";
+
+        logAction("display-settings", currentOffice + ": layout " + values.displayVersion);
+
+    }
+    catch (error) {
+
+        alert("Could not save:\n\n" + error.message);
+
+    }
+    finally {
+
+        $("dispSaveBtn").disabled = false;
+
+    }
+
+};
 
 
 /* =========================================================
@@ -532,7 +1123,11 @@ function loadWindows() {
     );
 
 
-    onValue(
+    loadDisplaySettings();
+
+    if (unsubWindows) unsubWindows();
+
+    unsubWindows = onValue(
         windowsRef,
         (snap) => {
 
@@ -548,6 +1143,8 @@ function loadWindows() {
                 "WINDOW READ ERROR:",
                 error
             );
+
+            if (!auth.currentUser) return;
 
             alert(
                 "Error loading windows:\n\n" +
@@ -595,17 +1192,19 @@ function renderTable() {
             row.innerHTML = `
 
                 <td>
-                    ${id}
+                    ${esc(id)}
                 </td>
 
                 <td>
 
                     <input
                         type="text"
-                        value="${win.label || ''}"
-                        data-id="${id}"
+                        value="${esc(win.label || '')}"
+                        data-id="${esc(id)}"
                         class="labelInput"
                     >
+
+                    <div class="muted">queue: ${esc(serviceKeyOf(win))}</div>
 
                 </td>
 
@@ -613,8 +1212,8 @@ function renderTable() {
 
                     <input
                         type="number"
-                        value="${win.order || 0}"
-                        data-id="${id}"
+                        value="${esc(win.order || 0)}"
+                        data-id="${esc(id)}"
                         class="orderInput"
                         style="width:80px"
                     >
@@ -625,7 +1224,8 @@ function renderTable() {
 
                     <button
                         class="deleteBtn"
-                        onclick="deleteWindow('${id}')">
+                        data-id="${esc(id)}"
+                        onclick="deleteWindow(this.dataset.id)">
 
                         DELETE
 
@@ -647,6 +1247,12 @@ function renderTable() {
 
 /* =========================================================
    SAVE CHANGES
+   Works out which queue (serviceKey) every window belongs to, so that:
+   - renaming ALL windows of a service renames the service and keeps
+     the people waiting;
+   - typing the label of another service moves the window into it;
+   - renaming only SOME windows of a service splits them off into a new
+     queue (you are asked to confirm).
    ========================================================= */
 
 window.saveAll = async function () {
@@ -659,45 +1265,156 @@ window.saveAll = async function () {
     }
 
 
+    const rows = Object.keys(currentData).map((id) => {
+
+        const win = currentData[id];
+
+        const labelInput =
+            document.querySelector(`.labelInput[data-id="${CSS.escape(id)}"]`);
+
+        const orderInput =
+            document.querySelector(`.orderInput[data-id="${CSS.escape(id)}"]`);
+
+        const newLabel =
+            labelInput
+                ? labelInput.value.trim()
+                : (win.label || "");
+
+        return {
+            id: id,
+            oldLabel: win.label || "",
+            oldKey: serviceKeyOf(win),
+            newLabel: newLabel,
+            order: orderInput ? Number(orderInput.value) : (win.order || 0),
+            changed: newLabel !== (win.label || ""),
+            norm: getRoleKey(newLabel)
+        };
+
+    });
+
+
+    if (rows.some((r) => !r.norm)) {
+
+        alert("Every window needs a label (letters or numbers).");
+
+        return;
+
+    }
+
+
+    // ---- group windows by their new label
+    const groups = {};
+
+    rows.forEach((r) => {
+
+        (groups[r.norm] = groups[r.norm] || []).push(r);
+
+    });
+
+    const usedKeys = new Set(rows.map((r) => r.oldKey));
+
+    const claimed = {};
+
+    // groups that keep an unchanged label choose their queue first
+    const groupOrder = Object.keys(groups).sort(
+        (a, b) =>
+            Number(groups[b].some((r) => !r.changed)) -
+            Number(groups[a].some((r) => !r.changed))
+    );
+
+    groupOrder.forEach((norm) => {
+
+        const group = groups[norm];
+
+        const anchor =
+            group.find((r) => !r.changed) || group[0];
+
+        let key = anchor.oldKey;
+
+        if (claimed[key] && claimed[key] !== norm) {
+
+            // that queue already belongs to another label: make a new one
+            let n = 2;
+
+            key = norm;
+
+            while (usedKeys.has(key) || claimed[key]) {
+
+                key = norm + "_" + n++;
+
+            }
+
+        }
+
+        claimed[key] = norm;
+
+        usedKeys.add(key);
+
+        group.forEach((r) => {
+
+            r.key = key;
+
+            r.label = anchor.newLabel;
+
+        });
+
+    });
+
+
+    // ---- warnings
+    const finalKeys = new Set(rows.map((r) => r.key));
+
+    const splits = rows.filter(
+        (r) => r.key !== r.oldKey && finalKeys.has(r.oldKey)
+    );
+
+    if (splits.length) {
+
+        const names = splits.map(
+            (r) => `"${r.oldLabel}" -> "${r.label}"`
+        ).join("\n");
+
+        if (!confirm(
+            "These windows will become a SEPARATE queue from the other " +
+            "windows that had the same label:\n\n" + names +
+            "\n\nContinue?"
+        )) {
+            return;
+        }
+
+    }
+
+    const vanished = [...new Set(rows.map((r) => r.oldKey))].filter(
+        (k) => !finalKeys.has(k)
+    );
+
+    for (const key of vanished) {
+
+        const waiting = await waitingCount(key);
+
+        if (waiting > 0 && !confirm(
+            waiting + " customer(s) are waiting for \"" + key +
+            "\" and no window will serve it after this change. " +
+            "They would be stuck.\n\nSave anyway?"
+        )) {
+            return;
+        }
+
+    }
+
+
+    // ---- save
     const updates = {};
 
+    rows.forEach((r) => {
 
-    /*
-     * Save labels.
-     */
+        updates[`${r.id}/label`] = r.label;
 
-    document
-        .querySelectorAll(".labelInput")
-        .forEach(input => {
+        updates[`${r.id}/order`] = r.order;
 
-            const id =
-                input.dataset.id;
+        updates[`${r.id}/serviceKey`] = r.key;
 
-            updates[
-                `${id}/label`
-            ] =
-                input.value;
-
-        });
-
-
-    /*
-     * Save order.
-     */
-
-    document
-        .querySelectorAll(".orderInput")
-        .forEach(input => {
-
-            const id =
-                input.dataset.id;
-
-            updates[
-                `${id}/order`
-            ] =
-                Number(input.value);
-
-        });
+    });
 
 
     await update(
@@ -717,6 +1434,8 @@ window.saveAll = async function () {
 
 /* =========================================================
    ADD WINDOW
+   The new id is the next free number, so an existing window can
+   never be overwritten (even after deleting one in the middle).
    ========================================================= */
 
 window.addWindow = async function () {
@@ -729,17 +1448,28 @@ window.addWindow = async function () {
     }
 
 
-    /*
-     * Same basic logic as the
-     * original program.
-     */
+    let nextNo = 1;
 
-    const nextNo =
-        Object.keys(currentData).length + 1;
+    Object.keys(currentData).forEach((existing) => {
+
+        const m = /^w(\d+)$/.exec(existing);
+
+        if (m) nextNo = Math.max(nextNo, Number(m[1]) + 1);
+
+    });
+
+    while (currentData["w" + nextNo]) nextNo++;
 
 
     const id =
         "w" + nextNo;
+
+
+    const nextOrder =
+        Object.values(currentData).reduce(
+            (max, w) => Math.max(max, Number(w.order) || 0),
+            0
+        ) + 1;
 
 
     await update(
@@ -756,8 +1486,12 @@ window.addWindow = async function () {
                 label:
                     "New Window",
 
+                serviceKey:
+                    getRoleKey("New Window"),
+
                 order:
-                    nextNo,
+                    nextOrder,
+
                 queue:
                     0
 
@@ -773,16 +1507,56 @@ window.addWindow = async function () {
 
 /* =========================================================
    DELETE WINDOW
+   Warns when people are waiting for a service that no other
+   window serves.
    ========================================================= */
 
 window.deleteWindow = async function (id) {
 
-    if (
-        !confirm(
-            "Delete " + id + " ?"
-        )
-    ) {
+    const win = currentData[id] || {};
+
+    const key = serviceKeyOf(win);
+
+    const others = Object.entries(currentData).filter(
+        ([otherId, w]) => otherId !== id && serviceKeyOf(w) === key
+    );
+
+    let message = "Delete " + id + " ?";
+
+    try {
+
+        if (others.length === 0) {
+
+            const waiting = await waitingCount(key);
+
+            if (waiting > 0) {
+
+                message =
+                    waiting + " customer(s) are waiting for \"" +
+                    (win.label || key) + "\" and NO other window serves it. " +
+                    "They would be stuck.\n\nDelete " + id + " anyway?";
+
+            }
+
+        }
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+    if (Number(win.queue) > 0) {
+
+        message += "\n\n(This window is currently showing number " + win.queue + ".)";
+
+    }
+
+    if (!confirm(message)) {
+
         return;
+
     }
 
 
@@ -796,6 +1570,444 @@ window.deleteWindow = async function (id) {
     );
 
 };
+
+
+
+/* =========================================================
+   STAFF ACCOUNTS
+   Each person gets their own login and a record at
+   companies/<company>/users/<uid> holding their name, role and branch.
+   The database rules read that record, so deactivating a person
+   (active = false) takes their access away immediately.
+   ========================================================= */
+
+function loadStaff() {
+
+    if (unsubStaff) unsubStaff();
+
+    unsubStaff = onValue(
+
+        ref(db, `companies/${currentCompany}/users`),
+
+        (snap) => {
+
+            staffData = snap.val() || {};
+
+            renderStaff();
+
+        },
+
+        (error) => {
+
+            console.error("STAFF READ ERROR:", error);
+
+            if (!auth.currentUser) return;
+
+            $("staffTable").innerHTML =
+                '<tr><td colspan="6" class="muted">Could not load staff (' +
+                esc(error.code || error.message) + ")</td></tr>";
+
+        }
+
+    );
+
+}
+
+
+function officeOptions(selected) {
+
+    return Object.entries(officesData).map(
+        ([id, o]) =>
+            `<option value="${esc(id)}"${id === selected ? " selected" : ""}>` +
+            esc(o.name || id) + "</option>"
+    ).join("");
+
+}
+
+
+function renderStaff() {
+
+    const tbody = $("staffTable");
+
+    const entries = Object.entries(staffData).sort(
+        (a, b) => String(a[1].name).localeCompare(String(b[1].name))
+    );
+
+    if (!entries.length) {
+
+        tbody.innerHTML =
+            '<tr><td colspan="6" class="muted">No staff accounts yet.</td></tr>';
+
+        return;
+
+    }
+
+    tbody.innerHTML = "";
+
+    entries.forEach(([uid, u]) => {
+
+        const active = u.active !== false;
+
+        const row = document.createElement("tr");
+
+        if (!active) row.className = "inactive";
+
+        row.innerHTML = `
+
+            <td>
+                <input type="text" class="stName" value="${esc(u.name)}"
+                       maxlength="60" style="width:150px">
+            </td>
+
+            <td>${esc(u.email)}</td>
+
+            <td>
+                <select class="stRole">
+                    <option value="employee"${u.role === "employee" ? " selected" : ""}>Employee</option>
+                    <option value="kiosk"${u.role === "kiosk" ? " selected" : ""}>Kiosk</option>
+                </select>
+            </td>
+
+            <td>
+                <select class="stOffice">${officeOptions(u.officeId)}</select>
+            </td>
+
+            <td>
+                <span class="tag ${active ? "on" : "off"}">${active ? "Active" : "Deactivated"}</span>
+            </td>
+
+            <td>
+                <button class="saveBtn" data-uid="${esc(uid)}" data-act="save">SAVE</button>
+                <button class="grayBtn" data-uid="${esc(uid)}" data-act="toggle">${active ? "DEACTIVATE" : "ACTIVATE"}</button>
+            </td>
+
+        `;
+
+        tbody.appendChild(row);
+
+    });
+
+}
+
+
+// One click handler for all buttons in the staff table
+$("staffTable").addEventListener("click", async (event) => {
+
+    const button = event.target.closest("button[data-act]");
+
+    if (!button) return;
+
+    const uid = button.dataset.uid;
+
+    const user = staffData[uid];
+
+    if (!user) return;
+
+    const row = button.closest("tr");
+
+    const base = `companies/${currentCompany}/users/${uid}`;
+
+    try {
+
+        if (button.dataset.act === "save") {
+
+            const name = row.querySelector(".stName").value.trim();
+
+            if (name.length < 2) {
+
+                alert("Please enter the person's name.");
+
+                return;
+
+            }
+
+            const role = row.querySelector(".stRole").value;
+
+            const officeId = row.querySelector(".stOffice").value;
+
+            const changes = {};
+
+            changes[`${base}/name`] = name;
+
+            changes[`${base}/role`] = role;
+
+            changes[`${base}/officeId`] = officeId;
+
+            // "access/<company>/<branch>/<uid>" is what the database rules
+            // check. Move it when the branch changes; only active people have it.
+            changes[`access/${currentCompany}/${user.officeId}/${uid}`] = null;
+
+            if (user.active !== false) {
+
+                changes[`access/${currentCompany}/${officeId}/${uid}`] = role;
+
+            }
+
+            await update(ref(db), changes);
+
+            await logAction("user-updated", user.email + " (" + name + ")");
+
+            alert("Saved");
+
+        }
+        else if (button.dataset.act === "toggle") {
+
+            const nowActive = user.active === false;
+
+            if (!confirm(
+                (nowActive ? "Activate " : "Deactivate ") +
+                user.name + " (" + user.email + ")?"
+            )) {
+                return;
+            }
+
+            const changes = {};
+
+            changes[`${base}/active`] = nowActive;
+
+            changes[`access/${currentCompany}/${user.officeId}/${uid}`] =
+                nowActive ? user.role : null;
+
+            await update(ref(db), changes);
+
+            await logAction(
+                nowActive ? "user-activated" : "user-deactivated",
+                user.email + " (" + user.name + ")"
+            );
+
+        }
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        alert("Could not complete that action:\n\n" + (error.code || error.message));
+
+    }
+
+});
+
+
+// A second, separate Firebase connection is used to create the new login.
+// Creating a user signs that connection in as the new person, which would
+// otherwise sign YOU out of this page.
+window.createUser = async function () {
+
+    const name = $("newName").value.trim();
+
+    const username = $("newUser").value.trim().toLowerCase();
+
+    const password = $("newPass").value;
+
+    const role = $("newRole").value;
+
+    const officeId = $("newOffice").value;
+
+    if (name.length < 2) {
+
+        alert("Please enter the person's full name.");
+
+        return;
+
+    }
+
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
+
+        alert("Login name: 3-30 characters, letters, numbers, dot, dash or underscore only.");
+
+        return;
+
+    }
+
+    if (username === "admin" || username === "operator" || officesData[username]) {
+
+        alert(
+            "That login name is reserved (it matches \"admin\", \"operator\" or a branch name). " +
+            "Choose another."
+        );
+
+        return;
+
+    }
+
+    if (password.length < 6) {
+
+        alert("The password needs at least 6 characters.");
+
+        return;
+
+    }
+
+    if (!officeId || !officesData[officeId]) {
+
+        alert("Please choose the branch.");
+
+        return;
+
+    }
+
+    if (!emailDomain) {
+
+        alert("Could not work out the e-mail domain. Sign in again.");
+
+        return;
+
+    }
+
+    const email = username + "@" + emailDomain;
+
+    const button = $("createBtn");
+
+    button.disabled = true;
+
+    let uid = null;
+
+    try {
+
+        const secondaryApp = initializeApp(firebaseConfig, "creator");
+
+        const secondaryAuth = getAuth(secondaryApp);
+
+        const credential =
+            await createUserWithEmailAndPassword(secondaryAuth, email, password);
+
+        uid = credential.user.uid;
+
+        await signOut(secondaryAuth);
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        button.disabled = false;
+
+        if (error.code === "auth/email-already-in-use") {
+
+            alert(
+                email + " already exists in Firebase Authentication. " +
+                "Choose another login name (or ask the operator to delete the old one in the Firebase console)."
+            );
+
+        }
+        else if (error.code === "auth/weak-password") {
+
+            alert("That password is too weak. Use at least 6 characters.");
+
+        }
+        else {
+
+            alert("Could not create the login:\n\n" + (error.code || error.message));
+
+        }
+
+        return;
+
+    }
+
+    try {
+
+        // Two places are written together (all or nothing):
+        //  - the person's record (name, e-mail, role, branch, active)
+        //  - "access/<company>/<branch>/<uid>" = role, which the database
+        //    rules check to decide what this login may do
+        await update(ref(db), {
+            [`companies/${currentCompany}/users/${uid}`]: {
+                name: name,
+                email: email,
+                role: role,
+                officeId: officeId,
+                active: true,
+                createdAt: serverTimestamp(),
+                createdBy: adminEmail
+            },
+            [`access/${currentCompany}/${officeId}/${uid}`]: role
+        });
+
+        await logAction(
+            "user-created",
+            email + " (" + name + ", " + role + ", " + officeId + ")"
+        );
+
+        $("newName").value = "";
+        $("newUser").value = "";
+        $("newPass").value = "";
+
+        alert(
+            "Created.\n\nLogin: " + email + "\nPassword: (the temporary one you typed)\n\n" +
+            "Give these to " + name + "."
+        );
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "The login " + email + " was created, but saving the staff record failed:\n\n" +
+            (error.code || error.message) +
+            "\n\nThe account cannot be used until this is fixed. Tell the operator."
+        );
+
+    }
+
+    button.disabled = false;
+
+};
+
+
+
+/* =========================================================
+   RECENT ACTIVITY (audit log of administrator actions)
+   ========================================================= */
+
+function loadAudit() {
+
+    if (unsubAudit) unsubAudit();
+
+    unsubAudit = onValue(
+
+        query(
+            ref(db, `companies/${currentCompany}/auditLog`),
+            limitToLast(40)
+        ),
+
+        (snap) => {
+
+            const rows = Object.values(snap.val() || {}).sort(
+                (a, b) => (b.at || 0) - (a.at || 0)
+            );
+
+            const tbody = $("auditTable");
+
+            if (!rows.length) {
+
+                tbody.innerHTML =
+                    '<tr><td colspan="3" class="muted">Nothing yet.</td></tr>';
+
+                return;
+
+            }
+
+            tbody.innerHTML = rows.map((r) =>
+                "<tr><td>" + esc(fmtWhen(r.at)) +
+                "</td><td>" + esc(r.byName || r.byEmail) +
+                "</td><td>" + esc(r.action) + ": " + esc(r.detail) +
+                "</td></tr>"
+            ).join("");
+
+        },
+
+        (error) => {
+
+            console.error("AUDIT READ ERROR:", error);
+
+        }
+
+    );
+
+}
 
 </script>
 

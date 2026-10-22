@@ -1,0 +1,12 @@
+{
+  "appId": "com.ezq.kiosk",
+  "appName": "EZQ Kiosk",
+  "webDir": "www",
+  "server": {
+    "url": "https://panelco-i-queue-system.web.app/index.html",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

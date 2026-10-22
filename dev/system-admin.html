@@ -217,6 +217,12 @@ input{
             onclick="addCompany()">
             ADD COMPANY
         </button>
+
+        <button
+            class="logoutBtn"
+            onclick="downloadBackup()">
+            DOWNLOAD BACKUP
+        </button>
     </div>
 
     <div>
@@ -257,6 +263,31 @@ input{
             type="text"
             id="companyName"
             placeholder="Company Name">
+
+        <input
+            type="text"
+            id="companyTagline"
+            placeholder="Tagline (optional, shown on the display)">
+
+        <input
+            type="text"
+            id="companyTimezone"
+            list="timezoneList"
+            placeholder="Time zone, e.g. Asia/Manila">
+
+        <datalist id="timezoneList">
+            <option value="Asia/Manila">
+            <option value="Asia/Singapore">
+            <option value="Asia/Hong_Kong">
+            <option value="Asia/Tokyo">
+            <option value="Asia/Bangkok">
+            <option value="Asia/Jakarta">
+            <option value="Asia/Dubai">
+            <option value="Australia/Sydney">
+            <option value="Europe/London">
+            <option value="America/New_York">
+            <option value="America/Los_Angeles">
+        </datalist>
 
         <div class="modalButtons">
 
@@ -335,6 +366,7 @@ import {
     getDatabase,
     ref,
     onValue,
+    get,
     update,
     set,
     remove
@@ -401,6 +433,58 @@ let editingBranchId = null;
    LOGOUT
 ===================================================== */
 
+/* =====================================================
+   DOWNLOAD BACKUP
+   Saves everything under "companies" (names, branches, windows,
+   staff records, tickets, logs) as one JSON file. Login accounts
+   (Firebase Authentication) are not part of it.
+===================================================== */
+
+window.downloadBackup = async function(){
+
+    try{
+
+        const snap =
+            await get(ref(db, "companies"));
+
+        const text =
+            JSON.stringify(snap.val() || {}, null, 2);
+
+        const blob =
+            new Blob([text], { type: "application/json" });
+
+        const link =
+            document.createElement("a");
+
+        link.href =
+            URL.createObjectURL(blob);
+
+        link.download =
+            "ezq-backup-" +
+            new Date().toISOString().slice(0, 10) +
+            ".json";
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        link.remove();
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "Could not create the backup:\n\n" +
+            (error.code || error.message)
+        );
+
+    }
+
+};
+
+
 window.logout = function(){
 
     signOut(auth).then(() => {
@@ -422,7 +506,7 @@ onAuthStateChanged(auth, (user) => {
     if (!user) {
 
         window.location.href =
-            "login.html";
+            "index.html";
 
         return;
 
@@ -447,7 +531,7 @@ onAuthStateChanged(auth, (user) => {
         alert("Unauthorized");
 
         window.location.href =
-            "staff2.html";
+            "employee.html";
 
         return;
 
@@ -769,6 +853,16 @@ window.addCompany = function(){
 
 
     document.getElementById(
+        "companyTagline"
+    ).value = "";
+
+
+    document.getElementById(
+        "companyTimezone"
+    ).value = "Asia/Manila";
+
+
+    document.getElementById(
         "companyModal"
     ).style.display =
         "block";
@@ -813,6 +907,18 @@ window.editCompany = function(
 
 
     document.getElementById(
+        "companyTagline"
+    ).value =
+        company.tagline || "";
+
+
+    document.getElementById(
+        "companyTimezone"
+    ).value =
+        company.timezone || "Asia/Manila";
+
+
+    document.getElementById(
         "companyModal"
     ).style.display =
         "block";
@@ -830,6 +936,35 @@ window.saveCompany = async function(){
         document.getElementById(
             "companyName"
         ).value.trim();
+
+
+    const tagline =
+        document.getElementById(
+            "companyTagline"
+        ).value.trim();
+
+
+    const timezone =
+        document.getElementById(
+            "companyTimezone"
+        ).value.trim() || "Asia/Manila";
+
+    try{
+
+        // throws if this is not a real time zone name
+        new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+
+    }
+    catch(error){
+
+        alert(
+            "Unknown time zone: " + timezone +
+            "\n\nUse a name like Asia/Manila."
+        );
+
+        return;
+
+    }
 
 
     if(!name){
@@ -856,7 +991,9 @@ window.saveCompany = async function(){
                 ),
 
                 {
-                    name:name
+                    name:name,
+                    tagline:tagline,
+                    timezone:timezone
                 }
 
             );
@@ -886,6 +1023,10 @@ window.saveCompany = async function(){
                 {
 
                     name:name,
+
+                    tagline:tagline,
+
+                    timezone:timezone,
 
                     offices:{}
 

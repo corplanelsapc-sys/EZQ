@@ -3,26 +3,49 @@
     "public": ".",
     "ignore": [
       "firebase.json",
+      "database.rules.json",
+      "README.md",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "kiosk-app/**",
+      "*.zip",
+      "*.md"
     ],
     "rewrites": [
-      {
-        "source": "/queue2",
-        "destination": "/index2.html"
-      },
       {
         "source": "/display",
         "destination": "/display.html"
       },
       {
         "source": "/staff",
-        "destination": "/staff2.html"
+        "destination": "/employee.html"
+      },
+      {
+        "source": "/employee",
+        "destination": "/employee.html"
+      },
+      {
+        "source": "/customer",
+        "destination": "/customer.html"
       },
       {
         "source": "/window",
         "destination": "/window.html"
       }
+    ],
+    "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
     ]
+  },
+  "database": {
+    "rules": "database.rules.json"
   }
 }

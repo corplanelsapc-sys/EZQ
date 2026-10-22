@@ -1,0 +1,170 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid"
+      }
+    },
+    "access": {
+      ".write": "auth != null && auth.token.email.toLowerCase() == 'operator@panelcoi.com'",
+      "$company": {
+        ".write": "auth != null && (auth.token.email.toLowerCase().beginsWith('admin@' + $company + '.') || (root.child('users').child(auth.uid).child('role').val() == 'userAdmin' && root.child('users').child(auth.uid).child('companyId').val() == $company))",
+        "$office": {
+          "$uid": {
+            ".validate": "newData.isString() && (newData.val() == 'employee' || newData.val() == 'kiosk')"
+          }
+        }
+      }
+    },
+    "companies": {
+      ".read": "auth != null && auth.token.email.toLowerCase() == 'operator@panelcoi.com'",
+      ".write": "auth != null && auth.token.email.toLowerCase() == 'operator@panelcoi.com'",
+      "$company": {
+        "name": {
+          ".read": true
+        },
+        "tagline": {
+          ".read": true
+        },
+        "timezone": {
+          ".read": true
+        },
+        "users": {
+          ".read": "auth != null && (auth.token.email.toLowerCase().beginsWith('admin@' + $company + '.') || (root.child('users').child(auth.uid).child('role').val() == 'userAdmin' && root.child('users').child(auth.uid).child('companyId').val() == $company))",
+          ".write": "auth != null && (auth.token.email.toLowerCase().beginsWith('admin@' + $company + '.') || (root.child('users').child(auth.uid).child('role').val() == 'userAdmin' && root.child('users').child(auth.uid).child('companyId').val() == $company))",
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid",
+            ".validate": "newData.hasChildren(['name', 'email', 'role', 'officeId', 'active'])",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 60"
+            },
+            "email": {
+              ".validate": "newData.isString() && newData.val().length < 120"
+            },
+            "role": {
+              ".validate": "newData.isString() && (newData.val() == 'employee' || newData.val() == 'kiosk')"
+            },
+            "officeId": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length < 60"
+            },
+            "active": {
+              ".validate": "newData.isBoolean()"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber()"
+            },
+            "createdBy": {
+              ".validate": "newData.isString() && newData.val().length < 120"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "auditLog": {
+          ".read": "auth != null && (auth.token.email.toLowerCase().beginsWith('admin@' + $company + '.') || (root.child('users').child(auth.uid).child('role').val() == 'userAdmin' && root.child('users').child(auth.uid).child('companyId').val() == $company))",
+          "$id": {
+            ".write": "!data.exists() && ((auth != null && (auth.token.email.toLowerCase().beginsWith('admin@' + $company + '.') || (root.child('users').child(auth.uid).child('role').val() == 'userAdmin' && root.child('users').child(auth.uid).child('companyId').val() == $company))) || (auth != null && auth.token.email.toLowerCase().contains('@' + $company + '.') && root.child('companies').child($company).child('users').child(auth.uid).child('active').val() != false))",
+            ".validate": "newData.hasChildren(['at', 'action'])",
+            "at": {
+              ".validate": "newData.isNumber()"
+            },
+            "byEmail": {
+              ".validate": "newData.isString() && newData.val().length < 120"
+            },
+            "byName": {
+              ".validate": "newData.isString() && newData.val().length < 80"
+            },
+            "action": {
+              ".validate": "newData.isString() && newData.val().length < 60"
+            },
+            "detail": {
+              ".validate": "newData.isString() && newData.val().length <= 300"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "offices": {
+          ".read": "auth != null && (auth.token.email.toLowerCase().beginsWith('admin@' + $company + '.') || (root.child('users').child(auth.uid).child('role').val() == 'userAdmin' && root.child('users').child(auth.uid).child('companyId').val() == $company))",
+          "$office": {
+            ".read": "auth != null && (auth.token.email.toLowerCase().beginsWith($office + '@' + $company + '.') || root.child('access').child($company).child($office).child(auth.uid).val() == 'employee')",
+            "name": {
+              ".read": true
+            },
+            "windows": {
+              ".read": true,
+              ".write": "(auth != null && (auth.token.email.toLowerCase().beginsWith($office + '@' + $company + '.') || root.child('access').child($company).child($office).child(auth.uid).val() == 'employee')) || (auth != null && (auth.token.email.toLowerCase().beginsWith('admin@' + $company + '.') || (root.child('users').child(auth.uid).child('role').val() == 'userAdmin' && root.child('users').child(auth.uid).child('companyId').val() == $company)))"
+            },
+            "settings": {
+              ".read": true,
+              ".write": "auth != null && (auth.token.email.toLowerCase().beginsWith($office + '@' + $company + '.') || root.child('access').child($company).child($office).child(auth.uid).val() == 'employee') || (auth != null && (auth.token.email.toLowerCase().beginsWith('admin@' + $company + '.') || (root.child('users').child(auth.uid).child('role').val() == 'userAdmin' && root.child('users').child(auth.uid).child('companyId').val() == $company)))"
+            },
+            "counters": {
+              "$day": {
+                ".write": "auth != null && (auth.token.email.toLowerCase().beginsWith($office + '@' + $company + '.') || root.child('access').child($company).child($office).child(auth.uid).val() == 'employee')",
+                "$service": {
+                  ".read": "auth != null && (auth.token.email.toLowerCase().beginsWith($office + '@' + $company + '.') || root.child('access').child($company).child($office).child(auth.uid).exists())",
+                  ".write": "auth != null && (auth.token.email.toLowerCase().beginsWith($office + '@' + $company + '.') || root.child('access').child($company).child($office).child(auth.uid).exists())",
+                  ".validate": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1"
+                }
+              }
+            },
+            "tickets": {
+              "$day": {
+                ".read": "auth != null && (auth.token.email.toLowerCase().beginsWith($office + '@' + $company + '.') || root.child('access').child($company).child($office).child(auth.uid).exists())",
+                ".write": "auth != null && (auth.token.email.toLowerCase().beginsWith($office + '@' + $company + '.') || root.child('access').child($company).child($office).child(auth.uid).val() == 'employee')",
+                "$ticket": {
+                  ".write": "!data.exists() && (auth != null && (auth.token.email.toLowerCase().beginsWith($office + '@' + $company + '.') || root.child('access').child($company).child($office).child(auth.uid).exists()))",
+                  ".validate": "newData.hasChildren(['service', 'serviceLabel', 'number', 'status', 'createdAt'])",
+                  "service": {
+                    ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length < 100"
+                  },
+                  "serviceLabel": {
+                    ".validate": "newData.isString() && newData.val().length < 150"
+                  },
+                  "number": {
+                    ".validate": "newData.isNumber() && newData.val() >= 1"
+                  },
+                  "status": {
+                    ".validate": "newData.isString() && (newData.val() == 'waiting' || (data.exists() && (newData.val() == 'serving' || newData.val() == 'done' || newData.val() == 'noshow')))"
+                  },
+                  "createdAt": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  "calledAt": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  "doneAt": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  "windowId": {
+                    ".validate": "newData.isString()"
+                  },
+                  "calledBy": {
+                    ".validate": "newData.isString() && newData.val().length < 100"
+                  },
+                  "calledByName": {
+                    ".validate": "newData.isString() && newData.val().length < 80"
+                  },
+                  "closedBy": {
+                    ".validate": "newData.isString() && newData.val().length < 100"
+                  },
+                  "closedByName": {
+                    ".validate": "newData.isString() && newData.val().length < 80"
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
